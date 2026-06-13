@@ -1,0 +1,16 @@
+# Core web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Config & validation
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# HTTP client for WhatsApp Cloud API + Dell AI Factory (NIM / OpenAI-compatible) calls
+httpx==0.28.1
+
+# Form parsing (USSD aggregators post application/x-www-form-urlencoded)
+python-multipart==0.0.20
+
+# --- Dev / test ---
+pytest==8.3.4

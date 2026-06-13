@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Tutor — Demo Simulator</title>
+  <style>
+    :root { --bg:#0b141a; --panel:#111b21; --in:#202c33; --out:#005c4b;
+            --accent:#00a884; --txt:#e9edef; --muted:#8696a0; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif;
+           background:var(--bg); color:var(--txt); height:100vh; display:flex;
+           flex-direction:column; }
+    header { background:var(--panel); padding:12px 16px; display:flex;
+             align-items:center; gap:12px; border-bottom:1px solid #222d34; }
+    header .avatar { width:40px; height:40px; border-radius:50%;
+             background:var(--accent); display:grid; place-items:center;
+             font-weight:700; }
+    header h1 { font-size:16px; margin:0; }
+    header p { font-size:12px; color:var(--muted); margin:2px 0 0; }
+    .lang { margin-left:auto; }
+    select { background:var(--in); color:var(--txt); border:1px solid #2a3942;
+             border-radius:8px; padding:6px 8px; }
+    #chat { flex:1; overflow-y:auto; padding:18px; display:flex;
+            flex-direction:column; gap:8px; }
+    .msg { max-width:78%; padding:8px 12px; border-radius:10px; font-size:14px;
+           line-height:1.4; white-space:pre-wrap; }
+    .user { align-self:flex-end; background:var(--out); }
+    .bot  { align-self:flex-start; background:var(--in); }
+    .diag { align-self:flex-start; max-width:78%; font-size:12px;
+            color:var(--muted); background:#0e171d; border:1px dashed #2a3942;
+            border-radius:8px; padding:8px 10px; }
+    .diag b { color:var(--accent); }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="avatar">AI</div>
+    <div>
+      <h1>AI Maths Tutor</h1>
+      <p>CAPS-aligned · WhatsApp/USSD prototype · mock mode</p>
+    </div>
+    <div class="lang">
+      <select id="lang" title="Language hint">
+        <option value="">auto-detect</option>
+        <option value="en">English</option>
+        <option value="af">Afrikaans</option>
+        <option value="zu">isiZulu</option>
+        <option value="xh">isiXhosa</option>
+      </select>
+    </div>
+  </header>
+
+  <div id="chat"></div>
+
+  <div style="padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap;
+              background:var(--panel); border-top:1px solid #222d34;">
+    <button class="quick" data-send="hi">👋 Start</button>
+    <button class="quick" data-img="2x + 3 = 7&#10;2x = 7 + 3&#10;2x = 10&#10;x = 5">
+      📷 Upload wrong working</button>
+    <button class="quick" data-img="5x - 2 = 2x + 7&#10;5x - 2x = 7 + 2&#10;3x = 9&#10;x = 3">
+      📷 Upload correct working</button>
+    <button class="quick" data-send="hint">💡 Hint</button>
+  </div>
+
+  <form id="composer" style="display:flex; gap:8px; padding:12px 16px;
+        background:var(--panel);">
+    <input id="text" autocomplete="off" placeholder="Type a problem, e.g. 2x+3=7"
+      style="flex:1; background:var(--in); color:var(--txt); border:none;
+             border-radius:20px; padding:10px 16px; font-size:14px;" />
+    <button id="send" style="background:var(--accent); color:#03110d;
+      border:none; border-radius:20px; padding:10px 18px; font-weight:600;
+      cursor:pointer;">Send</button>
+  </form>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const userId = 'web-' + Math.random().toString(36).slice(2, 8);
+
+    function bubble(text, cls) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + cls;
+      d.textContent = text;
+      chat.appendChild(d);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    function diagBubble(d) {
+      if (!d) return;
+      const el = document.createElement('div');
+      el.className = 'diag';
+      const err = d.first_error_step === null ? 'none'
+                  : ('step ' + (d.first_error_step + 1));
+      el.innerHTML = '<b>diagnosis</b> · correct: ' + d.is_correct
+        + ' · first error: ' + err + ' · misconception: ' + d.misconception
+        + (d.summary ? '<br/>' + d.summary : '');
+      chat.appendChild(el);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function send({text, image}) {
+      const lang = document.getElementById('lang').value || null;
+      if (text) bubble(text, 'user');
+      if (image) bubble('📷 [screenshot of working]\n' + image, 'user');
+      const body = { user_id: userId, language: lang };
+      if (image) body.image_caption = image; else body.text = text;
+      const res = await fetch('/api/chat', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      bubble(data.text, 'bot');
+      diagBubble(data.diagnosis);
+    }
+
+    document.getElementById('composer').addEventListener('submit', e => {
+      e.preventDefault();
+      const t = document.getElementById('text');
+      if (t.value.trim()) { send({text: t.value.trim()}); t.value = ''; }
+    });
+    document.querySelectorAll('.quick').forEach(b => {
+      b.style.cssText = 'background:#2a3942;color:var(--txt);border:none;'
+        + 'border-radius:14px;padding:6px 10px;font-size:12px;cursor:pointer;';
+      b.addEventListener('click', () => {
+        if (b.dataset.img) send({image: b.dataset.img});
+        else send({text: b.dataset.send});
+      });
+    });
+    window.addEventListener('load', () => send({text: 'hi'}));
+  </script>
+</body>
+</html>

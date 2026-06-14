@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Tutor — USSD Simulator</title>
+  <style>
+    :root { --bg:#0e1014; --phone:#1c1f26; --bezel:#2a2f3a;
+            --screen:#001a02; --green:#9cff8c; --key:#3a3f4a; --keytxt:#e9edef;
+            --accent:#00a884; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:#e9edef;
+           font-family:system-ui,Segoe UI,Roboto,sans-serif;
+           display:flex; flex-direction:column; align-items:center; padding:18px; gap:14px; }
+    h1 { margin:0; font-size:18px; }
+    .sub { color:#8696a0; font-size:13px; margin-top:-6px; }
+    a { color:var(--accent); text-decoration:none; }
+
+    .phone { width:340px; background:var(--phone); border:6px solid var(--bezel);
+             border-radius:36px; padding:18px; box-shadow:0 12px 40px rgba(0,0,0,.5); }
+    .speaker { width:60px; height:5px; background:#3a3f4a; border-radius:3px;
+               margin:0 auto 14px; }
+    .screen { background:var(--screen); color:var(--green); font-family:monospace;
+              font-size:14px; line-height:1.45; min-height:170px; padding:12px 14px;
+              border-radius:8px; white-space:pre-wrap; word-wrap:break-word;
+              border:1px solid #003c0a; }
+    .screen .label { color:#5cd05c; font-size:11px; opacity:.7; }
+    .session { color:#8696a0; font-size:11px; margin:8px 4px 0;
+               display:flex; justify-content:space-between; }
+
+    .input { display:flex; gap:6px; margin-top:12px; }
+    .input input { flex:1; background:#0d1218; color:var(--green);
+              border:1px solid #2a3942; border-radius:6px; padding:8px;
+              font-family:monospace; font-size:14px; }
+    .input button { background:var(--accent); color:#03110d; border:none;
+              border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer; }
+
+    .keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+              margin-top:12px; }
+    .keypad button { background:var(--key); color:var(--keytxt); border:none;
+              border-radius:6px; padding:10px 0; font-size:16px; cursor:pointer; }
+    .keypad button:hover { background:#4a5260; }
+    .keypad .send { background:#1a8757; color:#fff; }
+    .keypad .end  { background:#7a1d1d; color:#fff; }
+
+    .help { max-width:340px; font-size:12px; color:#8696a0; line-height:1.5; }
+    .help b { color:#cbe7e0; }
+  </style>
+</head>
+<body>
+  <h1>AI Tutor — USSD Simulator</h1>
+  <p class="sub">Feature-phone reach · text-only · zero data needed in production · <a href="/">switch to WhatsApp simulator</a></p>
+
+  <div class="phone">
+    <div class="speaker"></div>
+    <div id="screen" class="screen"><span class="label">USSD</span>
+Press DIAL *123# to begin.
+
+This simulates how a learner with a feature phone (no smartphone, no data) would reach the AI Tutor — entirely over plain text, on Vodacom zero-rated USSD.</div>
+    <div class="session">
+      <span>Session: <code id="sess"></code></span>
+      <span>Path: <code id="path">—</code></span>
+    </div>
+
+    <div class="input">
+      <input id="entry" placeholder="Reply (e.g. 1, or 2x+3=7)" autocomplete="off" />
+      <button id="btn-send" type="button">Send</button>
+    </div>
+
+    <div class="keypad">
+      <button data-k="1">1</button><button data-k="2">2 abc</button><button data-k="3">3 def</button>
+      <button data-k="4">4 ghi</button><button data-k="5">5 jkl</button><button data-k="6">6 mno</button>
+      <button data-k="7">7 pqrs</button><button data-k="8">8 tuv</button><button data-k="9">9 wxyz</button>
+      <button data-k="*">*</button><button data-k="0">0</button><button data-k="#">#</button>
+      <button class="send" id="dial">📞 Dial *123#</button>
+      <button data-k="back">⌫</button>
+      <button class="end" id="hangup">End</button>
+    </div>
+  </div>
+
+  <div class="help">
+    <p><b>How USSD works here:</b> the simulator sends a form POST to <code>/ussd</code>
+       (the same endpoint a real aggregator like Africa's Talking would call).
+       Each reply is one menu screen, prefixed <code>CON</code> (continue) or
+       <code>END</code> (session over).</p>
+    <p><b>Try this flow:</b> Dial → <b>1</b> (English) → <b>1</b> (Maths) →
+       <b>2x+3=7</b> → <b>2x=7+3</b> → see the tutor spot the transposition error
+       in one screen.</p>
+  </div>
+
+  <script>
+    const sessionId = 'sim-' + Math.random().toString(36).slice(2, 10);
+    const phoneNumber = '+27820000000';
+    let textPath = '';     // accumulates "1*1*2x+3=7" across screens
+    let inSession = false;
+
+    document.getElementById('sess').textContent = sessionId;
+    const screenEl = document.getElementById('screen');
+    const pathEl = document.getElementById('path');
+    const entry = document.getElementById('entry');
+
+    function show(label, body) {
+      screenEl.innerHTML = '';
+      const lbl = document.createElement('span');
+      lbl.className = 'label';
+      lbl.textContent = label;
+      screenEl.appendChild(lbl);
+      screenEl.appendChild(document.createTextNode('\n' + body));
+    }
+
+    async function postUssd() {
+      const fd = new URLSearchParams();
+      fd.append('sessionId', sessionId);
+      fd.append('phoneNumber', phoneNumber);
+      fd.append('text', textPath);
+      const res = await fetch('/ussd', { method: 'POST', body: fd });
+      const raw = await res.text();
+      const isEnd = raw.startsWith('END ');
+      const isCon = raw.startsWith('CON ');
+      const body = raw.replace(/^(CON|END)\s/, '');
+      show(isEnd ? 'USSD · session ended' : 'USSD', body);
+      pathEl.textContent = textPath || '—';
+      inSession = !isEnd;
+      entry.disabled = isEnd;
+      if (isEnd) entry.value = '';
+    }
+
+    document.getElementById('dial').addEventListener('click', async () => {
+      textPath = '';
+      inSession = true;
+      entry.disabled = false;
+      await postUssd();
+      entry.focus();
+    });
+
+    document.getElementById('hangup').addEventListener('click', () => {
+      textPath = '';
+      inSession = false;
+      entry.disabled = true;
+      entry.value = '';
+      show('USSD', 'Call ended. Press DIAL *123# to begin again.');
+      pathEl.textContent = '—';
+    });
+
+    async function sendReply() {
+      if (!inSession) return;
+      const v = entry.value.trim();
+      if (!v) return;
+      textPath = textPath ? textPath + '*' + v : v;
+      entry.value = '';
+      await postUssd();
+    }
+
+    document.getElementById('btn-send').addEventListener('click', sendReply);
+    entry.addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendReply();
+    });
+
+    // Keypad
+    document.querySelectorAll('.keypad button[data-k]').forEach(b => {
+      b.addEventListener('click', () => {
+        if (b.dataset.k === 'back') entry.value = entry.value.slice(0, -1);
+        else entry.value += b.dataset.k.split(' ')[0];
+        entry.focus();
+      });
+    });
+
+    // Start with the line disabled until you "dial"
+    entry.disabled = true;
+  </script>
+</body>
+</html>

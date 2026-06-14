@@ -23,7 +23,9 @@ from app.tutor.engine import get_engine
 
 router = APIRouter(tags=["mock-ui"])
 
-_INDEX = Path(__file__).resolve().parent.parent / "static" / "index.html"
+_STATIC = Path(__file__).resolve().parent.parent / "static"
+_INDEX = _STATIC / "index.html"
+_USSD_PAGE = _STATIC / "ussd.html"
 
 
 class ChatRequest(BaseModel):
@@ -61,3 +63,9 @@ async def chat(req: ChatRequest) -> dict:
 @router.get("/", response_class=HTMLResponse)
 async def index() -> str:
     return _INDEX.read_text(encoding="utf-8")
+
+
+@router.get("/ussd-simulator", response_class=HTMLResponse, tags=["ussd"])
+async def ussd_simulator() -> str:
+    """Phone-shaped feature-phone simulator that drives the real /ussd endpoint."""
+    return _USSD_PAGE.read_text(encoding="utf-8")

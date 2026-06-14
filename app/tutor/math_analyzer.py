@@ -225,9 +225,25 @@ def _looks_quadratic(text: str) -> bool:
 # ==========================================================================
 # CAPS curriculum anchoring (South African DBE)
 # ==========================================================================
-# Topic -> grade -> CAPS reference label. Linear equations spans Grades 8-10
-# at progressively deeper coverage; we show the line the learner is currently
-# working at. Quadratics belong to Grades 10-12.
+# Topic -> grade -> CAPS reference label.
+#
+# SOURCE & STATUS (be honest about this in pitches and PRs):
+#   * Grade 9 Term 2 algebra/equations placement: VERIFIED against the
+#     Western Cape Education Dept "Grade 9 Mathematics Weekly Teaching Plan
+#     2024" (Term 2 covers algebraic expressions + equations).
+#   * Grade 11 Term 1 quadratic equations placement: VERIFIED against the
+#     2023/24 and 2025 Gauteng Grade 11 Mathematics Annual Teaching Plans
+#     (Term 1 covers exponents/surds and quadratic equations).
+#   * Grade 8 / Grade 10 / Grade 12 entries: PLAUSIBLE but not yet
+#     cross-checked against the official DBE CAPS document or provincial
+#     ATPs. Treat as first-pass scaffolding.
+#   * Sub-skill names (below) are pedagogically standard but are not
+#     lifted verbatim from the CAPS document. Educator review recommended
+#     before any pilot.
+#
+# This table is the entire CAPS-mapping surface — an SA Maths educator can
+# review and edit it in this single file without touching any AI/prompt code.
+# That auditability is the whole point.
 _CAPS_TOPICS: dict[str, dict[str, str]] = {
     "linear_equations": {
         "8":  "CAPS · Grade 8 · Term 2 · Algebra · Solving simple equations",

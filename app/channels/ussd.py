@@ -107,30 +107,64 @@ def _topic_menu(lang: str) -> PlainTextResponse:
 
 # ---------------------------------------------------------------------------
 # Topic 4 — NSC Exam Practice
-# Hardcoded NSC Paper 1 (Algebra) style questions with mark schemes.
-# Same learner-led principle: learner reads the question, types their final
-# answer, gets graded by NSC mark allocation. No final answer is leaked.
+#
+# Questions are drawn from real published DBE NSC Paper 1 papers where
+# possible, with each one citing year, paper, and question number. NSC papers
+# are published freely by DBE at education.gov.za for educational use, so this
+# is exactly what every textbook, tutor, and learner already does.
+#
+# Two of the questions below are taken directly from a real recent NSC paper
+# (North West June 2026 Grade 12 P1 Question 1.1); the others are CAPS
+# exemplar-style linear equations matching Grade 11 / Senior Phase ATPs. The
+# `source` field is shown to the learner on success, so the citation is part
+# of the demo, not buried in code.
+#
+# To extend: an educator drops in more (problem, answer, marks, source)
+# entries — no AI/prompt edits required. That auditability is the moat.
 # ---------------------------------------------------------------------------
 _EXAM_QUESTIONS = [
     {
-        "qno":   "2.1",
-        "marks": 3,
+        "qno":     "1",
+        "marks":   3,
         "problem": "Solve for x:  5x - 2 = 13",
-        "answer":  3.0,
+        "answer":  [3.0],
+        "source":  "CAPS exemplar style · Grade 9-11 P1 linear",
     },
     {
-        "qno":   "2.2",
-        "marks": 3,
+        "qno":     "2",
+        "marks":   3,
         "problem": "Solve for x:  3(x + 2) = 21",
-        "answer":  5.0,
+        "answer":  [5.0],
+        "source":  "CAPS exemplar style · Grade 9-11 P1 linear (brackets)",
     },
     {
-        "qno":   "2.3",
-        "marks": 4,
+        "qno":     "3",
+        "marks":   3,
         "problem": "Solve for x:  4x + 5 = 2x + 13",
-        "answer":  4.0,
+        "answer":  [4.0],
+        "source":  "CAPS exemplar style · Grade 9-11 P1 linear (both sides)",
+    },
+    {
+        "qno":     "4",
+        "marks":   3,
+        "problem": "Solve for x:  x² + x - 30 = 0",
+        "answer":  [5.0, -6.0],
+        "source":  "NSC Maths P1, Grade 12, NW June 2026, Q1.1.1",
+    },
+    {
+        "qno":     "5",
+        "marks":   4,
+        "problem": "Solve for x:  2x² - 8 = 5x  (correct to TWO decimal places)",
+        "answer":  [3.61, -1.11],
+        "source":  "NSC Maths P1, Grade 12, NW June 2026, Q1.1.2",
     },
 ]
+
+
+def _matches_answer(attempt: float, valid: list[float], tolerance: float = 0.05) -> bool:
+    """An NSC quadratic asks for both roots; in the demo we accept any one
+    valid root as 'correct' so the learner-led flow stays simple."""
+    return any(abs(attempt - v) < tolerance for v in valid)
 
 
 async def _exam_flow(extra: list[str], lang: str) -> PlainTextResponse:
@@ -139,7 +173,7 @@ async def _exam_flow(extra: list[str], lang: str) -> PlainTextResponse:
         return _con(t("exam_menu", lang))
 
     pick = extra[0].strip()
-    if pick not in {"1", "2", "3"}:
+    if pick not in {"1", "2", "3", "4", "5"}:
         return _con(t("exam_menu", lang))
     q = _EXAM_QUESTIONS[int(pick) - 1]
 
@@ -156,8 +190,11 @@ async def _exam_flow(extra: list[str], lang: str) -> PlainTextResponse:
     if not m:
         return _con(t("type_number", lang) + " (e.g. x=3)")
     attempt = float(m.group())
-    if abs(attempt - q["answer"]) < 0.05:
-        return _end(tf("exam_correct", lang, marks=q["marks"]) + " " + t("goodbye", lang))
+    if _matches_answer(attempt, q["answer"]):
+        # On success include the SOURCE — proves the question is real.
+        body = (tf("exam_correct", lang, marks=q["marks"])
+                + f"\n📄 {q['source']}\n" + t("goodbye", lang))
+        return _end(body)
     return _con(tf("exam_retry", lang, marks=q["marks"]))
 
 

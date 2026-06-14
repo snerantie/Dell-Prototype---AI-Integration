@@ -513,10 +513,10 @@ _STRINGS.update({
 # ----------------------------------------------------------------------------
 _STRINGS.update({
     "exam_menu": {
-        "en": "📝 NSC Exam Practice (Paper 1, Algebra):\n1. Q1 (3 marks) — linear\n2. Q2 (3 marks) — brackets\n3. Q3 (4 marks) — both sides\nReply 1, 2 or 3.",
-        "af": "📝 NSC Eksamenoefening (Vraestel 1, Algebra):\n1. V1 (3 punte) — lineêr\n2. V2 (3 punte) — hakies\n3. V3 (4 punte) — albei kante\nAntwoord 1, 2 of 3.",
-        "zu": "📝 Ukuzilolonga kwe-NSC (Iphepha 1, i-Algebra):\n1. Q1 (3 amamaki) — okuqondile\n2. Q2 (3 amamaki) — abakaki\n3. Q3 (4 amamaki) — zombili izinhlangothi\nPhendula 1, 2 noma 3.",
-        "xh": "📝 Ukuziqhelanisa kwe-NSC (Iphepha 1, i-Algebra):\n1. Q1 (3 amanqaku) — engqalileyo\n2. Q2 (3 amanqaku) — izibiyeli\n3. Q3 (4 amanqaku) — zombini iicala\nPhendula 1, 2 okanye 3.",
+        "en": "📝 NSC Exam Practice (Paper 1, Algebra):\n1. Q1 (3) linear · CAPS\n2. Q2 (3) brackets · CAPS\n3. Q3 (3) both sides · CAPS\n4. Q4 (3) factor · NW Jun26\n5. Q5 (4) formula · NW Jun26",
+        "af": "📝 NSC Eksamenoefening (V1, Algebra):\n1. V1 (3) lineêr · CAPS\n2. V2 (3) hakies · CAPS\n3. V3 (3) albei kante · CAPS\n4. V4 (3) faktor · NW Jun26\n5. V5 (4) formule · NW Jun26",
+        "zu": "📝 Ukuzilolonga kwe-NSC (Iphepha 1, Algebra):\n1. Q1 (3) okuqondile · CAPS\n2. Q2 (3) abakaki · CAPS\n3. Q3 (3) zombili · CAPS\n4. Q4 (3) factor · NW Jun26\n5. Q5 (4) formula · NW Jun26",
+        "xh": "📝 Ukuziqhelanisa kwe-NSC (Iphepha 1, Algebra):\n1. Q1 (3) engqalileyo · CAPS\n2. Q2 (3) izibiyeli · CAPS\n3. Q3 (3) zombini · CAPS\n4. Q4 (3) factor · NW Jun26\n5. Q5 (4) formula · NW Jun26",
     },
     "exam_q_intro": {
         "en": "QUESTION {qno} ({marks} marks)\n{problem}\nShow your working. Type your final answer (e.g. x=3):",

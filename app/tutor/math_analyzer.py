@@ -225,51 +225,97 @@ def _looks_quadratic(text: str) -> bool:
 # ==========================================================================
 # CAPS curriculum anchoring (South African DBE)
 # ==========================================================================
-# Topic -> grade -> CAPS reference label.
+# SOURCES & VERIFICATION STATUS (be transparent in pitches and PRs):
 #
-# SOURCE & STATUS (be honest about this in pitches and PRs):
-#   * Grade 9 Term 2 algebra/equations placement: VERIFIED against the
-#     Western Cape Education Dept "Grade 9 Mathematics Weekly Teaching Plan
-#     2024" (Term 2 covers algebraic expressions + equations).
-#   * Grade 11 Term 1 quadratic equations placement: VERIFIED against the
-#     2023/24 and 2025 Gauteng Grade 11 Mathematics Annual Teaching Plans
-#     (Term 1 covers exponents/surds and quadratic equations).
-#   * Grade 8 / Grade 10 / Grade 12 entries: PLAUSIBLE but not yet
-#     cross-checked against the official DBE CAPS document or provincial
-#     ATPs. Treat as first-pass scaffolding.
-#   * Sub-skill names (below) are pedagogically standard but are not
-#     lifted verbatim from the CAPS document. Educator review recommended
-#     before any pilot.
+#   * Grade 8 · Term 2 · algebraic equations:
+#       VERIFIED via madebyteachers.com & mathsatsharp.co.za
+#       (Grade 8 Term 2 algebraic-equations CAPS-aligned worksheet bundles).
+#   * Grade 9 · Term 2 · algebraic expressions & equations:
+#       VERIFIED via Western Cape Education Dept "Grade 9 Maths Weekly
+#       Teaching Plan 2024".
+#   * Grade 10 · Term 1 · algebraic expressions, equations, exponents:
+#       VERIFIED via KZN Grade 10 Maths ATP 2024 and Free State Grade 10
+#       Maths ATP 2024.
+#   * Grade 11 · Term 1 · exponents/surds, equations & inequalities (incl.
+#     quadratic), number patterns:
+#       VERIFIED via Gauteng Grade 11 Maths ATPs (2023/24, 2025, 2026).
+#   * Grade 12 · Term 1 · sequences/series, functions, trigonometry:
+#       VERIFIED via Grade 12 Maths ATP 2025 (Final).
+#       NB: Quadratic equations are NOT a Grade 12 topic — they are assumed
+#       prior knowledge from Grade 10/11. The table reflects this.
+#   * Sub-skill names (below) align with CAPS phrasing where possible
+#     ("inverse operations", "distributive law", "factorisation" are CAPS
+#     terms) but are not lifted verbatim from the official document and
+#     should still be reviewed by an SA Maths educator before pilot.
 #
 # This table is the entire CAPS-mapping surface — an SA Maths educator can
 # review and edit it in this single file without touching any AI/prompt code.
 # That auditability is the whole point.
+#
+# Topic key -> grade -> CAPS reference label.
 _CAPS_TOPICS: dict[str, dict[str, str]] = {
+    # Linear equations: Grades 8-10 (deepens with each grade).
     "linear_equations": {
-        "8":  "CAPS · Grade 8 · Term 2 · Algebra · Solving simple equations",
-        "9":  "CAPS · Grade 9 · Term 2 · Algebra · Linear equations",
-        "10": "CAPS · Grade 10 · Term 1 · Algebra · Linear equations",
+        "8":  "CAPS · Grade 8 · Term 2 · Algebra · Algebraic equations",
+        "9":  "CAPS · Grade 9 · Term 2 · Algebra · Equations and inequalities",
+        "10": "CAPS · Grade 10 · Term 1 · Algebra · Equations and inequalities",
     },
+    # Quadratic equations: introduced Grade 10, mastered Grade 11.
+    # NOT a Grade 12 topic in CAPS — assumed prior knowledge there.
     "quadratic_equations": {
-        "10": "CAPS · Grade 10 · Term 2 · Algebra · Quadratic patterns",
-        "11": "CAPS · Grade 11 · Term 1 · Algebra · Quadratic equations",
-        "12": "CAPS · Grade 12 · Term 1 · Algebra · Equations & inequalities",
+        "10": "CAPS · Grade 10 · Term 1 · Algebra · Equations and inequalities",
+        "11": "CAPS · Grade 11 · Term 1 · Algebra · Equations and inequalities (quadratic)",
+    },
+    # ----- Roadmap topics (scaffolded for v1+; deterministic analyzer not
+    # yet implemented for these, so they appear when the LLM/VLM identifies
+    # the topic but no first-error step is computed). -----
+    "algebraic_expressions": {
+        "8":  "CAPS · Grade 8 · Term 2 · Algebra · Algebraic expressions",
+        "9":  "CAPS · Grade 9 · Term 2 · Algebra · Algebraic expressions",
+        "10": "CAPS · Grade 10 · Term 1 · Algebra · Algebraic expressions",
+    },
+    "exponents": {
+        "8":  "CAPS · Grade 8 · Term 1 · Numbers · Exponents",
+        "9":  "CAPS · Grade 9 · Term 1 · Numbers · Exponents",
+        "10": "CAPS · Grade 10 · Term 1 · Numbers · Exponents",
+        "11": "CAPS · Grade 11 · Term 1 · Numbers · Exponents and surds",
+    },
+    "factorisation": {
+        "9":  "CAPS · Grade 9 · Term 2 · Algebra · Factorisation",
+        "10": "CAPS · Grade 10 · Term 1 · Algebra · Factorisation",
+    },
+    "number_patterns": {
+        "10": "CAPS · Grade 10 · Term 3 · Algebra · Number patterns",
+        "11": "CAPS · Grade 11 · Term 1 · Algebra · Number patterns",
+        "12": "CAPS · Grade 12 · Term 1 · Algebra · Number patterns, sequences and series",
+    },
+    "functions": {
+        "10": "CAPS · Grade 10 · Term 2 · Functions · Linear, parabolic, hyperbolic",
+        "11": "CAPS · Grade 11 · Term 2 · Functions",
+        "12": "CAPS · Grade 12 · Term 1 · Functions · Formal definition, inverses, exponential and logarithmic",
+    },
+    "trigonometry": {
+        "10": "CAPS · Grade 10 · Term 2 · Trigonometry · Introduction",
+        "11": "CAPS · Grade 11 · Term 2 · Trigonometry",
+        "12": "CAPS · Grade 12 · Term 1 · Trigonometry",
     },
 }
 
 # Misconception type -> CAPS sub-skill the learner needs to revisit.
+# Phrasing aligned to CAPS Mathematics terminology where possible
+# ("inverse operations", "distributive law", "factorisation" are CAPS terms).
 _CAPS_SUBSKILLS: dict[MisconceptionType, str] = {
-    MisconceptionType.SIGN_ERROR:        "Sub-skill · Integer operations · sign rules",
-    MisconceptionType.TRANSPOSITION:     "Sub-skill · Inverse operations · transposing terms",
-    MisconceptionType.DISTRIBUTION:      "Sub-skill · Distributive law · expanding brackets",
-    MisconceptionType.FACTORISATION:     "Sub-skill · Factorisation",
-    MisconceptionType.FRACTION_HANDLING: "Sub-skill · Equivalent equations · dividing both sides",
-    MisconceptionType.SUBSTITUTION:      "Sub-skill · Substitution into expressions",
-    MisconceptionType.ARITHMETIC_SLIP:   "Sub-skill · Number operations · accuracy",
-    MisconceptionType.CONCEPTUAL:        "Sub-skill · Conceptual understanding",
-    MisconceptionType.INCOMPLETE:        "Sub-skill · Process completion",
-    MisconceptionType.ORDER_OF_OPERATIONS: "Sub-skill · BODMAS / order of operations",
-    MisconceptionType.NONE:              "",
+    MisconceptionType.SIGN_ERROR:          "CAPS sub-skill · Integers · operating with positive and negative numbers",
+    MisconceptionType.TRANSPOSITION:       "CAPS sub-skill · Equations · using inverse operations to solve equations",
+    MisconceptionType.DISTRIBUTION:        "CAPS sub-skill · Algebraic expressions · distributive law (expanding brackets)",
+    MisconceptionType.FACTORISATION:       "CAPS sub-skill · Algebraic expressions · factorisation",
+    MisconceptionType.FRACTION_HANDLING:   "CAPS sub-skill · Equations · multiplying / dividing both sides by the same number",
+    MisconceptionType.SUBSTITUTION:        "CAPS sub-skill · Algebraic expressions · substitution",
+    MisconceptionType.ARITHMETIC_SLIP:     "CAPS sub-skill · Number operations · computational accuracy",
+    MisconceptionType.CONCEPTUAL:          "CAPS sub-skill · Conceptual understanding of the topic",
+    MisconceptionType.INCOMPLETE:          "CAPS sub-skill · Process · completing all required steps",
+    MisconceptionType.ORDER_OF_OPERATIONS: "CAPS sub-skill · BODMAS · order of operations",
+    MisconceptionType.NONE:                "",
 }
 
 

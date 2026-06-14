@@ -389,3 +389,115 @@ def hint_for(misconception: MisconceptionType, lang: str = "en") -> str:
     """Localised Socratic hint for a misconception type."""
     entry = MISCONCEPTION_HINTS_I18N.get(misconception, {})
     return entry.get(lang) or entry.get("en") or ""
+
+
+
+
+# ----------------------------------------------------------------------------
+# Topic-based USSD strings (added to support text-only Geometry / Area on
+# feature phones — no smartphone, no data, no images required).
+# ----------------------------------------------------------------------------
+_STRINGS.update({
+    "topic_menu": {
+        "en": "Choose a topic:\n1. Algebra (equations)\n2. Geometry (Pythagoras)\n3. Area (shapes)\n0. Free-form (soon)",
+        "af": "Kies 'n onderwerp:\n1. Algebra (vergelykings)\n2. Meetkunde (Pythagoras)\n3. Oppervlakte (vorms)\n0. Vrye vorm (binnekort)",
+        "zu": "Khetha isihloko:\n1. I-Algebra (izibalo)\n2. I-Geometry (i-Pythagoras)\n3. Indawo (izinhlangothi)\n0. Buza ngokukhululekile (kuyeza)",
+        "xh": "Khetha umxholo:\n1. I-Algebra (izibalo)\n2. I-Geometry (i-Pythagoras)\n3. Ummandla (iimilo)\n0. Buza ngokukhululekile (kuza)",
+    },
+    "pyth_intro": {
+        "en": "Pythagoras: a² + b² = c² (right-angled triangle).\nType side a (in cm):",
+        "af": "Pythagoras: a² + b² = c² (regte driehoek).\nTik sy a (in cm):",
+        "zu": "I-Pythagoras: a² + b² = c² (unxantathu one-90°).\nBhala uhlangothi a (nge-cm):",
+        "xh": "I-Pythagoras: a² + b² = c² (unxantathu one-90°).\nBhala icala a (nge-cm):",
+    },
+    "pyth_ask_b": {
+        "en": "Good. Type side b (in cm):",
+        "af": "Goed. Tik sy b (in cm):",
+        "zu": "Kuhle. Bhala uhlangothi b (nge-cm):",
+        "xh": "Kuhle. Bhala icala b (nge-cm):",
+    },
+    "pyth_show_calc": {
+        "en": "a² + b² = {a_sq} + {b_sq} = {sum_sq}.\nSo c² = {sum_sq}.\nWhat is c? (the square root)",
+        "af": "a² + b² = {a_sq} + {b_sq} = {sum_sq}.\nDus c² = {sum_sq}.\nWat is c? (die vierkantswortel)",
+        "zu": "a² + b² = {a_sq} + {b_sq} = {sum_sq}.\nNgakho c² = {sum_sq}.\nIngakanani u-c? (impande yesikwele)",
+        "xh": "a² + b² = {a_sq} + {b_sq} = {sum_sq}.\nNgoko c² = {sum_sq}.\nIngakanani u-c? (ingcambu yesikwere)",
+    },
+    "pyth_correct": {
+        "en": "Correct! c = {c}. Working without a single picture — well done!",
+        "af": "Reg! c = {c}. Sonder 'n enkele prentjie gedoen — mooi so!",
+        "zu": "Lungile! c = {c}. Ngaphandle kwesithombe — wenze kahle!",
+        "xh": "Ichanile! c = {c}. Ngaphandle komfanekiso — wenze kakuhle!",
+    },
+    "pyth_wrong": {
+        "en": "Not quite. c² = {sum_sq}, so c ≈ {c_round}. Try the square root again, or type END.",
+        "af": "Nie heeltemal nie. c² = {sum_sq}, dus c ≈ {c_round}. Probeer die wortel weer, of tik END.",
+        "zu": "Akulona iqiniso. c² = {sum_sq}, ngakho c ≈ {c_round}. Zama futhi impande, noma bhala END.",
+        "xh": "Ayilunganga. c² = {sum_sq}, ngoko c ≈ {c_round}. Zama kwakhona ingcambu, okanye bhala END.",
+    },
+    "area_menu": {
+        "en": "Area of which shape?\n1. Triangle\n2. Rectangle\n3. Circle",
+        "af": "Oppervlakte van watter vorm?\n1. Driehoek\n2. Reghoek\n3. Sirkel",
+        "zu": "Indawo yaluphi uhlobo?\n1. Unxantathu\n2. Isikwele\n3. Indilinga",
+        "xh": "Ummandla wayiphi imilo?\n1. Unxantathu\n2. Isikwere\n3. Isangqa",
+    },
+    "tri_area_intro": {
+        "en": "Triangle area = ½ × base × height.\nType the base (cm):",
+        "af": "Driehoek-oppervlakte = ½ × basis × hoogte.\nTik die basis (cm):",
+        "zu": "Indawo yonxantathu = ½ × isisekelo × ubude.\nBhala isisekelo (cm):",
+        "xh": "Ummandla wonxantathu = ½ × isiseko × ubude.\nBhala isiseko (cm):",
+    },
+    "tri_area_ask_h": {
+        "en": "Type the height (cm):",
+        "af": "Tik die hoogte (cm):",
+        "zu": "Bhala ubude (cm):",
+        "xh": "Bhala ubude (cm):",
+    },
+    "tri_area_show": {
+        "en": "Area = ½ × {b} × {h} = {area} cm². No diagram needed!",
+        "af": "Oppervlakte = ½ × {b} × {h} = {area} cm². Geen prentjie nodig nie!",
+        "zu": "Indawo = ½ × {b} × {h} = {area} cm². Akudingekile sithombe!",
+        "xh": "Ummandla = ½ × {b} × {h} = {area} cm². Akukho mfanekiso ufunekayo!",
+    },
+    "rect_area_intro": {
+        "en": "Rectangle area = length × width.\nType the length (cm):",
+        "af": "Reghoek-oppervlakte = lengte × breedte.\nTik die lengte (cm):",
+        "zu": "Indawo yesikwele = ubude × ububanzi.\nBhala ubude (cm):",
+        "xh": "Ummandla wesikwere = ubude × ububanzi.\nBhala ubude (cm):",
+    },
+    "rect_area_ask_w": {
+        "en": "Type the width (cm):",
+        "af": "Tik die breedte (cm):",
+        "zu": "Bhala ububanzi (cm):",
+        "xh": "Bhala ububanzi (cm):",
+    },
+    "rect_area_show": {
+        "en": "Area = {l} × {w} = {area} cm². Done in plain text — no smartphone needed.",
+        "af": "Oppervlakte = {l} × {w} = {area} cm². In gewone teks gedoen — geen slimfoon nodig nie.",
+        "zu": "Indawo = {l} × {w} = {area} cm². Kwenziwe ngombhalo nje — akudingeki ifoni eyihle.",
+        "xh": "Ummandla = {l} × {w} = {area} cm². Yenzelwe kumbhalo nje — akukho fowuni efunekayo.",
+    },
+    "circle_area_intro": {
+        "en": "Circle area = π × r².\nType the radius (cm):",
+        "af": "Sirkel-oppervlakte = π × r².\nTik die radius (cm):",
+        "zu": "Indawo yendilinga = π × r².\nBhala i-radius (cm):",
+        "xh": "Ummandla wesangqa = π × r².\nBhala i-radius (cm):",
+    },
+    "circle_area_show": {
+        "en": "Area = π × {r}² = {area} cm² (using π ≈ 3.14).",
+        "af": "Oppervlakte = π × {r}² = {area} cm² (gebruik π ≈ 3.14).",
+        "zu": "Indawo = π × {r}² = {area} cm² (esebenzisa π ≈ 3.14).",
+        "xh": "Ummandla = π × {r}² = {area} cm² (esebenzisa π ≈ 3.14).",
+    },
+    "type_number": {
+        "en": "Please type just a number (e.g. 3 or 4.5):",
+        "af": "Tik asseblief net 'n nommer (bv. 3 of 4.5):",
+        "zu": "Sicela ubhale inombolo nje (isb. 3 noma 4.5):",
+        "xh": "Nceda ubhale inombolo nje (umz. 3 okanye 4.5):",
+    },
+    "topic_coming_soon": {
+        "en": "That topic is coming soon. {goodbye}",
+        "af": "Daardie onderwerp kom binnekort. {goodbye}",
+        "zu": "Lesi sihloko siyeza maduze. {goodbye}",
+        "xh": "Lo mxholo uza kungekudala. {goodbye}",
+    },
+})

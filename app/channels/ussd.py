@@ -144,103 +144,128 @@ async def _algebra_flow(extra: list[str], lang: str) -> PlainTextResponse:
 
 
 # ---------------------------------------------------------------------------
-# Topic 2 — Geometry: Pythagoras (right-angled triangle)
-# Walks the learner through a² + b² = c² with no diagram. Pure text.
+# Topic 2 — Geometry: Pythagoras (right-angled triangle), LEARNER-LED.
+# Pattern (mirrors Algebra): learner types their own problem; learner does
+# the working; tutor only verifies and gives a Socratic nudge if wrong.
+# Tutor never types the answer for them.
 # ---------------------------------------------------------------------------
+_NUM_RE = re.compile(r"-?\d+(?:[.,]\d+)?")
+
+
+def _extract_numbers(text: str) -> list[float]:
+    out: list[float] = []
+    for m in _NUM_RE.findall(text):
+        try:
+            out.append(float(m.replace(",", ".")))
+        except ValueError:
+            pass
+    return out
+
+
 async def _pythagoras_flow(extra: list[str], lang: str) -> PlainTextResponse:
+    # Screen 1: prompt the learner to type their OWN problem.
     if len(extra) == 0:
         return _con(t("pyth_intro", lang))
 
-    a = _parse_num(extra[0])
-    if a is None:
-        return _con(t("type_number", lang))
-
-    if len(extra) == 1:
-        return _con(t("pyth_ask_b", lang))
-
-    b = _parse_num(extra[1])
-    if b is None:
-        return _con(t("type_number", lang))
-
+    # The learner's typed problem (any phrasing). Pull two numbers out of it.
+    problem_text = extra[0]
+    nums = _extract_numbers(problem_text)
+    if len(nums) < 2:
+        return _con(t("pyth_need_sides", lang))
+    a, b = nums[0], nums[1]
     sum_sq = a * a + b * b
-    if len(extra) == 2:
-        return _con(tf(
-            "pyth_show_calc", lang,
-            a_sq=_fmt(a * a), b_sq=_fmt(b * b), sum_sq=_fmt(sum_sq),
-        ))
-
-    attempt = _parse_num(extra[2])
-    if attempt is None:
-        return _con(t("type_number", lang))
     c_correct = math.sqrt(sum_sq)
-    if abs(attempt - c_correct) < 0.05:
+
+    # USSD accumulates every attempt in the path, so we walk extras[1:] in
+    # order: first find the first correct a²+b², then look for c after it.
+    attempts = extra[1:]
+
+    # Stage 1: learner is still attempting a²+b².
+    sum_idx = None
+    for i, raw in enumerate(attempts):
+        v = _parse_num(raw)
+        if v is not None and abs(v - sum_sq) < 0.05:
+            sum_idx = i
+            break
+
+    if sum_idx is None:
+        if not attempts:
+            # First time arriving here: ASK them.
+            return _con(tf("pyth_ask_sum", lang, a=_fmt(a), b=_fmt(b)))
+        # They've attempted but got it wrong — Socratic nudge using LAST attempt.
+        if _parse_num(attempts[-1]) is None:
+            return _con(t("type_number", lang))
+        return _con(tf("pyth_sum_wrong", lang, a_sq=_fmt(a * a), b_sq=_fmt(b * b)))
+
+    # Stage 2: a²+b² is confirmed. Now look at attempts AFTER that for c.
+    c_attempts = attempts[sum_idx + 1:]
+    if not c_attempts:
+        return _con(tf("pyth_ask_c", lang, sum_sq=_fmt(sum_sq)))
+
+    last_c = _parse_num(c_attempts[-1])
+    if last_c is None:
+        return _con(t("type_number", lang))
+    if abs(last_c - c_correct) < 0.05:
         return _end(tf("pyth_correct", lang, c=_fmt(c_correct))
                     + " " + t("goodbye", lang))
-    return _con(tf("pyth_wrong", lang,
+    return _con(tf("pyth_c_wrong", lang,
                    sum_sq=_fmt(sum_sq), c_round=_fmt(round(c_correct, 2))))
 
 
 # ---------------------------------------------------------------------------
-# Topic 3 — Area calculations (triangle / rectangle / circle)
-# All structured Q&A. No diagram needed — learner enters numbers, tutor
-# computes the answer with the formula spelled out so they learn the method.
+# Topic 3 — Area calculations, LEARNER-LED.
+# Learner types their own problem; we extract shape+numbers; learner does the
+# multiplication; tutor verifies. Same pedagogy as Pythagoras and Algebra.
 # ---------------------------------------------------------------------------
+def _detect_area_shape(text: str) -> str | None:
+    t_low = text.lower()
+    if any(w in t_low for w in ("triangle", "driehoek", "unxantathu")):
+        return "triangle"
+    if any(w in t_low for w in ("rect", "square", "reghoek", "isikwele", "isikwere")):
+        return "rectangle"
+    if any(w in t_low for w in ("circle", "sirkel", "indilinga", "isangqa")):
+        return "circle"
+    return None
+
+
 async def _area_flow(extra: list[str], lang: str) -> PlainTextResponse:
+    # Screen 1: prompt the learner to type their OWN problem.
     if len(extra) == 0:
         return _con(t("area_menu", lang))
 
-    shape = extra[0].strip()
-    rest = extra[1:]
+    problem_text = extra[0]
+    shape = _detect_area_shape(problem_text)
+    nums = _extract_numbers(problem_text)
+    if shape is None or len(nums) < (1 if shape == "circle" else 2):
+        return _con(t("area_need_shape", lang))
 
-    if shape == "1":   # Triangle
-        return _triangle_area(rest, lang)
-    if shape == "2":   # Rectangle
-        return _rectangle_area(rest, lang)
-    if shape == "3":   # Circle
-        return _circle_area(rest, lang)
-    return _end(tf("topic_coming_soon", lang, goodbye=t("goodbye", lang)))
+    # Compute the correct area + the formula prompt for the learner.
+    if shape == "triangle":
+        b, h = nums[0], nums[1]
+        area_correct = (b * h) / 2
+        ask_msg = tf("area_ask_tri", lang, b=_fmt(b), h=_fmt(h))
+    elif shape == "rectangle":
+        l, w = nums[0], nums[1]
+        area_correct = l * w
+        ask_msg = tf("area_ask_rect", lang, l=_fmt(l), w=_fmt(w))
+    else:  # circle
+        r = nums[0]
+        area_correct = math.pi * r * r
+        ask_msg = tf("area_ask_circle", lang, r=_fmt(r), r_sq=_fmt(r * r))
 
+    # Screen 2: ASK THEM for the area. Never volunteer it.
+    if len(extra) == 1:
+        return _con(ask_msg)
 
-def _triangle_area(rest: list[str], lang: str) -> PlainTextResponse:
-    if len(rest) == 0:
-        return _con(t("tri_area_intro", lang))
-    base = _parse_num(rest[0])
-    if base is None:
+    # Screen 3+: walk through attempts. Use the LATEST attempt so retries
+    # after a wrong answer actually advance.
+    last = _parse_num(extra[-1])
+    if last is None:
         return _con(t("type_number", lang))
-    if len(rest) == 1:
-        return _con(t("tri_area_ask_h", lang))
-    height = _parse_num(rest[1])
-    if height is None:
-        return _con(t("type_number", lang))
-    area = (base * height) / 2
-    return _end(tf("tri_area_show", lang, b=_fmt(base), h=_fmt(height), area=_fmt(area))
-                + " " + t("goodbye", lang))
+    if abs(last - area_correct) > 0.05:
+        return _con(tf("area_wrong", lang, area=_fmt(round(area_correct, 2))))
 
-
-def _rectangle_area(rest: list[str], lang: str) -> PlainTextResponse:
-    if len(rest) == 0:
-        return _con(t("rect_area_intro", lang))
-    length = _parse_num(rest[0])
-    if length is None:
-        return _con(t("type_number", lang))
-    if len(rest) == 1:
-        return _con(t("rect_area_ask_w", lang))
-    width = _parse_num(rest[1])
-    if width is None:
-        return _con(t("type_number", lang))
-    area = length * width
-    return _end(tf("rect_area_show", lang, l=_fmt(length), w=_fmt(width), area=_fmt(area))
-                + " " + t("goodbye", lang))
-
-
-def _circle_area(rest: list[str], lang: str) -> PlainTextResponse:
-    if len(rest) == 0:
-        return _con(t("circle_area_intro", lang))
-    r = _parse_num(rest[0])
-    if r is None:
-        return _con(t("type_number", lang))
-    area = math.pi * r * r
-    return _end(tf("circle_area_show", lang, r=_fmt(r), area=_fmt(round(area, 2)))
+    return _end(tf("area_correct", lang, area=_fmt(round(area_correct, 2)))
                 + " " + t("goodbye", lang))
 
 

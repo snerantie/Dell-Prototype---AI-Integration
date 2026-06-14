@@ -501,3 +501,39 @@ _STRINGS.update({
         "xh": "Lo mxholo uza kungekudala. {goodbye}",
     },
 })
+
+
+
+
+# ----------------------------------------------------------------------------
+# NSC Exam-practice strings (Topic 4 on USSD).
+# Question text is in English to match NSC paper conventions; supporting
+# framing and feedback is localised so learners see exam-style preparation
+# in their own language.
+# ----------------------------------------------------------------------------
+_STRINGS.update({
+    "exam_menu": {
+        "en": "📝 NSC Exam Practice (Paper 1, Algebra):\n1. Q1 (3 marks) — linear\n2. Q2 (3 marks) — brackets\n3. Q3 (4 marks) — both sides\nReply 1, 2 or 3.",
+        "af": "📝 NSC Eksamenoefening (Vraestel 1, Algebra):\n1. V1 (3 punte) — lineêr\n2. V2 (3 punte) — hakies\n3. V3 (4 punte) — albei kante\nAntwoord 1, 2 of 3.",
+        "zu": "📝 Ukuzilolonga kwe-NSC (Iphepha 1, i-Algebra):\n1. Q1 (3 amamaki) — okuqondile\n2. Q2 (3 amamaki) — abakaki\n3. Q3 (4 amamaki) — zombili izinhlangothi\nPhendula 1, 2 noma 3.",
+        "xh": "📝 Ukuziqhelanisa kwe-NSC (Iphepha 1, i-Algebra):\n1. Q1 (3 amanqaku) — engqalileyo\n2. Q2 (3 amanqaku) — izibiyeli\n3. Q3 (4 amanqaku) — zombini iicala\nPhendula 1, 2 okanye 3.",
+    },
+    "exam_q_intro": {
+        "en": "QUESTION {qno} ({marks} marks)\n{problem}\nShow your working. Type your final answer (e.g. x=3):",
+        "af": "VRAAG {qno} ({marks} punte)\n{problem}\nWys jou bewerking. Tik jou finale antwoord (bv. x=3):",
+        "zu": "UMBUZO {qno} ({marks} amamaki)\n{problem}\nKhombisa umsebenzi wakho. Bhala impendulo yokugcina (isb. x=3):",
+        "xh": "UMBUZO {qno} ({marks} amanqaku)\n{problem}\nBonisa umsebenzi wakho. Bhala impendulo yokugqibela (umz. x=3):",
+    },
+    "exam_correct": {
+        "en": "✓ Method (1) ✓ Working (1) ✓ Final (1)\n★ TOTAL: {marks}/{marks} ★\nFull NSC marks. You did this exam-style!",
+        "af": "✓ Metode (1) ✓ Bewerking (1) ✓ Finaal (1)\n★ TOTAAL: {marks}/{marks} ★\nVolle NSC-punte. Jy het dit eksamen-styl gedoen!",
+        "zu": "✓ Indlela (1) ✓ Umsebenzi (1) ✓ Eyokugcina (1)\n★ ISAMBA: {marks}/{marks} ★\nWonke amamaki e-NSC. Wenze ngendlela yokuhlolwa!",
+        "xh": "✓ Indlela (1) ✓ Umsebenzi (1) ✓ Yokugqibela (1)\n★ ISIQUKO: {marks}/{marks} ★\nOnke amanqaku e-NSC. Wenze ngendlela yoviwo!",
+    },
+    "exam_retry": {
+        "en": "Marking NSC-style: final answer not yet correct.\nNo marks awarded yet (0/{marks}). Re-check, then type your new x= answer:",
+        "af": "Punte NSC-styl: finale antwoord nog nie reg nie.\nNog geen punte (0/{marks}). Kyk weer, en tik jou nuwe x= antwoord:",
+        "zu": "Ukumakwa kwe-NSC: impendulo yokugcina ayikalungi.\nAwekho amamaki okwamanje (0/{marks}). Phinda uhlole, bese ubhala u-x= entsha:",
+        "xh": "Ukumarkwa kwe-NSC: impendulo yokugqibela ayikachani.\nAkukho manqaku okwangoku (0/{marks}). Phinda ujonge, uze ubhale u-x= entsha:",
+    },
+})

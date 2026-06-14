@@ -61,6 +61,18 @@
              color:#9cff8c; font-size:12px; border-bottom:1px solid #00a884; }
     #handoff-ribbon.show { display:block; }
     #handoff-ribbon b { color:#ffffff; }
+    #exam-banner { display:flex; gap:10px; align-items:center;
+             padding:8px 16px; font-size:12px; color:#ffd699;
+             background:linear-gradient(90deg, #2c1d05, #4a3008);
+             border-bottom:1px solid #6b4d12; }
+    #exam-banner b { color:#ffe9b8; }
+    #exam-toggle { background:transparent; color:#ffd699; border:1px solid #6b4d12;
+             border-radius:12px; padding:3px 10px; font-size:11px; cursor:pointer;
+             margin-left:auto; }
+    #exam-toggle.on { background:#ffb347; color:#2c1d05; border-color:#ffb347;
+             font-weight:700; }
+    .marks { color:#ffd699; }
+    .marks b { color:#ffe9b8; }
   </style>
 </head>
 <body>
@@ -89,6 +101,13 @@
   </header>
 
   <div id="handoff-ribbon"><b>📲 ↳ continued from USSD.</b> Carrying your problem and language across.</div>
+
+  <div id="exam-banner">
+    <span>📅 <b id="exam-countdown">…</b></span>
+    <span>·</span>
+    <span>NSC-aligned · CAPS Paper 1 / 2 style</span>
+    <button id="exam-toggle" type="button">Exam mode: OFF</button>
+  </div>
 
   <div id="chat"></div>
 
@@ -130,6 +149,34 @@
     const chat = document.getElementById('chat');
     const userId = 'web-' + Math.random().toString(36).slice(2, 8);
     let pendingImageDataUrl = null;
+    let examModeOn = false;
+
+    // Compute days to the next major SA exam window (June mid-year or
+    // November NSC) and render the countdown.
+    (function renderCountdown() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const candidates = [
+        {name: 'June ' + y + ' exams',     date: new Date(y, 5, 1)},
+        {name: 'November ' + y + ' NSC',   date: new Date(y, 10, 1)},
+        {name: 'June ' + (y + 1) + ' exams', date: new Date(y + 1, 5, 1)},
+      ];
+      for (const c of candidates) {
+        if (c.date > now) {
+          const days = Math.ceil((c.date - now) / 86400000);
+          document.getElementById('exam-countdown').textContent =
+            c.name + ': ~' + days + ' day' + (days === 1 ? '' : 's') + ' to go';
+          return;
+        }
+      }
+    })();
+
+    document.getElementById('exam-toggle').addEventListener('click', () => {
+      examModeOn = !examModeOn;
+      const btn = document.getElementById('exam-toggle');
+      btn.textContent = 'Exam mode: ' + (examModeOn ? 'ON' : 'OFF');
+      btn.classList.toggle('on', examModeOn);
+    });
 
     function bubble(text, cls) {
       const d = document.createElement('div');
@@ -164,6 +211,17 @@
       if (d.summary) html += '<br/>' + d.summary;
       if (d.caps_topic) html += '<br/><span style="color:#7ed4b9">📘 ' + d.caps_topic + '</span>';
       if (d.caps_subskill) html += '<br/><span style="color:#7ed4b9">🎯 ' + d.caps_subskill + '</span>';
+      if (examModeOn) {
+        // NSC-style mark-scheme estimate based on the diagnosis. This is
+        // computed client-side for the demo; in production the engine would
+        // emit canonical mark allocations per question.
+        let total = 3, awarded = 0;
+        if (d.is_correct) awarded = 3;
+        else if (d.first_error_step !== null && d.first_error_step >= 1) awarded = 1;
+        const stars = '★'.repeat(awarded) + '☆'.repeat(total - awarded);
+        html += '<br/><span class="marks">📝 <b>NSC mark-scheme estimate:</b> '
+              + awarded + '/' + total + ' &nbsp; ' + stars + '</span>';
+      }
       el.innerHTML = html;
       chat.appendChild(el);
       chat.scrollTop = chat.scrollHeight;

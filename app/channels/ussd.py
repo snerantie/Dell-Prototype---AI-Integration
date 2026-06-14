@@ -99,7 +99,66 @@ def _subject_menu(lang: str) -> PlainTextResponse:
 
 
 def _topic_menu(lang: str) -> PlainTextResponse:
-    return _con(t("topic_menu", lang))
+    # Topic 4 (Exam practice) is appended; the static i18n menu lists 1-3 + 0.
+    base = t("topic_menu", lang)
+    extra = "\n4. 📝 NSC Exam practice"
+    return _con(base.replace("\n0.", extra + "\n0."))
+
+
+# ---------------------------------------------------------------------------
+# Topic 4 — NSC Exam Practice
+# Hardcoded NSC Paper 1 (Algebra) style questions with mark schemes.
+# Same learner-led principle: learner reads the question, types their final
+# answer, gets graded by NSC mark allocation. No final answer is leaked.
+# ---------------------------------------------------------------------------
+_EXAM_QUESTIONS = [
+    {
+        "qno":   "2.1",
+        "marks": 3,
+        "problem": "Solve for x:  5x - 2 = 13",
+        "answer":  3.0,
+    },
+    {
+        "qno":   "2.2",
+        "marks": 3,
+        "problem": "Solve for x:  3(x + 2) = 21",
+        "answer":  5.0,
+    },
+    {
+        "qno":   "2.3",
+        "marks": 4,
+        "problem": "Solve for x:  4x + 5 = 2x + 13",
+        "answer":  4.0,
+    },
+]
+
+
+async def _exam_flow(extra: list[str], lang: str) -> PlainTextResponse:
+    # Screen 1: list the available questions.
+    if len(extra) == 0:
+        return _con(t("exam_menu", lang))
+
+    pick = extra[0].strip()
+    if pick not in {"1", "2", "3"}:
+        return _con(t("exam_menu", lang))
+    q = _EXAM_QUESTIONS[int(pick) - 1]
+
+    # Screen 2: show the question, ask for their final answer.
+    if len(extra) == 1:
+        return _con(tf(
+            "exam_q_intro", lang,
+            qno=q["qno"], marks=q["marks"], problem=q["problem"],
+        ))
+
+    # Screen 3+: parse the latest attempt as a number (handles "x=3", "3").
+    last = extra[-1].strip().replace(",", ".")
+    m = re.search(r"-?\d+(\.\d+)?", last)
+    if not m:
+        return _con(t("type_number", lang) + " (e.g. x=3)")
+    attempt = float(m.group())
+    if abs(attempt - q["answer"]) < 0.05:
+        return _end(tf("exam_correct", lang, marks=q["marks"]) + " " + t("goodbye", lang))
+    return _con(tf("exam_retry", lang, marks=q["marks"]))
 
 
 # ---------------------------------------------------------------------------
@@ -312,6 +371,8 @@ async def ussd(
         return await _pythagoras_flow(extra, lang)
     if topic == "3":
         return await _area_flow(extra, lang)
+    if topic == "4":
+        return await _exam_flow(extra, lang)
     if topic == "0":
         # Free-form path — roadmap; for now route to WhatsApp where the LLM
         # has more room. (In v1 this would call the LLM directly with a

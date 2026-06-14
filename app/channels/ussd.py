@@ -8,23 +8,32 @@ one line at a time.
 
 Replies are prefixed CON (expect more input) or END (terminate session) and are
 kept within a single ~160-char USSD screen.
+
+Channel handoff: when a problem is too rich for USSD's text-only / 160-char
+constraints (quadratic equations, geometry, anything needing a diagram) or
+when the learner types MORE, the session ENDs with a "[switch:URL]" token the
+simulator renders as a "Continue on WhatsApp" button. In production this would
+trigger a real WhatsApp template message to the learner's phone.
 """
 from __future__ import annotations
 
 import re
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Form
 from fastapi.responses import PlainTextResponse
 
 from app.i18n import hint_for, t, tf
 from app.providers import factory
-from app.tutor.math_analyzer import _fmt
+from app.tutor.math_analyzer import _fmt, _looks_quadratic
 
 router = APIRouter(tags=["ussd"])
 
 _LANG_BY_IDX = {"1": "en", "2": "af", "3": "zu", "4": "xh"}
 _ANSWER_RE = re.compile(r"^\s*x\s*=\s*-?\d+(\.\d+)?\s*$", re.IGNORECASE)
 _USSD_MAX = 160
+# Tokens at any level that explicitly request escalation to WhatsApp.
+_MORE_TOKENS = {"more", "MORE", "More", "0", "00"}
 
 
 def _clip(text: str) -> str:
@@ -40,7 +49,35 @@ def _end(text: str) -> PlainTextResponse:
     return PlainTextResponse(f"END {_clip(text)}")
 
 
+# ---------------------------------------------------------------------------
+# Channel handoff
+# ---------------------------------------------------------------------------
+def _switch_url(problem: str, working: list[str], lang: str) -> str:
+    """WhatsApp simulator URL that pre-loads context from the USSD session."""
+    params = {"from": "ussd", "problem": problem, "lang": lang}
+    if working:
+        params["working"] = "\n".join(working)
+    return f"/?{urlencode(params)}"
 
+
+def _switch_response(reason: str, problem: str, working: list[str], lang: str) -> PlainTextResponse:
+    """END the USSD session with a [switch:URL] marker the simulator renders
+    as a 'Continue on WhatsApp' button. The marker is intentionally NOT clipped
+    so the URL arrives intact."""
+    body = f"{reason} Tap below to continue on WhatsApp Tutor."
+    return PlainTextResponse(f"END {body}[switch:{_switch_url(problem, working, lang)}]")
+
+
+def _is_complex_problem(problem: str) -> bool:
+    """Heuristic: the deterministic linear analyzer can't help here, so the
+    learner will get more value with the richer WhatsApp experience (images,
+    longer working, bigger screen)."""
+    return _looks_quadratic(problem)
+
+
+# ---------------------------------------------------------------------------
+# Menus & guidance
+# ---------------------------------------------------------------------------
 def _language_menu() -> PlainTextResponse:
     return _con(
         f"{t('welcome')}\n{t('choose_language')}\n"
@@ -64,14 +101,17 @@ async def _diagnose_tokens(problem: str, working: list[str]):
 
 
 def _ussd_hint(diagnosis, lang: str) -> str:
-    """One-screen Socratic nudge for USSD (no final answer), localised."""
+    """One-screen Socratic nudge for USSD (no final answer), localised. Adds
+    a single line inviting the learner to type MORE for richer help."""
     hint = hint_for(diagnosis.misconception, lang)
     step_no = (diagnosis.first_error_step or 0) + 1
     base = f"{tf('ussd_check_step', lang, n=step_no)} {hint}".strip()
-    return f"{base}\n{t('ussd_corrected_line', lang)}"
+    return f"{base}\n{t('ussd_corrected_line', lang)}\n(Type MORE for richer help on WhatsApp.)"
 
 
-
+# ---------------------------------------------------------------------------
+# Main handler
+# ---------------------------------------------------------------------------
 @router.post("/ussd")
 async def ussd(
     sessionId: str = Form(default=""),
@@ -98,16 +138,31 @@ async def ussd(
             return _end("That subject is coming soon. " + t("goodbye", lang))
         return _con(t("ask_problem", lang))
 
-    # Level 3: capture the problem, ask for the first working step.
+    # Level 3: capture the problem.
     if len(parts) == 3:
-        if "=" not in parts[2]:
+        problem = parts[2].strip()
+        if "=" not in problem:
             return _con(t("ask_problem", lang))
-        return _con(t("ask_working", lang) + "\n(Use 2x, not 2*x.)")
+        # Auto-escalate when the problem is beyond USSD's text-only scope.
+        if _is_complex_problem(problem):
+            return _switch_response(
+                "This question is richer than USSD can show.",
+                problem, [], lang,
+            )
+        return _con(t("ask_working", lang) + "\n(Use 2x, not 2*x. Type MORE any time for help on WhatsApp.)")
 
     # Level 4+: each extra token is a working step — check incrementally.
     problem = parts[2]
     working = parts[3:]
-    last = working[-1]
+    last = working[-1].strip()
+
+    # Explicit escalation by the learner.
+    if last in _MORE_TOKENS:
+        return _switch_response(
+            "Continuing on WhatsApp for richer help.",
+            problem, working[:-1], lang,
+        )
+
     diagnosis = await _diagnose_tokens(problem, working)
 
     if _ANSWER_RE.match(last):
@@ -118,4 +173,4 @@ async def ussd(
 
     if diagnosis.first_error_step is not None:
         return _con(_ussd_hint(diagnosis, lang))
-    return _con(t("ussd_continue", lang))
+    return _con(t("ussd_continue", lang) + "\n(Type MORE for richer help on WhatsApp.)")

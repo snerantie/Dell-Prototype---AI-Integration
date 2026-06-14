@@ -99,13 +99,29 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
     const pathEl = document.getElementById('path');
     const entry = document.getElementById('entry');
 
-    function show(label, body) {
+    function show(label, body, switchUrl) {
       screenEl.innerHTML = '';
       const lbl = document.createElement('span');
       lbl.className = 'label';
       lbl.textContent = label;
       screenEl.appendChild(lbl);
       screenEl.appendChild(document.createTextNode('\n' + body));
+      const existing = document.getElementById('switch-btn-wrap');
+      if (existing) existing.remove();
+      if (switchUrl) {
+        const wrap = document.createElement('div');
+        wrap.id = 'switch-btn-wrap';
+        wrap.style.cssText = 'margin-top:10px;';
+        const btn = document.createElement('a');
+        btn.href = switchUrl;
+        btn.textContent = '📲 Continue on WhatsApp →';
+        btn.style.cssText =
+          'display:inline-block;background:#00a884;color:#03110d;'
+          + 'padding:10px 14px;border-radius:6px;font-weight:700;'
+          + 'text-decoration:none;font-family:system-ui;';
+        wrap.appendChild(btn);
+        screenEl.parentElement.insertBefore(wrap, screenEl.nextSibling);
+      }
     }
 
     async function postUssd() {
@@ -117,8 +133,15 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
       const raw = await res.text();
       const isEnd = raw.startsWith('END ');
       const isCon = raw.startsWith('CON ');
-      const body = raw.replace(/^(CON|END)\s/, '');
-      show(isEnd ? 'USSD · session ended' : 'USSD', body);
+      let body = raw.replace(/^(CON|END)\s/, '');
+      // Pull the optional [switch:URL] handoff marker out of the end of the body.
+      let switchUrl = null;
+      const m = body.match(/\[switch:([^\]]+)\]\s*$/);
+      if (m) {
+        switchUrl = m[1];
+        body = body.slice(0, m.index).trim();
+      }
+      show(isEnd ? 'USSD · session ended' : 'USSD', body, switchUrl);
       pathEl.textContent = textPath || '—';
       inSession = !isEnd;
       entry.disabled = isEnd;
@@ -140,6 +163,8 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
       entry.value = '';
       show('USSD', 'Call ended. Press DIAL *123# to begin again.');
       pathEl.textContent = '—';
+      const existing = document.getElementById('switch-btn-wrap');
+      if (existing) existing.remove();
     });
 
     async function sendReply() {

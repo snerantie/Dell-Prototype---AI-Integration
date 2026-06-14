@@ -33,8 +33,9 @@ class MockReasoningProvider(ReasoningProvider):
         working_steps: list[str],
         subject: Subject = Subject.MATHEMATICS,
         topic: Optional[str] = None,
+        grade: str = "9",
     ) -> Diagnosis:
-        return math_analyzer.diagnose(problem, working_steps, topic=topic)
+        return math_analyzer.diagnose(problem, working_steps, topic=topic, grade=grade)
 
     async def compose_guidance(
         self,
@@ -93,9 +94,10 @@ class DellReasoningProvider(ReasoningProvider):
         working_steps: list[str],
         subject: Subject = Subject.MATHEMATICS,
         topic: Optional[str] = None,
+        grade: str = "9",
     ) -> Diagnosis:
         # Always compute the deterministic ground truth first.
-        grounded = math_analyzer.diagnose(problem, working_steps, topic=topic)
+        grounded = math_analyzer.diagnose(problem, working_steps, topic=topic, grade=grade)
         prompt = pedagogy.build_diagnosis_prompt(
             problem, working_steps, grounding=_grounding_text(grounded)
         )

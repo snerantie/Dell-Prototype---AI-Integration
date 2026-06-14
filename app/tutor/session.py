@@ -29,6 +29,7 @@ class ConversationState:
     user_id: str
     channel: Channel
     language: str = "en"
+    grade: str = "9"
     stage: Stage = Stage.NEW
     subject: Optional[str] = None
     problem: Optional[str] = None

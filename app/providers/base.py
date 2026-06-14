@@ -45,6 +45,7 @@ class ReasoningProvider(ABC):
         working_steps: list[str],
         subject: Subject = Subject.MATHEMATICS,
         topic: Optional[str] = None,
+        grade: str = "9",
     ) -> Diagnosis: ...
 
     @abstractmethod

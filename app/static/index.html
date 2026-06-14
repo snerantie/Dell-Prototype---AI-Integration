@@ -66,6 +66,13 @@
       <p>CAPS-aligned · WhatsApp/USSD prototype · mock mode · <a href="/ussd-simulator" style="color:var(--accent)">switch to USSD simulator</a></p>
     </div>
     <div class="lang">
+      <select id="grade" title="CAPS Grade" style="margin-right:6px;">
+        <option value="8" disabled>Grade 8 (soon)</option>
+        <option value="9" selected>Grade 9</option>
+        <option value="10" disabled>Grade 10 (soon)</option>
+        <option value="11" disabled>Grade 11 (soon)</option>
+        <option value="12" disabled>Grade 12 (soon)</option>
+      </select>
       <select id="lang" title="Language">
         <option value="">auto-detect</option>
         <option value="en">English</option>
@@ -145,19 +152,23 @@
       el.className = 'diag';
       const err = d.first_error_step === null ? 'none'
                   : ('step ' + (d.first_error_step + 1));
-      el.innerHTML = '<b>diagnosis</b> · correct: ' + d.is_correct
-        + ' · first error: ' + err + ' · misconception: ' + d.misconception
-        + (d.summary ? '<br/>' + d.summary : '');
+      let html = '<b>diagnosis</b> · correct: ' + d.is_correct
+        + ' · first error: ' + err + ' · misconception: ' + d.misconception;
+      if (d.summary) html += '<br/>' + d.summary;
+      if (d.caps_topic) html += '<br/><span style="color:#7ed4b9">📘 ' + d.caps_topic + '</span>';
+      if (d.caps_subskill) html += '<br/><span style="color:#7ed4b9">🎯 ' + d.caps_subskill + '</span>';
+      el.innerHTML = html;
       chat.appendChild(el);
       chat.scrollTop = chat.scrollHeight;
     }
 
     async function send({text, image, imageDataUrl}) {
       const lang = document.getElementById('lang').value || null;
+      const grade = document.getElementById('grade').value || null;
       if (text && !image) bubble(text, 'user');
       if (image && imageDataUrl) imageBubble(imageDataUrl, image);
       else if (image) bubble('📷 [screenshot of working]\n' + image, 'user');
-      const body = { user_id: userId, language: lang };
+      const body = { user_id: userId, language: lang, grade: grade };
       if (image) body.image_caption = image; else body.text = text;
       const res = await fetch('/api/chat', {
         method: 'POST', headers: {'Content-Type': 'application/json'},

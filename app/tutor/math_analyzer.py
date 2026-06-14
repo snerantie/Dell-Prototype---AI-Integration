@@ -223,6 +223,56 @@ def _looks_quadratic(text: str) -> bool:
 
 
 # ==========================================================================
+# CAPS curriculum anchoring (South African DBE)
+# ==========================================================================
+# Topic -> grade -> CAPS reference label. Linear equations spans Grades 8-10
+# at progressively deeper coverage; we show the line the learner is currently
+# working at. Quadratics belong to Grades 10-12.
+_CAPS_TOPICS: dict[str, dict[str, str]] = {
+    "linear_equations": {
+        "8":  "CAPS · Grade 8 · Term 2 · Algebra · Solving simple equations",
+        "9":  "CAPS · Grade 9 · Term 2 · Algebra · Linear equations",
+        "10": "CAPS · Grade 10 · Term 1 · Algebra · Linear equations",
+    },
+    "quadratic_equations": {
+        "10": "CAPS · Grade 10 · Term 2 · Algebra · Quadratic patterns",
+        "11": "CAPS · Grade 11 · Term 1 · Algebra · Quadratic equations",
+        "12": "CAPS · Grade 12 · Term 1 · Algebra · Equations & inequalities",
+    },
+}
+
+# Misconception type -> CAPS sub-skill the learner needs to revisit.
+_CAPS_SUBSKILLS: dict[MisconceptionType, str] = {
+    MisconceptionType.SIGN_ERROR:        "Sub-skill · Integer operations · sign rules",
+    MisconceptionType.TRANSPOSITION:     "Sub-skill · Inverse operations · transposing terms",
+    MisconceptionType.DISTRIBUTION:      "Sub-skill · Distributive law · expanding brackets",
+    MisconceptionType.FACTORISATION:     "Sub-skill · Factorisation",
+    MisconceptionType.FRACTION_HANDLING: "Sub-skill · Equivalent equations · dividing both sides",
+    MisconceptionType.SUBSTITUTION:      "Sub-skill · Substitution into expressions",
+    MisconceptionType.ARITHMETIC_SLIP:   "Sub-skill · Number operations · accuracy",
+    MisconceptionType.CONCEPTUAL:        "Sub-skill · Conceptual understanding",
+    MisconceptionType.INCOMPLETE:        "Sub-skill · Process completion",
+    MisconceptionType.ORDER_OF_OPERATIONS: "Sub-skill · BODMAS / order of operations",
+    MisconceptionType.NONE:              "",
+}
+
+
+def _caps_label(topic: Optional[str], grade: str) -> Optional[str]:
+    if not topic:
+        return None
+    by_grade = _CAPS_TOPICS.get(topic)
+    if not by_grade:
+        return None
+    # Prefer the requested grade; fall back to G9 (default) then any entry.
+    return by_grade.get(grade) or by_grade.get("9") or next(iter(by_grade.values()))
+
+
+def _caps_subskill(misconception: MisconceptionType) -> Optional[str]:
+    label = _CAPS_SUBSKILLS.get(misconception, "")
+    return label or None
+
+
+# ==========================================================================
 # Step-by-step diagnosis
 # ==========================================================================
 def _classify(prev: Lin, cur: Lin) -> MisconceptionType:
@@ -304,28 +354,34 @@ def analyze_linear_working(problem: str, raw_steps: list[str]) -> StepAnalysis:
     )
 
 
-def diagnose(problem: str, working_steps: list[str], topic: Optional[str] = None) -> Diagnosis:
+def diagnose(problem: str, working_steps: list[str], topic: Optional[str] = None,
+             grade: str = "9") -> Diagnosis:
     """Produce a Diagnosis from a problem and the learner's working steps.
 
     Falls back to a low-confidence, no-error diagnosis when the maths cannot be
     parsed (quadratics beyond scope, word problems, garbled OCR), so the engine
-    can choose to ask a clarifying question instead of bluffing.
+    can choose to ask a clarifying question instead of bluffing. The CAPS
+    topic/sub-skill is populated so the diagnosis is anchored to a specific
+    line of the SA curriculum.
     """
     if _looks_quadratic(problem):
+        topic_key = topic or "quadratic_equations"
         return Diagnosis(
             subject=Subject.MATHEMATICS,
-            topic=topic or "quadratic_equations",
+            topic=topic_key,
             detected_approach=None,
             summary="Quadratic detected; deterministic step-check is limited to "
                     "linear equations in this prototype.",
             confidence=0.2,
+            caps_topic=_caps_label(topic_key, grade),
         )
 
     analysis = analyze_linear_working(problem, working_steps)
+    topic_key = topic or "linear_equations"
     if not analysis.parseable:
         return Diagnosis(
             subject=Subject.MATHEMATICS,
-            topic=topic or "unknown",
+            topic="unknown",
             steps=analysis.steps,
             summary="Could not parse the problem as a linear equation.",
             confidence=0.2,
@@ -345,7 +401,7 @@ def diagnose(problem: str, working_steps: list[str], topic: Optional[str] = None
 
     return Diagnosis(
         subject=Subject.MATHEMATICS,
-        topic=topic or "linear_equations",
+        topic=topic_key,
         detected_approach=approach,
         steps=analysis.steps,
         first_error_step=analysis.first_error,
@@ -353,6 +409,8 @@ def diagnose(problem: str, working_steps: list[str], topic: Optional[str] = None
         is_correct=is_correct,
         confidence=0.9 if analysis.parseable else 0.3,
         summary=summary,
+        caps_topic=_caps_label(topic_key, grade),
+        caps_subskill=_caps_subskill(analysis.misconception) if not is_correct else None,
     )
 
 

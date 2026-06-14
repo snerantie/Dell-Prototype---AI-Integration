@@ -102,7 +102,9 @@ class TutorEngine:
             state.language = message.language
         elif message.text and state.stage == Stage.NEW:
             state.language = await self.translation.detect(message.text)
-        # otherwise keep the already-chosen session language
+        if message.grade:
+            state.grade = message.grade
+        # otherwise keep the already-chosen session language / grade
 
     def _greeting(self, state: ConversationState) -> TutorResponse:
         state.stage = Stage.AWAIT_PROBLEM
@@ -157,7 +159,9 @@ class TutorEngine:
         )
 
     async def _diagnose_and_guide(self, state: ConversationState) -> TutorResponse:
-        diagnosis = await self.reasoning.diagnose(state.problem or "", state.working_steps)
+        diagnosis = await self.reasoning.diagnose(
+            state.problem or "", state.working_steps, grade=state.grade,
+        )
         # Re-render the summary in the learner's language so the diagnosis
         # detail bubble matches the rest of the reply.
         diagnosis.summary = pedagogy.localized_summary(diagnosis, state.language)

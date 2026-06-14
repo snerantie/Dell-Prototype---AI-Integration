@@ -34,6 +34,7 @@ class ChatRequest(BaseModel):
     # Simulates an uploaded screenshot by carrying the transcribed working.
     image_caption: Optional[str] = None
     language: Optional[str] = None
+    grade: Optional[str] = None              # CAPS grade hint, "8".."12"
 
 
 @router.post("/api/chat")
@@ -43,12 +44,12 @@ async def chat(req: ChatRequest) -> dict:
         msg = InboundMessage(
             channel=Channel.MOCK_UI, user_id=req.user_id, type=MessageType.IMAGE,
             image=ImageAttachment(caption=req.image_caption), text=req.text,
-            language=req.language,
+            language=req.language, grade=req.grade,
         )
     else:
         msg = InboundMessage(
             channel=Channel.MOCK_UI, user_id=req.user_id,
-            text=req.text or "", language=req.language,
+            text=req.text or "", language=req.language, grade=req.grade,
         )
     resp = await engine.handle(msg)
     return {

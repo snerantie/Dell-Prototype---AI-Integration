@@ -44,6 +44,16 @@ class Language(str, Enum):
     XH = "xh"   # isiXhosa
 
 
+class Grade(str, Enum):
+    """Supported CAPS grades. Only Grade 9 is fully scaffolded in this
+    prototype; the others are reserved so the UI can show the roadmap."""
+    G8 = "8"
+    G9 = "9"
+    G10 = "10"
+    G11 = "11"
+    G12 = "12"
+
+
 LANGUAGE_NAMES: dict[str, str] = {
     "en": "English",
     "af": "Afrikaans",
@@ -93,6 +103,7 @@ class InboundMessage(BaseModel):
     text: Optional[str] = None
     image: Optional[ImageAttachment] = None
     language: Optional[str] = None             # caller hint; engine may override
+    grade: Optional[str] = None                # CAPS grade hint, "8".."12"
     received_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -118,6 +129,10 @@ class Diagnosis(BaseModel):
     is_correct: bool = False
     confidence: float = 0.0                    # 0..1
     summary: Optional[str] = None              # human-readable explanation
+    # CAPS (South African National Curriculum) anchoring — what makes the
+    # tutor auditable by DBE / educators / parents.
+    caps_topic: Optional[str] = None           # e.g. "CAPS · Grade 9 · Term 2 · Algebra · Linear equations"
+    caps_subskill: Optional[str] = None        # the specific sub-skill the learner is missing
 
 
 # --------------------------------------------------------------------------

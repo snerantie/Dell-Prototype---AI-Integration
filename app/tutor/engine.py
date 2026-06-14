@@ -158,14 +158,18 @@ class TutorEngine:
 
     async def _diagnose_and_guide(self, state: ConversationState) -> TutorResponse:
         diagnosis = await self.reasoning.diagnose(state.problem or "", state.working_steps)
+        # Re-render the summary in the learner's language so the diagnosis
+        # detail bubble matches the rest of the reply.
+        diagnosis.summary = pedagogy.localized_summary(diagnosis, state.language)
         state.last_diagnosis = diagnosis
         state.hint_level = 0
         state.stage = Stage.TUTORING
         screens = await self.reasoning.compose_guidance(
-            state.problem or "", diagnosis, history=state.history, channel=state.channel
+            state.problem or "", diagnosis,
+            history=state.history, channel=state.channel, language=state.language,
         )
         self.sessions.save(state)
-        return self._localized(state, screens, diagnosis=diagnosis)
+        return self._localized(state, screens, diagnosis=diagnosis, translate=False)
 
 
 
@@ -175,10 +179,12 @@ class TutorEngine:
                                    requires_image=True, translate=False)
         state.hint_level += 1
         screens = pedagogy.escalated_guidance(
-            state.problem, state.last_diagnosis, state.hint_level, state.channel
+            state.problem, state.last_diagnosis, state.hint_level,
+            state.channel, state.language,
         )
         self.sessions.save(state)
-        return self._localized(state, screens, diagnosis=state.last_diagnosis)
+        return self._localized(state, screens, diagnosis=state.last_diagnosis,
+                               translate=False)
 
     def _localized(
         self,

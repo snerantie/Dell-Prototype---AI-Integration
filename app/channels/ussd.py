@@ -16,9 +16,8 @@ import re
 from fastapi import APIRouter, Form
 from fastapi.responses import PlainTextResponse
 
-from app.i18n import t
+from app.i18n import hint_for, t, tf
 from app.providers import factory
-from app.tutor import pedagogy
 from app.tutor.math_analyzer import _fmt
 
 router = APIRouter(tags=["ussd"])
@@ -65,11 +64,11 @@ async def _diagnose_tokens(problem: str, working: list[str]):
 
 
 def _ussd_hint(diagnosis, lang: str) -> str:
-    """One-screen Socratic nudge for USSD (no final answer)."""
-    hint = pedagogy.MISCONCEPTION_HINTS.get(diagnosis.misconception, "")
+    """One-screen Socratic nudge for USSD (no final answer), localised."""
+    hint = hint_for(diagnosis.misconception, lang)
     step_no = (diagnosis.first_error_step or 0) + 1
-    base = f"Check step {step_no}. {hint}".strip()
-    return f"{base}\nType your corrected line:"
+    base = f"{tf('ussd_check_step', lang, n=step_no)} {hint}".strip()
+    return f"{base}\n{t('ussd_corrected_line', lang)}"
 
 
 
@@ -113,9 +112,10 @@ async def ussd(
 
     if _ANSWER_RE.match(last):
         if diagnosis.is_correct:
-            return _end(f"Correct! {last.strip()}. {t('goodbye', lang)}")
+            return _end(f"{tf('ussd_correct', lang, answer=last.strip())} "
+                        f"{t('goodbye', lang)}")
         return _con(_ussd_hint(diagnosis, lang))
 
     if diagnosis.first_error_step is not None:
         return _con(_ussd_hint(diagnosis, lang))
-    return _con("Looks right so far. Enter your next step (or x = ... for your answer):")
+    return _con(t("ussd_continue", lang))

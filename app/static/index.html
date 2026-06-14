@@ -24,16 +24,40 @@
     #chat { flex:1; overflow-y:auto; padding:18px; display:flex;
             flex-direction:column; gap:8px; }
     .msg { max-width:78%; padding:8px 12px; border-radius:10px; font-size:14px;
-           line-height:1.4; white-space:pre-wrap; }
+           line-height:1.4; white-space:pre-wrap; word-wrap:break-word; }
     .user { align-self:flex-end; background:var(--out); }
     .bot  { align-self:flex-start; background:var(--in); }
+    .imgmsg { align-self:flex-end; background:var(--out); padding:6px;
+              border-radius:10px; max-width:60%; }
+    .imgmsg img { display:block; max-width:100%; border-radius:6px; }
+    .imgmsg .cap { font-size:12px; color:#cbe7e0; margin-top:6px; padding:0 4px;
+                   white-space:pre-wrap; }
     .diag { align-self:flex-start; max-width:78%; font-size:12px;
             color:var(--muted); background:#0e171d; border:1px dashed #2a3942;
             border-radius:8px; padding:8px 10px; }
     .diag b { color:var(--accent); }
+    .quick { background:#2a3942; color:var(--txt); border:none;
+             border-radius:14px; padding:6px 10px; font-size:12px;
+             cursor:pointer; }
+    .quick:hover { background:#36454f; }
+    #upload-panel { display:none; padding:10px 16px; background:#0e171d;
+             border-top:1px solid #222d34; gap:8px; align-items:flex-start; }
+    #upload-panel.show { display:flex; flex-wrap:wrap; }
+    #upload-panel textarea { flex:1; min-width:240px; min-height:90px;
+             background:var(--in); color:var(--txt); border:1px solid #2a3942;
+             border-radius:8px; padding:8px; font-family:monospace;
+             font-size:13px; }
+    #upload-panel .preview { width:120px; height:120px; border-radius:8px;
+             background:#1a2a32 center/cover no-repeat; border:1px dashed #2a3942;
+             display:grid; place-items:center; color:var(--muted); font-size:11px;
+             text-align:center; padding:6px; }
+    .btn-primary { background:var(--accent); color:#03110d; border:none;
+             border-radius:14px; padding:8px 14px; font-weight:600;
+             cursor:pointer; }
+    .btn-secondary { background:#2a3942; color:var(--txt); border:none;
+             border-radius:14px; padding:8px 14px; cursor:pointer; }
   </style>
 </head>
-
 <body>
   <header>
     <div class="avatar">AI</div>
@@ -42,7 +66,7 @@
       <p>CAPS-aligned · WhatsApp/USSD prototype · mock mode</p>
     </div>
     <div class="lang">
-      <select id="lang" title="Language hint">
+      <select id="lang" title="Language">
         <option value="">auto-detect</option>
         <option value="en">English</option>
         <option value="af">Afrikaans</option>
@@ -54,14 +78,28 @@
 
   <div id="chat"></div>
 
+  <!-- Optional image-upload composer (toggled by the 📎 button) -->
+  <div id="upload-panel">
+    <div id="preview" class="preview">No image picked</div>
+    <textarea id="upload-text" placeholder="Type the working as it appears in the image, one step per line — e.g.&#10;2x + 3 = 7&#10;2x = 7 + 3&#10;2x = 10&#10;x = 5"></textarea>
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <button class="btn-primary" id="upload-send">Send screenshot</button>
+      <button class="btn-secondary" id="upload-cancel">Cancel</button>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" />
+  </div>
+
+  <!-- Quick-action shortcuts -->
   <div style="padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap;
               background:var(--panel); border-top:1px solid #222d34;">
     <button class="quick" data-send="hi">👋 Start</button>
     <button class="quick" data-img="2x + 3 = 7&#10;2x = 7 + 3&#10;2x = 10&#10;x = 5">
-      📷 Upload wrong working</button>
+      📷 Wrong working (preset)</button>
     <button class="quick" data-img="5x - 2 = 2x + 7&#10;5x - 2x = 7 + 2&#10;3x = 9&#10;x = 3">
-      📷 Upload correct working</button>
+      📷 Correct working (preset)</button>
+    <button class="quick" id="open-upload">📎 Upload your own</button>
     <button class="quick" data-send="hint">💡 Hint</button>
+    <button class="quick" data-send="reset">🔄 Reset</button>
   </div>
 
   <form id="composer" style="display:flex; gap:8px; padding:12px 16px;
@@ -77,12 +115,28 @@
   <script>
     const chat = document.getElementById('chat');
     const userId = 'web-' + Math.random().toString(36).slice(2, 8);
+    let pendingImageDataUrl = null;
 
     function bubble(text, cls) {
       const d = document.createElement('div');
       d.className = 'msg ' + cls;
       d.textContent = text;
       chat.appendChild(d);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    function imageBubble(dataUrl, caption) {
+      const wrap = document.createElement('div');
+      wrap.className = 'imgmsg';
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      wrap.appendChild(img);
+      if (caption) {
+        const c = document.createElement('div');
+        c.className = 'cap';
+        c.textContent = caption;
+        wrap.appendChild(c);
+      }
+      chat.appendChild(wrap);
       chat.scrollTop = chat.scrollHeight;
     }
     function diagBubble(d) {
@@ -98,10 +152,11 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    async function send({text, image}) {
+    async function send({text, image, imageDataUrl}) {
       const lang = document.getElementById('lang').value || null;
-      if (text) bubble(text, 'user');
-      if (image) bubble('📷 [screenshot of working]\n' + image, 'user');
+      if (text && !image) bubble(text, 'user');
+      if (image && imageDataUrl) imageBubble(imageDataUrl, image);
+      else if (image) bubble('📷 [screenshot of working]\n' + image, 'user');
       const body = { user_id: userId, language: lang };
       if (image) body.image_caption = image; else body.text = text;
       const res = await fetch('/api/chat', {
@@ -113,19 +168,66 @@
       diagBubble(data.diagnosis);
     }
 
+    // Composer (text input)
     document.getElementById('composer').addEventListener('submit', e => {
       e.preventDefault();
       const t = document.getElementById('text');
       if (t.value.trim()) { send({text: t.value.trim()}); t.value = ''; }
     });
+
+    // Quick-action buttons
     document.querySelectorAll('.quick').forEach(b => {
-      b.style.cssText = 'background:#2a3942;color:var(--txt);border:none;'
-        + 'border-radius:14px;padding:6px 10px;font-size:12px;cursor:pointer;';
+      if (b.id) return;  // skip 📎 (handled below)
       b.addEventListener('click', () => {
         if (b.dataset.img) send({image: b.dataset.img});
         else send({text: b.dataset.send});
       });
     });
+
+    // 📎 Upload your own — open the upload panel + file picker
+    const panel = document.getElementById('upload-panel');
+    const fileInput = document.getElementById('file-input');
+    const preview = document.getElementById('preview');
+    const uploadText = document.getElementById('upload-text');
+
+    document.getElementById('open-upload').addEventListener('click', () => {
+      panel.classList.add('show');
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        pendingImageDataUrl = e.target.result;
+        preview.style.backgroundImage = 'url(' + pendingImageDataUrl + ')';
+        preview.textContent = '';
+      };
+      reader.readAsDataURL(f);
+    });
+    document.getElementById('upload-send').addEventListener('click', () => {
+      const working = uploadText.value.trim();
+      if (!working) {
+        alert('Type the working that the image shows (one step per line) so the tutor can analyse it.');
+        return;
+      }
+      send({image: working, imageDataUrl: pendingImageDataUrl});
+      uploadText.value = '';
+      pendingImageDataUrl = null;
+      preview.style.backgroundImage = '';
+      preview.textContent = 'No image picked';
+      fileInput.value = '';
+      panel.classList.remove('show');
+    });
+    document.getElementById('upload-cancel').addEventListener('click', () => {
+      uploadText.value = '';
+      pendingImageDataUrl = null;
+      preview.style.backgroundImage = '';
+      preview.textContent = 'No image picked';
+      fileInput.value = '';
+      panel.classList.remove('show');
+    });
+
     window.addEventListener('load', () => send({text: 'hi'}));
   </script>
 </body>

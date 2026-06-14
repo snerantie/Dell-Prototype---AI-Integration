@@ -54,11 +54,12 @@ class ReasoningProvider(ABC):
         diagnosis: Diagnosis,
         history: Optional[list[str]] = None,
         channel: Channel = Channel.WHATSAPP,
+        language: str = "en",
     ) -> list[str]:
         """Return guidance as ordered text blocks (channels paginate these).
 
-        Output is in English; the engine localises afterwards so the policy is
-        uniform across providers.
+        Output is in ``language`` (en/af/zu/xh) so the channel does not need
+        to translate after the fact.
         """
         ...
 

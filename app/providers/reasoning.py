@@ -42,8 +42,9 @@ class MockReasoningProvider(ReasoningProvider):
         diagnosis: Diagnosis,
         history: Optional[list[str]] = None,
         channel: Channel = Channel.WHATSAPP,
+        language: str = "en",
     ) -> list[str]:
-        return pedagogy.compose_templated_guidance(problem, diagnosis, channel)
+        return pedagogy.compose_templated_guidance(problem, diagnosis, channel, language)
 
 
 def _grounding_text(d: Diagnosis) -> str:
@@ -118,15 +119,16 @@ class DellReasoningProvider(ReasoningProvider):
         diagnosis: Diagnosis,
         history: Optional[list[str]] = None,
         channel: Channel = Channel.WHATSAPP,
+        language: str = "en",
     ) -> list[str]:
-        prompt = pedagogy.build_guidance_prompt(problem, diagnosis, history)
+        prompt = pedagogy.build_guidance_prompt(problem, diagnosis, history, language)
         try:
             raw = await self._chat(pedagogy.TUTOR_SYSTEM_PROMPT, prompt, temperature=0.4)
             text = raw.strip()
-            return [text] if text else pedagogy.compose_templated_guidance(problem, diagnosis, channel)
+            return [text] if text else pedagogy.compose_templated_guidance(problem, diagnosis, channel, language)
         except Exception as exc:
             logger.warning("Dell LLM guidance failed, using templated guidance: %s", exc)
-            return pedagogy.compose_templated_guidance(problem, diagnosis, channel)
+            return pedagogy.compose_templated_guidance(problem, diagnosis, channel, language)
 
 
 def _extract_json(text: str) -> dict:

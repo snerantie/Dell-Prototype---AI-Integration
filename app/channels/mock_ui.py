@@ -37,6 +37,33 @@ class ChatRequest(BaseModel):
     grade: Optional[str] = None              # CAPS grade hint, "8".."12"
 
 
+@router.get("/api/past-papers")
+async def past_papers_index() -> list[dict]:
+    """Snapshot of the past-papers archive for the frontend picker.
+
+    Returns the same archive USSD navigates, so both channels render the same
+    content. Reading from app.tutor.past_papers means a single edit to that
+    file updates both channels at once.
+    """
+    from app.tutor.past_papers import ARCHIVE
+    return [
+        {
+            "label": y.label,
+            "papers": [
+                {
+                    "label": p.label,
+                    "questions": [
+                        {
+                            "qno": q.qno, "marks": q.marks,
+                            "text": q.text, "memo": q.memo, "source": q.source,
+                        } for q in p.questions
+                    ],
+                } for p in y.papers
+            ],
+        } for y in ARCHIVE
+    ]
+
+
 @router.post("/api/chat")
 async def chat(req: ChatRequest) -> dict:
     engine = get_engine()

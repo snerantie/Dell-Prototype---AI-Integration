@@ -28,6 +28,7 @@ from fastapi.responses import PlainTextResponse
 from app.i18n import hint_for, t, tf
 from app.providers import factory
 from app.tutor.math_analyzer import _fmt
+from app.tutor.past_papers import ARCHIVE, has_content as _year_has_content
 
 router = APIRouter(tags=["ussd"])
 
@@ -106,96 +107,94 @@ def _topic_menu(lang: str) -> PlainTextResponse:
 
 
 # ---------------------------------------------------------------------------
-# Topic 4 — NSC Exam Practice
+# Topic 4 — NSC Past Papers Archive (shared with WhatsApp via past_papers.py)
 #
-# Questions are drawn from real published DBE NSC Paper 1 papers where
-# possible, with each one citing year, paper, and question number. NSC papers
-# are published freely by DBE at education.gov.za for educational use, so this
-# is exactly what every textbook, tutor, and learner already does.
-#
-# Two of the questions below are taken directly from a real recent NSC paper
-# (North West June 2026 Grade 12 P1 Question 1.1); the others are CAPS
-# exemplar-style linear equations matching Grade 11 / Senior Phase ATPs. The
-# `source` field is shown to the learner on success, so the citation is part
-# of the demo, not buried in code.
-#
-# To extend: an educator drops in more (problem, answer, marks, source)
-# entries — no AI/prompt edits required. That auditability is the moat.
+# Path tokens:  <topic=4> * <year_idx> * <paper_idx> * <question_idx> * <answer>
+# All menus are generated from app.tutor.past_papers.ARCHIVE so adding more
+# papers requires editing one file (no AI/prompt changes). Same archive is
+# rendered by the WhatsApp simulator's past-papers picker.
 # ---------------------------------------------------------------------------
-_EXAM_QUESTIONS = [
-    {
-        "qno":     "1",
-        "marks":   3,
-        "problem": "Solve for x:  5x - 2 = 13",
-        "answer":  [3.0],
-        "source":  "CAPS exemplar style · Grade 9-11 P1 linear",
-    },
-    {
-        "qno":     "2",
-        "marks":   3,
-        "problem": "Solve for x:  3(x + 2) = 21",
-        "answer":  [5.0],
-        "source":  "CAPS exemplar style · Grade 9-11 P1 linear (brackets)",
-    },
-    {
-        "qno":     "3",
-        "marks":   3,
-        "problem": "Solve for x:  4x + 5 = 2x + 13",
-        "answer":  [4.0],
-        "source":  "CAPS exemplar style · Grade 9-11 P1 linear (both sides)",
-    },
-    {
-        "qno":     "4",
-        "marks":   3,
-        "problem": "Solve for x:  x² + x - 30 = 0",
-        "answer":  [5.0, -6.0],
-        "source":  "NSC Maths P1, Grade 12, NW June 2026, Q1.1.1",
-    },
-    {
-        "qno":     "5",
-        "marks":   4,
-        "problem": "Solve for x:  2x² - 8 = 5x  (correct to TWO decimal places)",
-        "answer":  [3.61, -1.11],
-        "source":  "NSC Maths P1, Grade 12, NW June 2026, Q1.1.2",
-    },
-]
-
-
-def _matches_answer(attempt: float, valid: list[float], tolerance: float = 0.05) -> bool:
-    """An NSC quadratic asks for both roots; in the demo we accept any one
-    valid root as 'correct' so the learner-led flow stays simple."""
-    return any(abs(attempt - v) < tolerance for v in valid)
-
-
 async def _exam_flow(extra: list[str], lang: str) -> PlainTextResponse:
-    # Screen 1: list the available questions.
+    # Screen 1: list available years.
     if len(extra) == 0:
-        return _con(t("exam_menu", lang))
+        lines = ["NSC Past Papers archive:"]
+        for i, year in enumerate(ARCHIVE, 1):
+            tag = "" if _year_has_content(year) else "  (coming soon)"
+            lines.append(f"{i}. {year.label}{tag}")
+        lines.append("Reply 1, 2, ...")
+        return _con("\n".join(lines))
 
-    pick = extra[0].strip()
-    if pick not in {"1", "2", "3", "4", "5"}:
-        return _con(t("exam_menu", lang))
-    q = _EXAM_QUESTIONS[int(pick) - 1]
+    # Pick year.
+    try:
+        y_idx = int(extra[0]) - 1
+        year = ARCHIVE[y_idx]
+    except (ValueError, IndexError):
+        return _con("Invalid choice. Reply with a year number.")
 
-    # Screen 2: show the question, ask for their final answer.
+    if not _year_has_content(year):
+        return _end(
+            f"{year.label} -- content arriving soon.\n"
+            f"Educator-curated past papers drop monthly. "
+            f"Try 2026 June for now. " + t("goodbye", lang)
+        )
+
+    # Screen 2: list papers in that year.
     if len(extra) == 1:
-        return _con(tf(
-            "exam_q_intro", lang,
-            qno=q["qno"], marks=q["marks"], problem=q["problem"],
-        ))
+        lines = [year.label, "Pick a paper:"]
+        for i, p in enumerate(year.papers, 1):
+            lines.append(f"{i}. {p.label}")
+        return _con("\n".join(lines))
 
-    # Screen 3+: parse the latest attempt as a number (handles "x=3", "3").
+    # Pick paper.
+    try:
+        p_idx = int(extra[1]) - 1
+        paper = year.papers[p_idx]
+    except (ValueError, IndexError):
+        return _con("Invalid choice. Reply with a paper number.")
+
+    # Screen 3: list questions in that paper.
+    if len(extra) == 2:
+        lines = [paper.label, "Pick a question:"]
+        for i, q in enumerate(paper.questions, 1):
+            lines.append(f"{i}. Q{q.qno}  ({q.marks} marks)")
+        return _con("\n".join(lines))
+
+    # Pick question.
+    try:
+        q_idx = int(extra[2]) - 1
+        question = paper.questions[q_idx]
+    except (ValueError, IndexError):
+        return _con("Invalid choice. Reply with a question number.")
+
+    # Screen 4: show the question, ask for the final answer.
+    if len(extra) == 3:
+        return _con(
+            f"QUESTION {question.qno} ({question.marks} marks)\n"
+            f"{question.text}\n"
+            f"Show your working. Type your final answer (e.g. x=3):"
+        )
+
+    # Screen 5+: parse the latest attempt.
     last = extra[-1].strip().replace(",", ".")
     m = re.search(r"-?\d+(\.\d+)?", last)
     if not m:
-        return _con(t("type_number", lang) + " (e.g. x=3)")
+        return _con("Type a number for your answer (e.g. x=3):")
+
     attempt = float(m.group())
-    if _matches_answer(attempt, q["answer"]):
-        # On success include the SOURCE — proves the question is real.
-        body = (tf("exam_correct", lang, marks=q["marks"])
-                + f"\n📄 {q['source']}\n" + t("goodbye", lang))
+    correct = any(abs(attempt - a) < 0.05 for a in question.answers)
+    if correct:
+        body = (
+            f"✓ Method (1) ✓ Working (1) ✓ Final (1)\n"
+            f"★ TOTAL: {question.marks}/{question.marks} ★\n"
+            f"\nMEMO:\n{question.memo}\n"
+            f"\n{question.source}\n"
+            f"{t('goodbye', lang)}"
+        )
         return _end(body)
-    return _con(tf("exam_retry", lang, marks=q["marks"]))
+    return _con(
+        f"NSC marking: not yet correct (0/{question.marks}).\n"
+        f"Re-check, then type your new x= answer:"
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -151,3 +151,33 @@ class TutorResponse(BaseModel):
     def text(self) -> str:
         """Full reply as a single string (WhatsApp / mock UI)."""
         return "\n\n".join(self.screens)
+
+
+
+# --------------------------------------------------------------------------
+# Extend LANGUAGE_NAMES to cover all 11 official SA spoken languages
+# (+ SA Sign Language on the roadmap). The 7 newly added entries are
+# framework-ready; their content strings in app/i18n.py are first-pass and
+# fall back to English where not yet educator-validated.
+# --------------------------------------------------------------------------
+LANGUAGE_NAMES.update({
+    "nso": "Sepedi (Northern Sotho)",
+    "st":  "Sesotho",
+    "tn":  "Setswana",
+    "ss":  "siSwati",
+    "ve":  "Tshivenda",
+    "ts":  "Xitsonga",
+    "nr":  "isiNdebele",
+    # SA Sign Language — Phase 3 (video channel; not a text path)
+    "sgn-ZA": "SA Sign Language",
+})
+
+# Status flag for the UI: which languages have educator-validated content
+# vs first-pass framework support. Honest UX.
+LANGUAGE_STATUS: dict[str, str] = {
+    "en": "validated", "af": "validated", "zu": "validated", "xh": "validated",
+    "nso": "first_pass", "st": "first_pass", "tn": "first_pass",
+    "ss":  "first_pass", "ve": "first_pass", "ts": "first_pass",
+    "nr":  "first_pass",
+    "sgn-ZA": "roadmap",
+}

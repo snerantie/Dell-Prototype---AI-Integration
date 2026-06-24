@@ -184,7 +184,7 @@ def slide_solution(prs):
     _add_pill(s, 0.6, 2.8, 1.4, 0.5, "WhatsApp", fill=GREEN, size=14)
     _add_bullets(s, 0.6, 3.5, 5.8, 3.5, [
         "Rich UI: text + image upload of working",
-        "Multilingual auto-detect (en/af/zu/xh)",
+        "11 official SA languages framework · 4 launch-validated",
         "Learner-led: types problem, types working",
         "Diagnoses misconceptions, not just answers",
         "NSC mark-scheme aware (toggle)",
@@ -195,7 +195,7 @@ def slide_solution(prs):
     _add_pill(s, 7.0, 2.8, 1.4, 0.5, "USSD",   fill=ORANGE, fg=DARK_TXT, size=14)
     _add_bullets(s, 7.0, 3.5, 5.8, 3.5, [
         "Feature phones — no smartphone required",
-        "Same 4 languages, native experience",
+        "All 11 official languages on roadmap · 4 launch ready",
         "Same Pythagoras / Area / Algebra / Past Papers",
         "Mark-scheme feedback in 160-char screens",
         "Optional handoff to WhatsApp on request",
@@ -367,7 +367,7 @@ def slide_segment(prs):
 
     _add_text(s, 0.6, 6.5, 12.1, 0.5,
               "Phase 2: Grades 8–10 + Maths Literacy. "
-              "Phase 3: Sciences, Accounting, all 11 official languages.",
+              "Phase 3: Sciences, Accounting, 11 official spoken languages + SA Sign Language (video channel).",
               size=13, color=MUTED, align=PP_ALIGN.CENTER)
     _add_speaker_notes(s,
         "Concrete personas. Thandi is the WhatsApp learner — has a "
@@ -394,7 +394,7 @@ def slide_responsibility(prs):
         ("Equality", GREEN, [
             "Two channels — never device-locked",
             "Zero at point of use (zero-rated)",
-            "en / af / zu / xh now → 11 langs",
+            "4 validated + 7 first-pass + SA Sign Language = 12",
             "Identical brain on both channels",
             "No premium tier — design constraint",
         ]),
@@ -456,7 +456,7 @@ def slide_roadmap(prs):
             "Educator advisory board (4-6 teachers)",
         ]),
         ("2027", "Scale", [
-            "All 11 official languages",
+            "All 11 official spoken languages educator-validated + SA Sign Language",
             "Maths Lit, Sciences, Accounting",
             "Class-level analytics for teachers",
             "DBE adoption discussions",

@@ -537,3 +537,53 @@ _STRINGS.update({
         "xh": "Ukumarkwa kwe-NSC: impendulo yokugqibela ayikachani.\nAkukho manqaku okwangoku (0/{marks}). Phinda ujonge, uze ubhale u-x= entsha:",
     },
 })
+
+
+
+
+# ============================================================================
+# 11 official SA spoken languages — first-pass greetings for the 7 new ones.
+# These are intentionally LIMITED to welcome / intro / language menu entries.
+# All other content strings fall back to English with the t() helper until an
+# educator-validated translation lands. Honesty by design.
+#
+# Languages added here:
+#   nso (Sepedi · Northern Sotho), st (Sesotho), tn (Setswana),
+#   ss (siSwati), ve (Tshivenda), ts (Xitsonga), nr (isiNdebele).
+# SA Sign Language (sgn-ZA) is a Phase-3 video channel — not a text path.
+# ============================================================================
+_STRINGS["welcome"].update({
+    "nso": "Dumela, o amogetšwe go AI Tutor",
+    "st":  "Dumela, o amohelehile ho AI Tutor",
+    "tn":  "Dumela, o amogetswe mo go AI Tutor",
+    "ss":  "Sawubona, wemukelekile ku-AI Tutor",
+    "ve":  "Ndaa, no ṱanganedzwa kha AI Tutor",
+    "ts":  "Avuxeni, mi amukeriwile eka AI Tutor",
+    "nr":  "Lotjhani, wamukelekile e-AI Tutor",
+})
+
+_STRINGS["whatsapp_intro"].update({
+    "nso": "Dumela! Ke morutiši wa gago wa AI wa Mathematics. Romela "
+           "bothata (mhl. 2x+3=7) goba senepe sa mošomo wa gago.",
+    "st":  "Dumela! Ke tichere ya hau ya AI ya Mathematics. Romela "
+           "bothata (mhl. 2x+3=7) kapa setšhwantšho sa mosebetsi wa hau.",
+    "tn":  "Dumela! Ke morutabana wa AI wa Mathematics. Romela bothata "
+           "(mhl. 2x+3=7) kgotsa setshwantsho sa tiro ya gago.",
+    "ss":  "Sawubona! Ngingumelekiseli wakho we-AI we-Mathematics. Tfumela "
+           "inkinga (sib. 2x+3=7) noma sitfombe semsebenti wakho.",
+    "ve":  "Ndaa! Ndi mufunzi waṋu wa AI wa Mathematics. Rumela "
+           "thaidzo (z.s. 2x+3=7) kana tshifanyiso tsha mushumo waṋu.",
+    "ts":  "Avuxeni! Hi mona dyondzisi wa AI wa Mathematics. Rhumela "
+           "xiphiqo (xik. 2x+3=7) kumbe xifaniso xa ntirho wa wena.",
+    "nr":  "Lotjhani! Ngimrutjhi wakho we-AI we-Mathematics. Thumela "
+           "inkinga (isb. 2x+3=7) noma isithombe somsebenzi wakho.",
+})
+
+# Friendly language-name labels for the picker (used in WhatsApp dropdown).
+_STRINGS["language_label_nso"] = {"en": "Sepedi (Northern Sotho)"}
+_STRINGS["language_label_st"]  = {"en": "Sesotho"}
+_STRINGS["language_label_tn"]  = {"en": "Setswana"}
+_STRINGS["language_label_ss"]  = {"en": "siSwati"}
+_STRINGS["language_label_ve"]  = {"en": "Tshivenda"}
+_STRINGS["language_label_ts"]  = {"en": "Xitsonga"}
+_STRINGS["language_label_nr"]  = {"en": "isiNdebele"}

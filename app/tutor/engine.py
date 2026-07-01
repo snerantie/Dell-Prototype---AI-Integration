@@ -9,6 +9,7 @@ teaching policy live in the providers + pedagogy module.
 from __future__ import annotations
 
 import logging
+import re
 from functools import lru_cache
 from typing import Optional
 
@@ -74,6 +75,14 @@ class TutorEngine:
         await self._resolve_language(message, state)
 
         text = (message.text or "").strip()
+
+        # Past-paper mode takes priority: either seeding a new question or
+        # grading a subsequent attempt on the same one.
+        if message.past_paper_id:
+            return await self._handle_past_paper(message, state)
+        if state.past_paper_id and message.text and not _is_command(text.lower(), _RESET_WORDS):
+            # Continuing an existing past-paper session.
+            return await self._grade_past_paper_attempt(message, state)
 
         # Global commands first.
         if _is_command(text, _RESET_WORDS) or (state.stage == Stage.NEW and not text and not message.image):
@@ -218,6 +227,92 @@ class TutorEngine:
         ]
         return response
 
+    # ---------------------------------------------------------------
+    # Past-paper (NSC exam) mode
+    # ---------------------------------------------------------------
+    async def _handle_past_paper(self, message: InboundMessage, state: ConversationState) -> TutorResponse:
+        """Load the question from the archive, seed a bot message, ready for attempts."""
+        from app.tutor.past_papers import find_question
+        triple = find_question(message.past_paper_id)
+        if not triple:
+            state.past_paper_id = None
+            return self._localized(
+                state, ["I couldn't find that past-paper question — try picking it again from the archive."],
+                translate=False,
+            )
+        year, paper, question = triple
+        state.past_paper_id = message.past_paper_id
+        state.past_paper_attempts = 0
+        state.problem = question.text
+        state.working_steps = []
+        state.last_diagnosis = None
+        state.hint_level = 0
+        state.stage = Stage.AWAIT_WORKING
+        self.sessions.save(state)
+        intro = (
+            f"📄 {question.source}\n\n"
+            f"QUESTION {question.qno}  ·  {question.marks} marks\n"
+            f"{question.text}\n\n"
+            f"Show your working. Type your final answer when ready (e.g. x=3 or x=-6)."
+        )
+        return self._localized(state, [intro], translate=False)
+
+    async def _grade_past_paper_attempt(self, message: InboundMessage, state: ConversationState) -> TutorResponse:
+        """Check the learner's latest attempt against the stored past-paper answer."""
+        from app.tutor.past_papers import find_question
+        triple = find_question(state.past_paper_id)
+        if not triple:
+            state.past_paper_id = None
+            return await self._route(message)  # fall through to normal flow
+        _, _, question = triple
+        state.past_paper_attempts += 1
+        text = (message.text or "").strip()
+        # Extract a number from strings like "x=5", "x = -6", "5", "3.61 or -1.11"
+        matches = re.findall(r"-?\d+(?:\.\d+)?", text.replace(",", "."))
+        attempts_numeric = [float(m) for m in matches]
+        correct = any(
+            any(abs(a - v) < 0.05 for v in question.answers)
+            for a in attempts_numeric
+        )
+        if correct:
+            screens = [
+                f"✓ Method (1)  ✓ Working (1)  ✓ Final (1)\n"
+                f"★ TOTAL: {question.marks} / {question.marks} ★\n\n"
+                f"📋 MEMO:\n{question.memo}\n\n"
+                f"📄 {question.source}"
+            ]
+            state.past_paper_id = None  # exam complete
+            state.past_paper_attempts = 0
+            self.sessions.save(state)
+            return self._localized(state, screens, translate=False)
+        # Not yet correct — Socratic nudge, do NOT give the answer.
+        if state.past_paper_attempts >= 3:
+            # After 3 wrong attempts, hint at the METHOD (still not the answer).
+            method_hint = _method_hint_for(question)
+            screens = [
+                f"Not quite yet — {state.past_paper_attempts} attempts.\n"
+                f"{method_hint}\n"
+                f"Try one more x= value:"
+            ]
+        else:
+            screens = [
+                f"NSC marking: not yet correct.\n"
+                f"Marks awarded so far: 0 / {question.marks}\n"
+                f"Re-check your working, then type your next x= attempt:"
+            ]
+        self.sessions.save(state)
+        return self._localized(state, screens, translate=False)
+
+
+
+def _method_hint_for(question) -> str:
+    """One-line method hint (never the numeric answer)."""
+    text = question.text.lower()
+    if "x^2" in text or "x²" in text or "quadratic" in text:
+        if "decimal" in text or "formula" in text:
+            return "Hint: use the quadratic formula, x = (-b ± √(b²-4ac)) / 2a."
+        return "Hint: try factorising — find two numbers that multiply to c and add to b."
+    return "Hint: isolate x by doing the same operation to both sides."
 
 
 # Module-level singletons so conversation state persists across requests.

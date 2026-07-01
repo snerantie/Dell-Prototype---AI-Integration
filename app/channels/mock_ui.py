@@ -35,6 +35,7 @@ class ChatRequest(BaseModel):
     image_caption: Optional[str] = None
     language: Optional[str] = None
     grade: Optional[str] = None              # CAPS grade hint, "8".."12"
+    past_paper_id: Optional[str] = None      # e.g. "2026_jun_nw:p1:1.1.1"
 
 
 @router.get("/api/past-papers")
@@ -48,9 +49,11 @@ async def past_papers_index() -> list[dict]:
     from app.tutor.past_papers import ARCHIVE
     return [
         {
+            "slug": y.slug,
             "label": y.label,
             "papers": [
                 {
+                    "slug": p.slug,
                     "label": p.label,
                     "questions": [
                         {
@@ -72,11 +75,13 @@ async def chat(req: ChatRequest) -> dict:
             channel=Channel.MOCK_UI, user_id=req.user_id, type=MessageType.IMAGE,
             image=ImageAttachment(caption=req.image_caption), text=req.text,
             language=req.language, grade=req.grade,
+            past_paper_id=req.past_paper_id,
         )
     else:
         msg = InboundMessage(
             channel=Channel.MOCK_UI, user_id=req.user_id,
             text=req.text or "", language=req.language, grade=req.grade,
+            past_paper_id=req.past_paper_id,
         )
     resp = await engine.handle(msg)
     return {

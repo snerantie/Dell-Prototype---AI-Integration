@@ -103,3 +103,20 @@ def get_year_by_slug(slug: str) -> Optional[PastPaperYear]:
 
 def has_content(year: PastPaperYear) -> bool:
     return any(p.questions for p in year.papers)
+
+
+
+def find_question(past_paper_id: str) -> Optional[tuple[PastPaperYear, PastPaper, PastPaperQuestion]]:
+    """Parse "<year_slug>:<paper_slug>:<qno>" and return the triple, or None."""
+    try:
+        year_slug, paper_slug, qno = past_paper_id.split(":")
+    except ValueError:
+        return None
+    y = get_year_by_slug(year_slug)
+    if not y:
+        return None
+    p = next((pp for pp in y.papers if pp.slug == paper_slug), None)
+    if not p:
+        return None
+    q = next((qq for qq in p.questions if qq.qno == qno), None)
+    return (y, p, q) if q else None

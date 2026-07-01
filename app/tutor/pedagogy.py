@@ -54,6 +54,14 @@ def compose_templated_guidance(
     """
     # Could not analyse -> ask for the working (Socratic, not a dead end).
     if diagnosis.confidence < 0.5:
+        # If the problem looks like a quadratic (topic="quadratic_equations"), give
+        # a Socratic nudge rather than the generic photo request.
+        if diagnosis.topic == "quadratic_equations":
+            return [
+                "This is a quadratic — nice one.",
+                "Which method are you using? Reply with your first working line "
+                "(e.g. factorising as `(x+a)(x+b)`, or the quadratic formula).",
+            ]
         return [t("ped_want_thinking", language), t("ped_send_photo", language)]
 
     # Correct -> affirm and deepen understanding.

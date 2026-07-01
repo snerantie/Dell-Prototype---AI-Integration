@@ -455,9 +455,8 @@
       send.className = 'btn-primary';
       send.textContent = 'Work this question →';
       send.addEventListener('click', () => {
-        const seed = 'Past paper Q' + q.qno + ' (' + q.marks + ' marks):\n'
-          + q.text + '\n\nMy working:';
-        send_to_chat(seed);
+        const pastPaperId = ppYear.slug + ':' + ppPaper.slug + ':' + q.qno;
+        send_to_chat_with_paper(q, pastPaperId);
         ppClose();
       });
       const back = document.createElement('button');
@@ -470,6 +469,19 @@
     }
     function send_to_chat(text) {
       send({text: text});
+    }
+    async function send_to_chat_with_paper(q, pastPaperId) {
+      const lang = document.getElementById('lang').value || null;
+      const grade = document.getElementById('grade').value || null;
+      bubble('📚 Practising: Q' + q.qno + ' · ' + q.marks + ' marks', 'user');
+      const body = { user_id: userId, language: lang, grade: grade, past_paper_id: pastPaperId };
+      const res = await fetch('/api/chat', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      bubble(data.text, 'bot');
+      diagBubble(data.diagnosis);
     }
     document.getElementById('open-pastpapers').addEventListener('click', ppOpen);
     document.getElementById('pp-close').addEventListener('click', ppClose);

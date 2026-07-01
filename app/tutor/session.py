@@ -37,6 +37,8 @@ class ConversationState:
     last_diagnosis: Optional[Diagnosis] = None
     hint_level: int = 0
     history: list[str] = field(default_factory=list)
+    past_paper_id: Optional[str] = None   # e.g. "2026_jun_nw:p1:1.1.1"
+    past_paper_attempts: int = 0
     updated_at: float = field(default_factory=time.time)
 
     def reset_problem(self) -> None:

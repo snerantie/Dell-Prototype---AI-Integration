@@ -104,6 +104,7 @@ class InboundMessage(BaseModel):
     image: Optional[ImageAttachment] = None
     language: Optional[str] = None             # caller hint; engine may override
     grade: Optional[str] = None                # CAPS grade hint, "8".."12"
+    past_paper_id: Optional[str] = None        # e.g. "2026_jun_nw:p1:1.1.1"
     received_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

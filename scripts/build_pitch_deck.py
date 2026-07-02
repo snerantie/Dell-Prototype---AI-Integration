@@ -108,7 +108,132 @@ def _add_speaker_notes(slide, text):
 
 
 # ============================================================================
-# Slide 1 — Title
+# Slide 1 — Cover
+# ============================================================================
+def _add_multiline(slide, left, top, width, height, lines,
+                   *, size=12, color=TEXT, bold=False,
+                   font_name="Calibri", align=PP_ALIGN.LEFT, spacing=2):
+    """Add a text box where each item in `lines` is its own paragraph."""
+    box = slide.shapes.add_textbox(Inches(left), Inches(top),
+                                   Inches(width), Inches(height))
+    tf = box.text_frame
+    tf.word_wrap = True
+    for i, line in enumerate(lines):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.alignment = align
+        p.space_before = Pt(spacing)
+        run = p.add_run()
+        run.text = line
+        run.font.size = Pt(size)
+        run.font.bold = bold
+        run.font.color.rgb = color
+        run.font.name = font_name
+    return box
+
+
+def _add_rounded_frame(slide, left, top, width, height,
+                       *, fill=DARK_TXT, border=GREEN, border_pt=1.5):
+    """Draw an empty rounded rectangle 'device frame'."""
+    shape = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(left), Inches(top), Inches(width), Inches(height),
+    )
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill
+    shape.line.color.rgb = border
+    shape.line.width = Pt(border_pt)
+    # Clear default text
+    shape.text_frame.text = ""
+    return shape
+
+
+def slide_cover(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+
+    # Finalist pill (top-left)
+    _add_pill(s, 0.6, 0.55, 1.9, 0.42, "Dell · Hackathon Finalist",
+              fill=GREEN, fg=DARK_TXT, size=11)
+
+    # Big title
+    _add_text(s, 0.6, 1.7, 7.6, 1.5,
+              "AI Tutor",
+              size=72, bold=True, color=WHITE)
+
+    # Sub-title
+    _add_text(s, 0.6, 3.35, 7.6, 0.7,
+              "Every learner. Every language. Every phone.",
+              size=28, color=GREEN_SOFT, bold=True)
+
+    _add_rule(s, 0.6, 4.15, 4)
+
+    # ------- Device mockup: smartphone (green border) --------------------
+    phone_x, phone_y, phone_w, phone_h = 9.7, 1.3, 2.0, 4.2
+    _add_rounded_frame(s, phone_x, phone_y, phone_w, phone_h,
+                       fill=DARK_TXT, border=GREEN, border_pt=2.0)
+    # WhatsApp pill inside phone (top)
+    _add_pill(s, phone_x + 0.25, phone_y + 0.2,
+              phone_w - 0.5, 0.35, "WhatsApp",
+              fill=GREEN, fg=DARK_TXT, size=10)
+    # Chat bubbles inside phone
+    bubble_specs = [
+        (phone_x + 0.2,           phone_y + 0.75, phone_w - 0.9, 0.45, GREEN,      DARK_TXT, "Solve x²+x-30"),
+        (phone_x + 0.6,           phone_y + 1.35, phone_w - 0.9, 0.45, PANEL,      TEXT,     "Try factorising"),
+        (phone_x + 0.2,           phone_y + 1.95, phone_w - 0.9, 0.45, GREEN,      DARK_TXT, "(x+6)(x-5)"),
+        (phone_x + 0.6,           phone_y + 2.55, phone_w - 0.9, 0.45, PANEL,      TEXT,     "✓ 3/3  ★"),
+    ]
+    for bx, by, bw, bh, bg_fill, fg, label in bubble_specs:
+        _add_pill(s, bx, by, bw, bh, label,
+                  fill=bg_fill, fg=fg, size=9, bold=False)
+
+    # ------- Device mockup: feature phone (orange border) ----------------
+    fp_x, fp_y, fp_w, fp_h = 11.1, 4.3, 1.5, 3.0
+    _add_rounded_frame(s, fp_x, fp_y, fp_w, fp_h,
+                       fill=DARK_TXT, border=ORANGE, border_pt=2.0)
+    # USSD label inside feature phone (green-on-black)
+    _add_text(s, fp_x + 0.05, fp_y + 0.35, fp_w - 0.1, 0.35,
+              "USSD *123#",
+              size=12, bold=True, color=GREEN_SOFT,
+              align=PP_ALIGN.CENTER, font_name="Consolas")
+    _add_multiline(s, fp_x + 0.1, fp_y + 0.85, fp_w - 0.2, 1.6, [
+        "1. Maths",
+        "2. Past papers",
+        "3. Language",
+        "4. Continue",
+    ], size=8, color=GREEN_SOFT, font_name="Consolas", spacing=2)
+    _add_text(s, fp_x + 0.05, fp_y + fp_h - 0.4, fp_w - 0.1, 0.3,
+              "Reply:", size=8, color=MUTED,
+              align=PP_ALIGN.LEFT, font_name="Consolas")
+
+    # ------- Bottom-left tagline -----------------------------------------
+    _add_text(s, 0.6, 5.85, 8.5, 0.9,
+              "A tutor South Africa can actually afford — "
+              "for the 75% of learners no one else reaches.",
+              size=18, color=TEXT, bold=True)
+
+    # ------- Bottom-right sponsor line -----------------------------------
+    _add_text(s, 0.6, 6.75, 12.1, 0.35,
+              "Powered by Dell AI Factory  ·  Zero-rated on Vodacom  ·  CAPS-aligned",
+              size=12, color=GREEN_SOFT, align=PP_ALIGN.RIGHT)
+
+    # ------- Placeholder note (muted, centered) --------------------------
+    _add_text(s, 0.6, 7.1, 12.1, 0.35,
+              "[Team: replace device mockups with real photos of SA learners "
+              "using the demo — see cover-photo brief]",
+              size=10, color=MUTED, align=PP_ALIGN.CENTER)
+
+    _add_speaker_notes(s,
+        "Open with the mission, not the tech. AI Tutor is a public-good "
+        "tutor that reaches every learner in South Africa — smartphone or "
+        "feature phone, any of the 11 official languages. The two device "
+        "mockups are placeholders; final version replaces them with real "
+        "photos of SA learners using the app. Powered by Dell AI Factory. "
+        "Zero-rated on Vodacom. CAPS-aligned.")
+    return s
+
+
+# ============================================================================
+# Slide 2 — Title (legacy short-form title, kept for continuity)
 # ============================================================================
 def slide_title(prs):
     s = prs.slides.add_slide(prs.slide_layouts[6])
@@ -212,40 +337,294 @@ def slide_solution(prs):
 
 
 # ============================================================================
-# Slide 4 — Architecture
+# Slide 5 — Solution Architecture (5-zone data flow)
 # ============================================================================
+def _add_arrow(slide, left, top, width, height, *, color=GREEN):
+    arrow = slide.shapes.add_shape(
+        MSO_SHAPE.RIGHT_ARROW,
+        Inches(left), Inches(top), Inches(width), Inches(height),
+    )
+    arrow.fill.solid()
+    arrow.fill.fore_color.rgb = color
+    arrow.line.fill.background()
+    return arrow
+
+
 def slide_architecture(prs):
     s = prs.slides.add_slide(prs.slide_layouts[6])
     _set_bg(s, BG)
-    _add_text(s, 0.6, 0.5, 12.1, 0.6, "Architecture",
+    _add_text(s, 0.6, 0.4, 12.1, 0.5, "Solution architecture",
               size=14, color=GREEN, bold=True)
-    _add_text(s, 0.6, 1.0, 12.1, 1.0,
-              "Channel-agnostic engine, swappable providers.",
-              size=32, bold=True, color=WHITE)
-    _add_rule(s, 0.6, 2.2, 4)
+    _add_text(s, 0.6, 0.85, 12.1, 0.7,
+              "Sovereign brain. Deterministic maths. Curriculum-bounded.",
+              size=26, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.75, 4)
 
-    # Visual flow
-    box_y = 3.0
-    _add_pill(s, 0.6, box_y, 2.6, 0.7, "WhatsApp Cloud", fill=GREEN, size=13)
-    _add_pill(s, 0.6, box_y + 0.9, 2.6, 0.7, "USSD aggregator", fill=ORANGE, fg=DARK_TXT, size=13)
+    # ------- Horizontal band with 5 zones + arrows between --------------
+    band_top = 2.15
+    band_h   = 4.35   # zones span ~2.15 → 6.5
 
-    _add_pill(s, 4.4, box_y + 0.45, 3.4, 0.7, "Tutor Engine", fill=PANEL, fg=GREEN_SOFT, size=14)
+    # X layout (inches), sums to ~13.0 wide
+    # Zone1: 2.30  arrow: 0.30  Zone2: 1.90  arrow: 0.30  Zone3: 2.85
+    #   arrow: 0.30  Zone4: 2.45  arrow: 0.30  Zone5: 2.20
+    z1_x, z1_w = 0.30, 2.30
+    a1_x, a1_w = z1_x + z1_w + 0.05, 0.35
+    z2_x, z2_w = a1_x + a1_w + 0.05, 1.90
+    a2_x, a2_w = z2_x + z2_w + 0.05, 0.35
+    z3_x, z3_w = a2_x + a2_w + 0.05, 2.85
+    a3_x, a3_w = z3_x + z3_w + 0.05, 0.35
+    z4_x, z4_w = a3_x + a3_w + 0.05, 2.45
+    a4_x, a4_w = z4_x + z4_w + 0.05, 0.35
+    z5_x, z5_w = a4_x + a4_w + 0.05, 2.10
 
-    _add_pill(s, 9.0, box_y - 0.35, 3.6, 0.6, "LLM (Dell AI Factory NIM)", fill=PANEL, fg=TEXT, size=12)
-    _add_pill(s, 9.0, box_y + 0.30, 3.6, 0.6, "Vision (Dell VLM)",         fill=PANEL, fg=TEXT, size=12)
-    _add_pill(s, 9.0, box_y + 0.95, 3.6, 0.6, "Translation",               fill=PANEL, fg=TEXT, size=12)
-    _add_pill(s, 9.0, box_y + 1.60, 3.6, 0.6, "Past Papers + CAPS data",   fill=PANEL, fg=GREEN_SOFT, size=12)
+    # Zone borders (subtle panel frames)
+    for zx, zw in [(z1_x, z1_w), (z2_x, z2_w), (z3_x, z3_w),
+                   (z4_x, z4_w), (z5_x, z5_w)]:
+        frame = s.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(zx), Inches(band_top), Inches(zw), Inches(band_h),
+        )
+        frame.fill.solid()
+        frame.fill.fore_color.rgb = PANEL
+        frame.line.color.rgb = MUTED
+        frame.line.width = Pt(0.5)
+        frame.text_frame.text = ""
 
-    _add_text(s, 0.6, box_y + 2.6, 12.1, 0.6,
-              "Mock providers ↔ Dell providers swap by env var. No code rewrite.",
-              size=15, color=MUTED, align=PP_ALIGN.CENTER)
+    # Arrows between zones (centered vertically on band)
+    arrow_y = band_top + (band_h / 2) - 0.20
+    for ax, aw in [(a1_x, a1_w), (a2_x, a2_w), (a3_x, a3_w), (a4_x, a4_w)]:
+        _add_arrow(s, ax, arrow_y, aw, 0.40, color=GREEN)
+
+    # ------- Zone 1: Learner + Channel ----------------------------------
+    _add_text(s, z1_x + 0.1, band_top + 0.1, z1_w - 0.2, 0.35,
+              "1 · Learner + Channel",
+              size=11, color=GREEN_SOFT, bold=True)
+    _add_pill(s, z1_x + 0.15, band_top + 0.55, z1_w - 0.3, 0.5,
+              "📱 Smartphone learner (Thandi)",
+              fill=DARK_TXT, fg=TEXT, size=10, bold=False)
+    _add_pill(s, z1_x + 0.15, band_top + 1.15, z1_w - 0.3, 0.5,
+              "📞 Feature-phone learner (Lethabo)",
+              fill=DARK_TXT, fg=TEXT, size=10, bold=False)
+    _add_pill(s, z1_x + 0.15, band_top + 2.35, z1_w - 0.3, 0.55,
+              "WhatsApp Cloud API",
+              fill=GREEN, fg=DARK_TXT, size=11)
+    _add_pill(s, z1_x + 0.15, band_top + 3.05, z1_w - 0.3, 0.55,
+              "Africa's Talking USSD",
+              fill=ORANGE, fg=DARK_TXT, size=11)
+
+    # ------- Zone 2: Public HTTPS Gateway -------------------------------
+    _add_text(s, z2_x + 0.1, band_top + 0.1, z2_w - 0.2, 0.35,
+              "2 · Public HTTPS",
+              size=11, color=GREEN_SOFT, bold=True)
+    _add_pill(s, z2_x + 0.1, band_top + 1.15, z2_w - 0.2, 0.55,
+              "Public HTTPS endpoint",
+              fill=PANEL, fg=GREEN_SOFT, size=11)
+    # Set line color for that pill so it reads as a bordered panel
+    _add_text(s, z2_x + 0.1, band_top + 1.80, z2_w - 0.2, 0.35,
+              "Deployed on Dell AI Factory",
+              size=9, color=MUTED, align=PP_ALIGN.CENTER)
+    _add_multiline(s, z2_x + 0.1, band_top + 2.55, z2_w - 0.2, 1.6, [
+        "• Meta Webhook",
+        "• USSD Callback",
+    ], size=10, color=TEXT, spacing=4)
+
+    # ------- Zone 3: Tutor Engine (larger, center) ----------------------
+    _add_text(s, z3_x + 0.1, band_top + 0.1, z3_w - 0.2, 0.35,
+              "3 · Tutor Engine",
+              size=11, color=GREEN_SOFT, bold=True)
+    _add_pill(s, z3_x + 0.25, band_top + 0.55, z3_w - 0.5, 0.6,
+              "Tutor Engine",
+              fill=PANEL, fg=GREEN_SOFT, size=16)
+    _add_bullets(s, z3_x + 0.2, band_top + 1.35, z3_w - 0.4, 3.0, [
+        "Channel-agnostic orchestrator",
+        "Session state (Redis in production)",
+        "Language routing + i18n",
+        "Past-paper mode + NSC marking",
+    ], size=11, color=TEXT, spacing=6)
+
+    # ------- Zone 4: AI Providers ---------------------------------------
+    _add_text(s, z4_x + 0.1, band_top + 0.1, z4_w - 0.2, 0.35,
+              "4 · AI Providers",
+              size=11, color=GREEN_SOFT, bold=True)
+    provider_pills = [
+        "🧠 Reasoning LLM  ·  Dell NIM (Llama / Qwen)",
+        "👁️ Vision VLM  ·  Dell NIM (Qwen2-VL) — handwriting",
+        "🌐 Translation  ·  Dell LLM (11 SA languages)",
+        "📚 Verified maths + memos  ·  deterministic code",
+    ]
+    pp_y = band_top + 0.55
+    for label in provider_pills:
+        _add_pill(s, z4_x + 0.1, pp_y, z4_w - 0.2, 0.75, label,
+                  fill=PANEL, fg=TEXT, size=9, bold=False)
+        pp_y += 0.85
+
+    # ------- Zone 5: Data / Knowledge Base ------------------------------
+    _add_text(s, z5_x + 0.1, band_top + 0.1, z5_w - 0.2, 0.35,
+              "5 · Knowledge Base",
+              size=11, color=GREEN_SOFT, bold=True)
+    _add_pill(s, z5_x + 0.1, band_top + 0.55, z5_w - 0.2, 0.55,
+              "Public + curated",
+              fill=PANEL, fg=GREEN_SOFT, size=11)
+    _add_bullets(s, z5_x + 0.1, band_top + 1.25, z5_w - 0.2, 3.0, [
+        "CAPS Mathematics — DBE education.gov.za",
+        "NSC past papers + memos — DBE archives",
+        "Provincial ATPs — WCED, GP, KZN, FS, LP, NW",
+        "Siyavula textbooks (CC-BY optional)",
+        "Educator advisory board",
+    ], size=9, color=TEXT, spacing=4)
+
+    # ------- Bottom banner ----------------------------------------------
+    _add_text(s, 0.6, 6.75, 12.1, 0.4,
+              "All data stays in South Africa  ·  POPIA-aligned  ·  "
+              "No conversation ever trains a foreign model",
+              size=12, color=MUTED, align=PP_ALIGN.CENTER, bold=True)
 
     _add_speaker_notes(s,
-        "The seam between channel UI and reasoning is intentional. Providers "
-        "are abstract base classes; real Dell endpoints plug into the same "
-        "interfaces the mocks satisfy. The deterministic math analyzer "
-        "grounds the LLM so it cannot hallucinate the answer — the LLM only "
-        "explains a verified result.")
+        "The green-underlined block is what Meta AI cannot claim: sovereign "
+        "data, deterministic maths grounding, curriculum-bounded scope. The "
+        "knowledge base is publicly sourceable — no proprietary AI, no "
+        "black box, no data leaving the country.")
+    return s
+
+
+# ============================================================================
+# Slide 6 — Demo Flow (6 phone-frame panels)
+# ============================================================================
+def slide_demo_flow(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.4, 12.1, 0.5, "Demo flow",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.85, 12.1, 0.7,
+              "One learner journey. Six screens. Every phone.",
+              size=26, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.75, 4)
+
+    # ------- Six phone-frame panels -------------------------------------
+    panel_w, panel_h = 1.9, 3.2
+    n = 6
+    slide_w = 13.33
+    left_margin = 0.2
+    right_margin = 0.2
+    total_panel_w = panel_w * n
+    total_gap = slide_w - left_margin - right_margin - total_panel_w
+    gap = total_gap / (n - 1)  # ~0.30
+
+    panel_y = 2.55
+    circle_size = 0.42
+    circle_y   = 2.05
+
+    steps = [
+        # (label,       header_color, body_lines, header_text)
+        ("1",  GREEN,  "CHOOSE",     [
+            "LANG:",
+            "> Sepedi",
+            "",
+            "GRADE:",
+            "> 11",
+            "",
+            "[ Continue ▶ ]",
+        ]),
+        ("2",  ORANGE, "PICK PAPER", [
+            "📄 2026 NW June",
+            "  ▶ Paper 1",
+            "     ▶ Q1.1.1",
+            "       (3 marks)",
+            "",
+            "[ Open ▶ ]",
+        ]),
+        ("3",  GREEN,  "QUESTION",   [
+            "QUESTION 1.1.1",
+            "· 3 marks",
+            "",
+            "Solve for x:",
+            "",
+            "x² + x - 30 = 0",
+        ]),
+        ("4",  ORANGE, "WORKING",    [
+            "Your working:",
+            "",
+            "> x = -3",
+            "",
+            "",
+            "[ Send ✓ ]",
+        ]),
+        ("5",  GREEN,  "DIAGNOSE",   [
+            "NSC marking:",
+            "0 / 3",
+            "",
+            "Re-check your",
+            "working...",
+            "",
+            "Hint: factorise.",
+        ]),
+        ("6",  ORANGE, "MEMO",       [
+            "✓✓✓ 3/3  ★",
+            "",
+            "Factorise:",
+            "(x+6)(x-5) = 0",
+            "x = -6 or x = 5",
+            "",
+            "📄 NSC P1 Q1.1.1",
+        ]),
+    ]
+
+    for i, (num, color, header, body) in enumerate(steps):
+        px = left_margin + i * (panel_w + gap)
+
+        # Step number circle (perfect square → visually circular via rounded)
+        cx = px + (panel_w / 2) - (circle_size / 2)
+        circle = s.shapes.add_shape(
+            MSO_SHAPE.OVAL,
+            Inches(cx), Inches(circle_y),
+            Inches(circle_size), Inches(circle_size),
+        )
+        circle.fill.solid()
+        circle.fill.fore_color.rgb = color
+        circle.line.fill.background()
+        tf = circle.text_frame
+        tf.margin_left = tf.margin_right = Inches(0.02)
+        tf.margin_top = tf.margin_bottom = Inches(0.02)
+        p = tf.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        r = p.add_run()
+        r.text = num
+        r.font.size = Pt(14)
+        r.font.bold = True
+        r.font.color.rgb = DARK_TXT
+        r.font.name = "Calibri"
+
+        # Phone frame
+        _add_rounded_frame(s, px, panel_y, panel_w, panel_h,
+                           fill=DARK_TXT, border=GREEN, border_pt=1.5)
+
+        # Header pill inside frame (top)
+        _add_pill(s, px + 0.15, panel_y + 0.15, panel_w - 0.3, 0.35,
+                  header, fill=color, fg=DARK_TXT, size=10)
+
+        # Mini-mockup body (monospace feel)
+        _add_multiline(s, px + 0.2, panel_y + 0.65, panel_w - 0.4, panel_h - 0.85,
+                       body,
+                       size=10, color=GREEN_SOFT,
+                       font_name="Consolas", spacing=2)
+
+    # ------- Orange progression arrow below panels ----------------------
+    arrow_y = panel_y + panel_h + 0.20
+    arrow_left = left_margin + 0.1
+    arrow_width = slide_w - left_margin - right_margin - 0.2
+    _add_arrow(s, arrow_left, arrow_y, arrow_width, 0.28, color=ORANGE)
+
+    # Caption below
+    _add_text(s, 0.6, arrow_y + 0.45, 12.1, 0.4,
+              "One learner journey  ·  90 seconds  ·  zero cost  ·  "
+              "every phone in South Africa",
+              size=13, color=GREEN_SOFT, align=PP_ALIGN.CENTER, bold=True)
+
+    _add_speaker_notes(s,
+        "This is the demo you'll record. Six screens, one continuous flow, "
+        "real NSC content, no answers given away, mark-scheme-authentic. "
+        "When an executive asks 'is this real?' — this is the slide you "
+        "point to.")
     return s
 
 
@@ -522,10 +901,12 @@ def main():
     prs.slide_width = Inches(13.33)
     prs.slide_height = Inches(7.5)
 
+    slide_cover(prs)
     slide_title(prs)
     slide_problem(prs)
     slide_solution(prs)
     slide_architecture(prs)
+    slide_demo_flow(prs)
     slide_differentiators(prs)
     slide_uplift(prs)
     slide_segment(prs)

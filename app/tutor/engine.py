@@ -20,6 +20,7 @@ from app.models.schemas import (
     Diagnosis,
     InboundMessage,
     MessageType,
+    QuickReply,
     Subject,
     TutorResponse,
 )
@@ -74,6 +75,13 @@ class TutorEngine:
         state = self.sessions.get_or_create(message.channel, message.user_id)
         await self._resolve_language(message, state)
 
+        # WhatsApp Business Interactive Reply Button click — the frontend
+        # sends the button's payload; route on it BEFORE any text/image logic
+        # so a payload always wins over stale text state.
+        payload = (message.payload or "").strip()
+        if payload:
+            return await self._handle_payload(payload, state)
+
         text = (message.text or "").strip()
 
         # Past-paper mode takes priority: either seeding a new question or
@@ -116,11 +124,27 @@ class TutorEngine:
         # otherwise keep the already-chosen session language / grade
 
     def _greeting(self, state: ConversationState) -> TutorResponse:
+        """Proactive greeting: intro + 3 top-level WhatsApp reply buttons.
+
+        This is what a learner sees on first contact, on "hi/hello/reset",
+        and whenever the engine wants to re-offer the top-level menu. The
+        button labels double as the text bubble the learner "sends" when
+        they tap.
+        """
         state.stage = Stage.AWAIT_PROBLEM
         state.subject = Subject.MATHEMATICS.value
+        state.reset_problem()
+        state.past_paper_id = None
+        state.past_paper_attempts = 0
         self.sessions.save(state)
-        screens = [t("whatsapp_intro", state.language)]
-        return self._localized(state, screens, requires_image=True, translate=False)
+        lang = state.language
+        screens = [t("welcome_choices_intro", lang)]
+        replies = [
+            QuickReply(label=t("btn_practice_papers", lang), payload="action:practice_papers"),
+            QuickReply(label=t("btn_solve_problem", lang),   payload="action:solve_problem"),
+            QuickReply(label=t("btn_free_form", lang),        payload="action:free_form"),
+        ]
+        return self._localized(state, screens, quick_replies=replies, translate=False)
 
     async def _handle_image(self, message: InboundMessage, state: ConversationState) -> TutorResponse:
         result = await self.vision.transcribe_working(message.image, hint=state.problem)
@@ -207,6 +231,7 @@ class TutorEngine:
         requires_image: bool = False,
         session_complete: bool = False,
         translate: bool = True,
+        quick_replies: Optional[list[QuickReply]] = None,
     ) -> TutorResponse:
         return TutorResponse(
             language=state.language,
@@ -214,6 +239,7 @@ class TutorEngine:
             diagnosis=diagnosis,
             requires_image=requires_image,
             session_complete=session_complete,
+            quick_replies=quick_replies or [],
             meta={"_translate": "1" if translate else "0"},
         )
 
@@ -226,6 +252,141 @@ class TutorEngine:
             await self.translation.translate(s, response.language) for s in response.screens
         ]
         return response
+
+    # ---------------------------------------------------------------
+    # WhatsApp Business Interactive Reply Button routing
+    # ---------------------------------------------------------------
+    async def _handle_payload(self, payload: str, state: ConversationState) -> TutorResponse:
+        """Route a quick-reply button click to the right response.
+
+        Payload grammar:
+          action:practice_papers    → year list buttons
+          action:solve_problem      → prompt (no buttons)
+          action:free_form          → prompt (no buttons)
+          pastpapers:back:years     → year list again
+          pastpapers:year:<slug>    → paper list for that year
+          pastpapers:paper:<yr>:<p> → question list for that paper
+        Anything else falls back to the greeting so we never dead-end.
+        """
+        from app.tutor.past_papers import ARCHIVE, get_year_by_slug, has_content
+
+        lang = state.language
+
+        # ---- top-level actions -----------------------------------------
+        if payload == "action:practice_papers" or payload == "pastpapers:back:years":
+            # Clear any half-loaded past-paper session before showing the picker.
+            state.past_paper_id = None
+            state.past_paper_attempts = 0
+            self.sessions.save(state)
+            screens = [t("prompt_pick_paper", lang)]
+            replies: list[QuickReply] = []
+            for year in ARCHIVE:
+                # Only years with at least one PastPaper get to represent a year;
+                # currently only 2026 June has papers seeded — others render as
+                # disabled "coming soon" pills so the roadmap stays visible.
+                if year.papers and has_content(year):
+                    # Represent the year via the first paper that has questions.
+                    first_paper = next((p for p in year.papers if p.questions), year.papers[0])
+                    replies.append(QuickReply(
+                        label=f"🗓️ {year.label} · {first_paper.label.split(' (')[0]}",
+                        payload=f"pastpapers:paper:{year.slug}:{first_paper.slug}",
+                    ))
+                else:
+                    replies.append(QuickReply(
+                        label=f"🗓️ {year.label} (coming soon)",
+                        payload=f"pastpapers:year:{year.slug}",
+                        disabled=True,
+                    ))
+                # Meta caps interactive reply buttons at 3 per message.
+                if len(replies) >= 3:
+                    break
+            return self._localized(state, screens, quick_replies=replies, translate=False)
+
+        if payload == "action:solve_problem":
+            state.stage = Stage.AWAIT_PROBLEM
+            state.reset_problem()
+            self.sessions.save(state)
+            return self._localized(state, [t("prompt_solve_hint", lang)],
+                                   translate=False)
+
+        if payload == "action:free_form":
+            state.stage = Stage.AWAIT_PROBLEM
+            state.reset_problem()
+            self.sessions.save(state)
+            return self._localized(state, [t("prompt_free_form", lang)],
+                                   translate=False)
+
+        # ---- past-paper navigation -------------------------------------
+        if payload.startswith("pastpapers:year:"):
+            year_slug = payload.split(":", 2)[2]
+            year = get_year_by_slug(year_slug)
+            if not year or not has_content(year):
+                # "coming soon" year clicked — bounce back to the year list.
+                return await self._handle_payload("pastpapers:back:years", state)
+            # Pick the first paper with questions.
+            paper = next((p for p in year.papers if p.questions), None)
+            if paper is None:
+                return await self._handle_payload("pastpapers:back:years", state)
+            return self._render_question_list(state, year.slug, paper)
+
+        if payload.startswith("pastpapers:question:"):
+            # Direct payload path: "pastpapers:question:<year>:<paper>:<qno>".
+            # The primary route the frontend uses is `past_paper_id`, but we
+            # also accept the payload form so button clicks are self-contained.
+            _, _, rest = payload.partition("pastpapers:question:")
+            parts = rest.split(":")
+            if len(parts) >= 3:
+                past_paper_id = ":".join(parts[:3])
+                proxy = InboundMessage(
+                    channel=state.channel, user_id=state.user_id,
+                    past_paper_id=past_paper_id, language=state.language,
+                    grade=state.grade,
+                )
+                return await self._handle_past_paper(proxy, state)
+            return self._greeting(state)
+
+        if payload.startswith("pastpapers:paper:"):
+            _, _, rest = payload.partition("pastpapers:paper:")
+            try:
+                year_slug, paper_slug = rest.split(":", 1)
+            except ValueError:
+                return await self._handle_payload("pastpapers:back:years", state)
+            year = get_year_by_slug(year_slug)
+            if not year:
+                return await self._handle_payload("pastpapers:back:years", state)
+            paper = next((p for p in year.papers if p.slug == paper_slug), None)
+            if paper is None or not paper.questions:
+                return await self._handle_payload("pastpapers:back:years", state)
+            return self._render_question_list(state, year.slug, paper)
+
+        # Unknown payload: dead-end guard → back to the greeting.
+        return self._greeting(state)
+
+    def _render_question_list(self, state: ConversationState, year_slug: str, paper) -> TutorResponse:
+        """Build the 'pick a question' bubble with up to 3 buttons.
+
+        The learner taps a question; the frontend translates the button's
+        payload (`pastpapers:question:<year>:<paper>:<qno>`) into a
+        `past_paper_id` field on the outgoing request, so the existing
+        `_handle_past_paper` path still handles the terminal step. The
+        engine also accepts the raw payload for defence-in-depth.
+        """
+        lang = state.language
+        replies: list[QuickReply] = []
+        # Meta cap: up to 3 interactive reply buttons per message. Reserve
+        # slot 3 for "back to years" so the learner always has an escape.
+        for q in paper.questions[:2]:
+            topic = _brief_topic_from_memo(q)
+            replies.append(QuickReply(
+                label=f"✍️ Q{q.qno} · {q.marks} marks · {topic}",
+                payload=f"pastpapers:question:{year_slug}:{paper.slug}:{q.qno}",
+            ))
+        replies.append(QuickReply(
+            label=t("btn_back_years", lang),
+            payload="pastpapers:back:years",
+        ))
+        screens = [t("prompt_pick_question", lang)]
+        return self._localized(state, screens, quick_replies=replies, translate=False)
 
     # ---------------------------------------------------------------
     # Past-paper (NSC exam) mode
@@ -313,6 +474,19 @@ def _method_hint_for(question) -> str:
             return "Hint: use the quadratic formula, x = (-b ± √(b²-4ac)) / 2a."
         return "Hint: try factorising — find two numbers that multiply to c and add to b."
     return "Hint: isolate x by doing the same operation to both sides."
+
+
+def _brief_topic_from_memo(question) -> str:
+    """Short topic label for question buttons — read off the memo/text."""
+    memo = (question.memo or "").lower()
+    text = (question.text or "").lower()
+    if "quadratic formula" in memo or "decimal" in text or "formula" in memo:
+        return "quadratic formula"
+    if "factor" in memo or "(x" in memo:
+        return "factorisation"
+    if "x²" in text or "x^2" in text:
+        return "quadratic"
+    return "algebra"
 
 
 # Module-level singletons so conversation state persists across requests.

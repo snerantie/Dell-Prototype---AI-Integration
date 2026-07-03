@@ -3,99 +3,76 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EduConnect AI Tutor — Demo Simulator</title>
+  <title>EduConnect AI Tutor</title>
   <style>
     :root { --bg:#0b141a; --panel:#111b21; --in:#202c33; --out:#005c4b;
-            --accent:#00a884; --txt:#e9edef; --muted:#8696a0; }
+            --accent:#00a884; --txt:#e9edef; --muted:#8696a0;
+            --qr-bg:#ffffff; --qr-hover:#eefaf5; --qr-disabled:#8696a0; }
     * { box-sizing:border-box; }
     body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif;
            background:var(--bg); color:var(--txt); height:100vh; display:flex;
            flex-direction:column; }
-    header { background:var(--panel); padding:12px 16px; display:flex;
+    header { background:var(--panel); padding:10px 16px; display:flex;
              align-items:center; gap:12px; border-bottom:1px solid #222d34; }
-    header .avatar { width:40px; height:40px; border-radius:50%;
+    header .avatar { width:38px; height:38px; border-radius:50%;
              background:var(--accent); display:grid; place-items:center;
-             font-weight:700; }
-    header h1 { font-size:16px; margin:0; }
-    header p { font-size:12px; color:var(--muted); margin:2px 0 0; }
-    .lang { margin-left:auto; }
-    select { background:var(--in); color:var(--txt); border:1px solid #2a3942;
-             border-radius:8px; padding:6px 8px; }
+             font-weight:700; color:#03110d; font-size:14px; }
+    header h1 { font-size:15px; margin:0; line-height:1.2; }
+    header .status { font-size:12px; color:var(--muted); margin:2px 0 0;
+             display:flex; align-items:center; gap:6px; }
+    header .status .dot { width:7px; height:7px; border-radius:50%;
+             background:#25d366; box-shadow:0 0 6px #25d366; }
+    header .meta { margin-left:auto; display:flex; align-items:center; gap:6px; }
+    header .meta select { background:var(--in); color:var(--txt);
+             border:1px solid #2a3942; border-radius:6px; padding:4px 6px;
+             font-size:11px; opacity:0.75; }
+    header .meta select:hover, header .meta select:focus { opacity:1; }
+    header .menu-link { color:var(--muted); text-decoration:none; font-size:20px;
+             padding:2px 6px; border-radius:6px; }
+    header .menu-link:hover { color:var(--txt); background:#1a242a; }
+
+    /* Hidden handoff container kept in DOM for USSD -> WhatsApp deep-linking. */
+    #handoff-ribbon { display:none; }
+
     #chat { flex:1; overflow-y:auto; padding:18px; display:flex;
-            flex-direction:column; gap:8px; }
+            flex-direction:column; gap:8px;
+            background:
+              linear-gradient(rgba(11,20,26,.85), rgba(11,20,26,.85)),
+              repeating-linear-gradient(45deg, #0f1a20 0 2px, transparent 2px 22px); }
     .msg { max-width:78%; padding:8px 12px; border-radius:10px; font-size:14px;
            line-height:1.4; white-space:pre-wrap; word-wrap:break-word; }
     .user { align-self:flex-end; background:var(--out); }
     .bot  { align-self:flex-start; background:var(--in); }
-    .imgmsg { align-self:flex-end; background:var(--out); padding:6px;
-              border-radius:10px; max-width:60%; }
-    .imgmsg img { display:block; max-width:100%; border-radius:6px; }
-    .imgmsg .cap { font-size:12px; color:#cbe7e0; margin-top:6px; padding:0 4px;
-                   white-space:pre-wrap; }
+    .bot-group { align-self:flex-start; max-width:78%; display:flex;
+                 flex-direction:column; gap:6px; }
+    .bot-group .msg { max-width:100%; }
     .diag { align-self:flex-start; max-width:78%; font-size:12px;
             color:var(--muted); background:#0e171d; border:1px dashed #2a3942;
             border-radius:8px; padding:8px 10px; }
     .diag b { color:var(--accent); }
-    .quick { background:#2a3942; color:var(--txt); border:none;
-             border-radius:14px; padding:6px 10px; font-size:12px;
+
+    /* WhatsApp Business Interactive Reply Buttons — pill-shaped, attached
+       to the bot bubble they belong to. */
+    .quick-replies { display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
+    .quick-reply { background:var(--qr-bg); color:var(--accent);
+             border:1px solid var(--accent); border-radius:20px;
+             padding:8px 16px; font-size:13px; font-weight:600;
+             cursor:pointer; font-family:inherit;
+             transition:background .12s, transform .05s, box-shadow .12s; }
+    .quick-reply:hover { background:var(--qr-hover);
+             box-shadow:0 1px 4px rgba(0,168,132,.25); }
+    .quick-reply:active { transform:translateY(1px); }
+    .quick-reply:disabled { background:#1a242a; color:var(--qr-disabled);
+             border-color:#2a3942; cursor:not-allowed;
+             box-shadow:none; font-weight:500; }
+
+    #composer { display:flex; gap:8px; padding:12px 16px;
+             background:var(--panel); border-top:1px solid #222d34; }
+    #composer input { flex:1; background:var(--in); color:var(--txt);
+             border:none; border-radius:20px; padding:10px 16px; font-size:14px; }
+    #composer button { background:var(--accent); color:#03110d; border:none;
+             border-radius:20px; padding:10px 18px; font-weight:600;
              cursor:pointer; }
-    .quick:hover { background:#36454f; }
-    #upload-panel { display:none; padding:10px 16px; background:#0e171d;
-             border-top:1px solid #222d34; gap:8px; align-items:flex-start; }
-    #upload-panel.show { display:flex; flex-wrap:wrap; }
-    #upload-panel textarea { flex:1; min-width:240px; min-height:90px;
-             background:var(--in); color:var(--txt); border:1px solid #2a3942;
-             border-radius:8px; padding:8px; font-family:monospace;
-             font-size:13px; }
-    #upload-panel .preview { width:120px; height:120px; border-radius:8px;
-             background:#1a2a32 center/cover no-repeat; border:1px dashed #2a3942;
-             display:grid; place-items:center; color:var(--muted); font-size:11px;
-             text-align:center; padding:6px; }
-    .btn-primary { background:var(--accent); color:#03110d; border:none;
-             border-radius:14px; padding:8px 14px; font-weight:600;
-             cursor:pointer; }
-    .btn-secondary { background:#2a3942; color:var(--txt); border:none;
-             border-radius:14px; padding:8px 14px; cursor:pointer; }
-    #handoff-ribbon { display:none; padding:8px 16px;
-             background:linear-gradient(90deg, #003c0a, #015c2c);
-             color:#9cff8c; font-size:12px; border-bottom:1px solid #00a884; }
-    #handoff-ribbon.show { display:block; }
-    #handoff-ribbon b { color:#ffffff; }
-    #exam-banner { display:flex; gap:10px; align-items:center;
-             padding:8px 16px; font-size:12px; color:#ffd699;
-             background:linear-gradient(90deg, #2c1d05, #4a3008);
-             border-bottom:1px solid #6b4d12; }
-    #exam-banner b { color:#ffe9b8; }
-    #exam-toggle { background:transparent; color:#ffd699; border:1px solid #6b4d12;
-             border-radius:12px; padding:3px 10px; font-size:11px; cursor:pointer;
-             margin-left:auto; }
-    #exam-toggle.on { background:#ffb347; color:#2c1d05; border-color:#ffb347;
-             font-weight:700; }
-    .marks { color:#ffd699; }
-    .marks b { color:#ffe9b8; }
-    /* Past papers modal */
-    #pp-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6);
-             z-index:10; align-items:center; justify-content:center; padding:20px; }
-    #pp-overlay.show { display:flex; }
-    #pp-modal { background:var(--panel); border-radius:12px; max-width:520px;
-             width:100%; max-height:80vh; overflow-y:auto;
-             box-shadow:0 20px 60px rgba(0,0,0,.7); }
-    #pp-modal header { padding:14px 18px; border-bottom:1px solid #222d34;
-             display:flex; align-items:center; gap:10px; }
-    #pp-modal header h2 { margin:0; font-size:15px; }
-    #pp-modal header .crumbs { color:#7ed4b9; font-size:12px; margin-top:2px; }
-    #pp-modal .x { margin-left:auto; background:transparent; color:var(--muted);
-             border:none; font-size:18px; cursor:pointer; }
-    #pp-modal ul { list-style:none; margin:0; padding:8px 0; }
-    #pp-modal li { padding:12px 18px; border-bottom:1px solid #1a242a;
-             cursor:pointer; display:flex; gap:10px; align-items:center; }
-    #pp-modal li:hover { background:#1a242a; }
-    #pp-modal li.disabled { color:#5a6770; cursor:not-allowed; }
-    #pp-modal li small { color:var(--muted); margin-left:auto; }
-    #pp-modal .qtext { font-family:monospace; color:#cbe7e0; font-size:13px;
-             padding:14px 18px; background:#0e171d; border-radius:8px;
-             margin:0 18px 12px; white-space:pre-wrap; }
-    #pp-modal .source { padding:0 18px 14px; color:#7ed4b9; font-size:12px; }
   </style>
 </head>
 <body>
@@ -103,26 +80,26 @@
     <div class="avatar">AI</div>
     <div>
       <h1>EduConnect AI Tutor</h1>
-      <p>CAPS-aligned · WhatsApp/USSD prototype · mock mode · <a href="/ussd-simulator" style="color:var(--accent)">switch to USSD simulator</a></p>
+      <div class="status"><span class="dot"></span>online</div>
     </div>
-    <div class="lang">
-      <select id="grade" title="CAPS Grade" style="margin-right:6px;">
-        <option value="8">Grade 8</option>
-        <option value="9">Grade 9</option>
-        <option value="10">Grade 10</option>
-        <option value="11">Grade 11</option>
-        <option value="12" selected>Grade 12</option>
+    <div class="meta">
+      <select id="grade" title="CAPS Grade">
+        <option value="8">Gr 8</option>
+        <option value="9">Gr 9</option>
+        <option value="10">Gr 10</option>
+        <option value="11">Gr 11</option>
+        <option value="12" selected>Gr 12</option>
       </select>
       <select id="lang" title="Language">
-        <option value="">auto-detect</option>
-        <optgroup label="Educator-validated (launch)">
+        <option value="">auto</option>
+        <optgroup label="Educator-validated">
           <option value="en">English</option>
           <option value="af">Afrikaans</option>
           <option value="zu">isiZulu</option>
           <option value="xh">isiXhosa</option>
         </optgroup>
-        <optgroup label="First-pass · awaiting educator review">
-          <option value="nso">Sepedi (Northern Sotho)</option>
+        <optgroup label="First-pass">
+          <option value="nso">Sepedi</option>
           <option value="st">Sesotho</option>
           <option value="tn">Setswana</option>
           <option value="ss">siSwati</option>
@@ -131,101 +108,24 @@
           <option value="nr">isiNdebele</option>
         </optgroup>
       </select>
+      <a class="menu-link" href="/ussd-simulator" title="Switch to USSD simulator">&#8801;</a>
     </div>
   </header>
 
-  <div id="handoff-ribbon"><b>📲 ↳ continued from USSD.</b> Carrying your problem and language across.</div>
-
-  <div id="exam-banner">
-    <span>📅 <b id="exam-countdown">…</b></span>
-    <span>·</span>
-    <span>NSC-aligned · CAPS Paper 1 / 2 style</span>
-    <button id="exam-toggle" type="button">Exam mode: OFF</button>
-  </div>
+  <!-- Retained (hidden) so a USSD deep-link handoff query still has a place to
+       render meta if we choose to surface it. Not visible by default. -->
+  <div id="handoff-ribbon"></div>
 
   <div id="chat"></div>
 
-  <!-- Optional image-upload composer (toggled by the 📎 button) -->
-  <div id="upload-panel">
-    <div id="preview" class="preview">No image picked</div>
-    <textarea id="upload-text" placeholder="Type the working as it appears in the image, one step per line — e.g.&#10;2x + 3 = 7&#10;2x = 7 + 3&#10;2x = 10&#10;x = 5"></textarea>
-    <div style="display:flex; flex-direction:column; gap:6px;">
-      <button class="btn-primary" id="upload-send">Send screenshot</button>
-      <button class="btn-secondary" id="upload-cancel">Cancel</button>
-    </div>
-    <input type="file" id="file-input" accept="image/*" style="display:none" />
-  </div>
-
-  <!-- Quick-action shortcuts -->
-  <div style="padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap;
-              background:var(--panel); border-top:1px solid #222d34;">
-    <button class="quick" data-send="hi">👋 Start</button>
-    <button class="quick" data-img="2x + 3 = 7&#10;2x = 7 + 3&#10;2x = 10&#10;x = 5">
-      📷 Wrong working (preset)</button>
-    <button class="quick" data-img="5x - 2 = 2x + 7&#10;5x - 2x = 7 + 2&#10;3x = 9&#10;x = 3">
-      📷 Correct working (preset)</button>
-    <button class="quick" id="open-upload">📎 Upload your own</button>
-    <button class="quick" id="open-pastpapers">📚 Past Papers</button>
-    <button class="quick" data-send="hint">💡 Hint</button>
-    <button class="quick" data-send="reset">🔄 Reset</button>
-  </div>
-
-  <!-- Past Papers picker (shared archive with USSD) -->
-  <div id="pp-overlay">
-    <div id="pp-modal">
-      <header>
-        <div>
-          <h2>📚 NSC Past Papers</h2>
-          <div class="crumbs" id="pp-crumbs">Same archive as the USSD channel</div>
-        </div>
-        <button class="x" id="pp-close">✕</button>
-      </header>
-      <div id="pp-body"></div>
-    </div>
-  </div>
-
-  <form id="composer" style="display:flex; gap:8px; padding:12px 16px;
-        background:var(--panel);">
-    <input id="text" autocomplete="off" placeholder="Type a problem, e.g. 2x+3=7"
-      style="flex:1; background:var(--in); color:var(--txt); border:none;
-             border-radius:20px; padding:10px 16px; font-size:14px;" />
-    <button id="send" style="background:var(--accent); color:#03110d;
-      border:none; border-radius:20px; padding:10px 18px; font-weight:600;
-      cursor:pointer;">Send</button>
+  <form id="composer" autocomplete="off">
+    <input id="text" autocomplete="off" placeholder="Message" />
+    <button id="send" type="submit">Send</button>
   </form>
 
   <script>
     const chat = document.getElementById('chat');
     const userId = 'web-' + Math.random().toString(36).slice(2, 8);
-    let pendingImageDataUrl = null;
-    let examModeOn = false;
-
-    // Compute days to the next major SA exam window (June mid-year or
-    // November NSC) and render the countdown.
-    (function renderCountdown() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const candidates = [
-        {name: 'June ' + y + ' exams',     date: new Date(y, 5, 1)},
-        {name: 'November ' + y + ' NSC',   date: new Date(y, 10, 1)},
-        {name: 'June ' + (y + 1) + ' exams', date: new Date(y + 1, 5, 1)},
-      ];
-      for (const c of candidates) {
-        if (c.date > now) {
-          const days = Math.ceil((c.date - now) / 86400000);
-          document.getElementById('exam-countdown').textContent =
-            c.name + ': ~' + days + ' day' + (days === 1 ? '' : 's') + ' to go';
-          return;
-        }
-      }
-    })();
-
-    document.getElementById('exam-toggle').addEventListener('click', () => {
-      examModeOn = !examModeOn;
-      const btn = document.getElementById('exam-toggle');
-      btn.textContent = 'Exam mode: ' + (examModeOn ? 'ON' : 'OFF');
-      btn.classList.toggle('on', examModeOn);
-    });
 
     function bubble(text, cls) {
       const d = document.createElement('div');
@@ -233,22 +133,41 @@
       d.textContent = text;
       chat.appendChild(d);
       chat.scrollTop = chat.scrollHeight;
+      return d;
     }
-    function imageBubble(dataUrl, caption) {
-      const wrap = document.createElement('div');
-      wrap.className = 'imgmsg';
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      wrap.appendChild(img);
-      if (caption) {
-        const c = document.createElement('div');
-        c.className = 'cap';
-        c.textContent = caption;
-        wrap.appendChild(c);
+
+    function botMessage(text, quickReplies) {
+      // A bot message consists of a bubble AND (optionally) a row of
+      // WhatsApp Business Interactive Reply Buttons rendered directly
+      // beneath it — Meta caps this at 3 buttons per message.
+      const group = document.createElement('div');
+      group.className = 'bot-group';
+      const bub = document.createElement('div');
+      bub.className = 'msg bot';
+      bub.textContent = text;
+      group.appendChild(bub);
+      if (Array.isArray(quickReplies) && quickReplies.length) {
+        const row = document.createElement('div');
+        row.className = 'quick-replies';
+        quickReplies.slice(0, 3).forEach(qr => {
+          const btn = document.createElement('button');
+          btn.className = 'quick-reply';
+          btn.type = 'button';
+          btn.textContent = qr.label;
+          btn.dataset.payload = qr.payload || '';
+          if (qr.disabled) {
+            btn.disabled = true;
+          } else {
+            btn.addEventListener('click', () => handleQuickReply(qr, btn));
+          }
+          row.appendChild(btn);
+        });
+        group.appendChild(row);
       }
-      chat.appendChild(wrap);
+      chat.appendChild(group);
       chat.scrollTop = chat.scrollHeight;
     }
+
     function diagBubble(d) {
       if (!d) return;
       const el = document.createElement('div');
@@ -258,254 +177,80 @@
       let html = '<b>diagnosis</b> · correct: ' + d.is_correct
         + ' · first error: ' + err + ' · misconception: ' + d.misconception;
       if (d.summary) html += '<br/>' + d.summary;
-      if (d.caps_topic) html += '<br/><span style="color:#7ed4b9">📘 ' + d.caps_topic + '</span>';
-      if (d.caps_subskill) html += '<br/><span style="color:#7ed4b9">🎯 ' + d.caps_subskill + '</span>';
-      if (examModeOn) {
-        // NSC-style mark-scheme estimate based on the diagnosis. This is
-        // computed client-side for the demo; in production the engine would
-        // emit canonical mark allocations per question.
-        let total = 3, awarded = 0;
-        if (d.is_correct) awarded = 3;
-        else if (d.first_error_step !== null && d.first_error_step >= 1) awarded = 1;
-        const stars = '★'.repeat(awarded) + '☆'.repeat(total - awarded);
-        html += '<br/><span class="marks">📝 <b>NSC mark-scheme estimate:</b> '
-              + awarded + '/' + total + ' &nbsp; ' + stars + '</span>';
-      }
+      if (d.caps_topic) html += '<br/><span style="color:#7ed4b9">&#128218; ' + d.caps_topic + '</span>';
+      if (d.caps_subskill) html += '<br/><span style="color:#7ed4b9">&#127919; ' + d.caps_subskill + '</span>';
       el.innerHTML = html;
       chat.appendChild(el);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    async function send({text, image, imageDataUrl}) {
+    function disableAllQuickReplies() {
+      // Once the learner has committed to a choice, older button rows should
+      // no longer be tappable — this matches how WhatsApp Business greys out
+      // stale interactive reply buttons after selection.
+      document.querySelectorAll('.quick-reply').forEach(b => { b.disabled = true; });
+    }
+
+    async function postChat(body) {
       const lang = document.getElementById('lang').value || null;
       const grade = document.getElementById('grade').value || null;
-      if (text && !image) bubble(text, 'user');
-      if (image && imageDataUrl) imageBubble(imageDataUrl, image);
-      else if (image) bubble('📷 [screenshot of working]\n' + image, 'user');
-      const body = { user_id: userId, language: lang, grade: grade };
-      if (image) body.image_caption = image; else body.text = text;
+      const payload = Object.assign({ user_id: userId, language: lang, grade: grade }, body);
       const res = await fetch('/api/chat', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
+        body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      bubble(data.text, 'bot');
+      return await res.json();
+    }
+
+    async function sendText(text) {
+      bubble(text, 'user');
+      disableAllQuickReplies();
+      const data = await postChat({ text: text });
+      botMessage(data.text, data.quick_replies);
       diagBubble(data.diagnosis);
     }
 
-    // Composer (text input)
+    async function handleQuickReply(qr, btnEl) {
+      // Echo the button label as the learner's message bubble.
+      bubble(qr.label, 'user');
+      disableAllQuickReplies();
+      // Terminal question buttons carry the past-paper id inside their
+      // payload — unpack and route through the past_paper_id field so the
+      // engine's existing _handle_past_paper still triggers.
+      const payload = qr.payload || '';
+      let body;
+      if (payload.startsWith('pastpapers:question:')) {
+        const rest = payload.slice('pastpapers:question:'.length);
+        body = { past_paper_id: rest };
+      } else {
+        body = { payload: payload };
+      }
+      const data = await postChat(body);
+      botMessage(data.text, data.quick_replies);
+      diagBubble(data.diagnosis);
+    }
+
     document.getElementById('composer').addEventListener('submit', e => {
       e.preventDefault();
       const t = document.getElementById('text');
-      if (t.value.trim()) { send({text: t.value.trim()}); t.value = ''; }
+      if (t.value.trim()) { sendText(t.value.trim()); t.value = ''; }
     });
 
-    // Quick-action buttons
-    document.querySelectorAll('.quick').forEach(b => {
-      if (b.id) return;  // skip 📎 (handled below)
-      b.addEventListener('click', () => {
-        if (b.dataset.img) send({image: b.dataset.img});
-        else send({text: b.dataset.send});
-      });
-    });
-
-    // 📎 Upload your own — open the upload panel + file picker
-    const panel = document.getElementById('upload-panel');
-    const fileInput = document.getElementById('file-input');
-    const preview = document.getElementById('preview');
-    const uploadText = document.getElementById('upload-text');
-
-    document.getElementById('open-upload').addEventListener('click', () => {
-      panel.classList.add('show');
-      fileInput.click();
-    });
-    fileInput.addEventListener('change', () => {
-      const f = fileInput.files[0];
-      if (!f) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        pendingImageDataUrl = e.target.result;
-        preview.style.backgroundImage = 'url(' + pendingImageDataUrl + ')';
-        preview.textContent = '';
-      };
-      reader.readAsDataURL(f);
-    });
-    document.getElementById('upload-send').addEventListener('click', () => {
-      const working = uploadText.value.trim();
-      if (!working) {
-        alert('Type the working that the image shows (one step per line) so the tutor can analyse it.');
-        return;
-      }
-      send({image: working, imageDataUrl: pendingImageDataUrl});
-      uploadText.value = '';
-      pendingImageDataUrl = null;
-      preview.style.backgroundImage = '';
-      preview.textContent = 'No image picked';
-      fileInput.value = '';
-      panel.classList.remove('show');
-    });
-    document.getElementById('upload-cancel').addEventListener('click', () => {
-      uploadText.value = '';
-      pendingImageDataUrl = null;
-      preview.style.backgroundImage = '';
-      preview.textContent = 'No image picked';
-      fileInput.value = '';
-      panel.classList.remove('show');
-    });
-
-    // ===========================================================
-    //  PAST PAPERS picker — same archive as USSD, fetched at open
-    // ===========================================================
-    const ppOverlay = document.getElementById('pp-overlay');
-    const ppBody    = document.getElementById('pp-body');
-    const ppCrumbs  = document.getElementById('pp-crumbs');
-    let ppArchive = null;
-    let ppYear = null, ppPaper = null;
-
-    function ppOpen() {
-      ppOverlay.classList.add('show');
-      if (!ppArchive) {
-        ppBody.innerHTML = '<p style="padding:18px;color:#8696a0;">Loading…</p>';
-        fetch('/api/past-papers').then(r => r.json()).then(data => {
-          ppArchive = data;
-          ppShowYears();
-        });
-      } else {
-        ppShowYears();
-      }
-    }
-    function ppClose() {
-      ppOverlay.classList.remove('show');
-      ppYear = null; ppPaper = null;
-    }
-    function ppShowYears() {
-      ppYear = null; ppPaper = null;
-      ppCrumbs.textContent = 'Pick a year — same archive USSD learners get';
-      const ul = document.createElement('ul');
-      ppArchive.forEach((y, i) => {
-        const has = y.papers.some(p => p.questions.length > 0);
-        const li = document.createElement('li');
-        if (!has) li.classList.add('disabled');
-        li.innerHTML = '📅 <span>' + y.label + '</span>'
-          + (has ? '' : '<small>coming soon</small>');
-        if (has) li.addEventListener('click', () => ppPickYear(i));
-        ul.appendChild(li);
-      });
-      ppBody.innerHTML = '';
-      ppBody.appendChild(ul);
-    }
-    function ppPickYear(i) {
-      ppYear = ppArchive[i];
-      ppCrumbs.textContent = ppYear.label + ' · pick a paper';
-      const ul = document.createElement('ul');
-      ppYear.papers.forEach((p, j) => {
-        const li = document.createElement('li');
-        li.innerHTML = '📄 <span>' + p.label + '</span>'
-          + '<small>' + p.questions.length + ' question'
-          + (p.questions.length === 1 ? '' : 's') + '</small>';
-        li.addEventListener('click', () => ppPickPaper(j));
-        ul.appendChild(li);
-      });
-      const back = document.createElement('li');
-      back.innerHTML = '<span style="color:#8696a0;">← Back to years</span>';
-      back.addEventListener('click', ppShowYears);
-      ul.appendChild(back);
-      ppBody.innerHTML = '';
-      ppBody.appendChild(ul);
-    }
-    function ppPickPaper(j) {
-      ppPaper = ppYear.papers[j];
-      ppCrumbs.textContent = ppYear.label + ' · ' + ppPaper.label;
-      const ul = document.createElement('ul');
-      ppPaper.questions.forEach((q, k) => {
-        const li = document.createElement('li');
-        li.innerHTML = '<span>Q' + q.qno + '</span>'
-          + '<small>' + q.marks + ' marks</small>';
-        li.addEventListener('click', () => ppPickQuestion(k));
-        ul.appendChild(li);
-      });
-      const back = document.createElement('li');
-      back.innerHTML = '<span style="color:#8696a0;">← Back to papers</span>';
-      back.addEventListener('click', () => ppPickYear(ppArchive.indexOf(ppYear)));
-      ul.appendChild(back);
-      ppBody.innerHTML = '';
-      ppBody.appendChild(ul);
-    }
-    function ppPickQuestion(k) {
-      const q = ppPaper.questions[k];
-      // Render question + source preview, then "Send to chat" CTA.
-      ppCrumbs.textContent = ppPaper.label + ' · Q' + q.qno;
-      ppBody.innerHTML = '';
-      const intro = document.createElement('p');
-      intro.style.cssText = 'padding:14px 18px 4px;font-size:13px;'
-        + 'color:#cbe7e0;';
-      intro.textContent = 'QUESTION ' + q.qno + '  ·  ' + q.marks + ' marks';
-      ppBody.appendChild(intro);
-      const qDiv = document.createElement('div');
-      qDiv.className = 'qtext';
-      qDiv.textContent = q.text;
-      ppBody.appendChild(qDiv);
-      const src = document.createElement('div');
-      src.className = 'source';
-      src.textContent = '📄 ' + q.source;
-      ppBody.appendChild(src);
-      const actions = document.createElement('div');
-      actions.style.cssText = 'display:flex;gap:8px;padding:0 18px 18px;';
-      const send = document.createElement('button');
-      send.className = 'btn-primary';
-      send.textContent = 'Work this question →';
-      send.addEventListener('click', () => {
-        const pastPaperId = ppYear.slug + ':' + ppPaper.slug + ':' + q.qno;
-        send_to_chat_with_paper(q, pastPaperId);
-        ppClose();
-      });
-      const back = document.createElement('button');
-      back.className = 'btn-secondary';
-      back.textContent = '← Back';
-      back.addEventListener('click', () => ppPickPaper(ppPaper && ppYear.papers.indexOf(ppPaper)));
-      actions.appendChild(send);
-      actions.appendChild(back);
-      ppBody.appendChild(actions);
-    }
-    function send_to_chat(text) {
-      send({text: text});
-    }
-    async function send_to_chat_with_paper(q, pastPaperId) {
-      const lang = document.getElementById('lang').value || null;
-      const grade = document.getElementById('grade').value || null;
-      bubble('📚 Practising: Q' + q.qno + ' · ' + q.marks + ' marks', 'user');
-      const body = { user_id: userId, language: lang, grade: grade, past_paper_id: pastPaperId };
-      const res = await fetch('/api/chat', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      bubble(data.text, 'bot');
-      diagBubble(data.diagnosis);
-    }
-    document.getElementById('open-pastpapers').addEventListener('click', ppOpen);
-    document.getElementById('pp-close').addEventListener('click', ppClose);
-    ppOverlay.addEventListener('click', e => {
-      if (e.target === ppOverlay) ppClose();
-    });
-
-    window.addEventListener('load', () => {
-      // Channel handoff: a USSD session ended with a "Continue on WhatsApp"
-      // button that landed us here with ?from=ussd&problem=...&lang=...
+    window.addEventListener('load', async () => {
+      // USSD -> WhatsApp deep-link handoff (kept for backwards compat).
       const qs = new URLSearchParams(window.location.search);
       if (qs.get('from') === 'ussd') {
-        document.getElementById('handoff-ribbon').classList.add('show');
         const lang = qs.get('lang');
         if (lang) document.getElementById('lang').value = lang;
         const problem = qs.get('problem') || '';
         const working = qs.get('working') || '';
         const seed = working ? (problem + '\n' + working) : problem;
-        if (seed.trim()) {
-          send({text: seed.trim()});
-          return;
-        }
+        if (seed.trim()) { sendText(seed.trim()); return; }
       }
-      send({text: 'hi'});
+      // Proactive greeting: fetch the AI's opening question + 3 reply buttons.
+      const data = await postChat({ text: 'hi' });
+      botMessage(data.text, data.quick_replies);
+      diagBubble(data.diagnosis);
     });
   </script>
 </body>

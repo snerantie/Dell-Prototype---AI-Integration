@@ -105,6 +105,7 @@ class InboundMessage(BaseModel):
     language: Optional[str] = None             # caller hint; engine may override
     grade: Optional[str] = None                # CAPS grade hint, "8".."12"
     past_paper_id: Optional[str] = None        # e.g. "2026_jun_nw:p1:1.1.1"
+    payload: Optional[str] = None              # quick-reply button payload from the frontend
     received_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -139,6 +140,17 @@ class Diagnosis(BaseModel):
 # --------------------------------------------------------------------------
 # Outbound
 # --------------------------------------------------------------------------
+class QuickReply(BaseModel):
+    """A single WhatsApp Business Interactive Reply Button.
+
+    Meta caps quick-reply button rows at 3 buttons per message; the engine
+    should honour that cap so the mock UI matches production WhatsApp UX.
+    """
+    label: str                                  # button text; also echoed as the user's bubble when tapped
+    payload: str                                # routed by the engine (e.g. "action:practice_papers")
+    disabled: bool = False                      # greyed "coming soon" state
+
+
 class TutorResponse(BaseModel):
     """The engine's reply. `screens` lets a channel paginate (USSD)."""
     language: str = "en"
@@ -146,6 +158,7 @@ class TutorResponse(BaseModel):
     diagnosis: Optional[Diagnosis] = None
     requires_image: bool = False               # ask the learner to upload working
     session_complete: bool = False             # USSD END vs CON hint
+    quick_replies: list[QuickReply] = Field(default_factory=list)
     meta: dict[str, str] = Field(default_factory=dict)
 
     @property

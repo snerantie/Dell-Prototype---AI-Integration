@@ -36,6 +36,7 @@ class ChatRequest(BaseModel):
     language: Optional[str] = None
     grade: Optional[str] = None              # CAPS grade hint, "8".."12"
     past_paper_id: Optional[str] = None      # e.g. "2026_jun_nw:p1:1.1.1"
+    payload: Optional[str] = None            # quick-reply button payload (e.g. "action:practice_papers")
 
 
 @router.get("/api/past-papers")
@@ -76,12 +77,14 @@ async def chat(req: ChatRequest) -> dict:
             image=ImageAttachment(caption=req.image_caption), text=req.text,
             language=req.language, grade=req.grade,
             past_paper_id=req.past_paper_id,
+            payload=req.payload,
         )
     else:
         msg = InboundMessage(
             channel=Channel.MOCK_UI, user_id=req.user_id,
             text=req.text or "", language=req.language, grade=req.grade,
             past_paper_id=req.past_paper_id,
+            payload=req.payload,
         )
     resp = await engine.handle(msg)
     return {
@@ -90,6 +93,7 @@ async def chat(req: ChatRequest) -> dict:
         "text": resp.text,
         "requires_image": resp.requires_image,
         "diagnosis": resp.diagnosis.model_dump() if resp.diagnosis else None,
+        "quick_replies": [qr.model_dump() for qr in resp.quick_replies],
     }
 
 

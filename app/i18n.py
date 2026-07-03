@@ -587,3 +587,48 @@ _STRINGS["language_label_ss"]  = {"en": "siSwati"}
 _STRINGS["language_label_ve"]  = {"en": "Tshivenda"}
 _STRINGS["language_label_ts"]  = {"en": "Xitsonga"}
 _STRINGS["language_label_nr"]  = {"en": "isiNdebele"}
+
+
+# ----------------------------------------------------------------------------
+# WhatsApp Business Interactive Reply Button strings (en + zu authored;
+# other 9 languages fall back to English through t() until an educator
+# validates them).
+# ----------------------------------------------------------------------------
+_STRINGS.update({
+    "welcome_choices_intro": {
+        "en": "Sawubona! I'm EduConnect AI Tutor. I'm here to help with your maths — in your language, on your phone.\n\nWhat would you like to do?",
+        "zu": "Sawubona! Ngingu-EduConnect AI Tutor. Ngilapha ukukusiza nezibalo — ngolimi lwakho, kufoni yakho.\n\nUngathanda ukwenzani?",
+    },
+    "btn_practice_papers": {
+        "en": "📝 Practice past papers",
+        "zu": "📝 Zilolonge amaphepha adlule",
+    },
+    "btn_solve_problem": {
+        "en": "🧮 Solve a maths problem",
+        "zu": "🧮 Xazulula inkinga yezibalo",
+    },
+    "btn_free_form": {
+        "en": "❓ Ask me anything",
+        "zu": "❓ Ngibuze nanoma yini",
+    },
+    "prompt_pick_paper": {
+        "en": "Great choice — you're preparing like a champion. Which past paper would you like to work on?",
+        "zu": "Ukhetho oluhle — uzilungiselela njengeqhawe. Ufuna ukusebenza kuliphi iphepha eladlula?",
+    },
+    "prompt_pick_question": {
+        "en": "Perfect. Which question would you like to try?",
+        "zu": "Kuhle. Ufuna ukuzama muphi umbuzo?",
+    },
+    "btn_back_years": {
+        "en": "🔄 Back to years",
+        "zu": "🔄 Buyela eminyakeni",
+    },
+    "prompt_solve_hint": {
+        "en": "Type your equation and I'll walk you through it, step by step. For example: 2x + 3 = 7",
+        "zu": "Bhala isibalo sakho bese ngizokusiza isinyathelo ngasinye. Isibonelo: 2x + 3 = 7",
+    },
+    "prompt_free_form": {
+        "en": "Ask me anything about your maths — in English or isiZulu. I'll help you understand, not just give answers.",
+        "zu": "Ngibuze noma yini ngezibalo zakho — ngesiNgisi noma ngesiZulu. Ngizokusiza uqonde, hhayi ukukunika nje izimpendulo.",
+    },
+})

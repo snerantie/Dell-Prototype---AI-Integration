@@ -32,7 +32,10 @@ from app.tutor.past_papers import ARCHIVE, has_content as _year_has_content
 
 router = APIRouter(tags=["ussd"])
 
-_LANG_BY_IDX = {"1": "en", "2": "af", "3": "zu", "4": "xh"}
+# Team-lead scope for USSD demo: English + isiZulu only.
+# Other 9 SA languages remain in the i18n framework and on WhatsApp; USSD
+# launches with the two most-spoken languages (~60% of SA learners).
+_LANG_BY_IDX = {"1": "en", "2": "zu"}
 _ANSWER_RE = re.compile(r"^\s*x\s*=\s*-?\d+(\.\d+)?\s*$", re.IGNORECASE)
 _USSD_MAX = 160
 # Tokens at any level that explicitly request escalation to WhatsApp.
@@ -87,15 +90,16 @@ def _switch_response(problem: str, working: list[str], lang: str) -> PlainTextRe
 def _language_menu() -> PlainTextResponse:
     return _con(
         f"{t('welcome')}\n{t('choose_language')}\n"
-        "1. English\n2. Afrikaans\n3. isiZulu\n4. isiXhosa"
+        "1. English\n2. isiZulu"
     )
 
 
 def _subject_menu(lang: str) -> PlainTextResponse:
+    # Phase 1 demo scope: Mathematics only. Other subjects are on the Phase 2/3
+    # roadmap (see the pitch deck) and intentionally not shown on USSD now.
     return _con(
         f"{t('choose_subject', lang)}\n"
-        f"1. {t('subject_mathematics', lang)}\n"
-        "2. Physical Sciences (soon)\n3. Accounting (soon)"
+        f"1. {t('subject_mathematics', lang)}"
     )
 
 

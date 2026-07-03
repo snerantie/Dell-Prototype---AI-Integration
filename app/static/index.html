@@ -204,7 +204,7 @@
 
     async function sendText(text) {
       bubble(text, 'user');
-      disableAllQuickReplies();
+      // Older button rows stay tappable — matches real WhatsApp Business.
       const data = await postChat({ text: text });
       botMessage(data.text, data.quick_replies);
       diagBubble(data.diagnosis);
@@ -213,7 +213,13 @@
     async function handleQuickReply(qr, btnEl) {
       // Echo the button label as the learner's message bubble.
       bubble(qr.label, 'user');
-      disableAllQuickReplies();
+      // Real WhatsApp Business greys out buttons ONLY in the message that
+      // was tapped — buttons in older messages remain tappable so learners
+      // can re-navigate. Match that behaviour.
+      const row = btnEl && btnEl.closest && btnEl.closest('.quick-replies');
+      if (row) {
+        row.querySelectorAll('.quick-reply').forEach(b => { b.disabled = true; });
+      }
       // Terminal question buttons carry the past-paper id inside their
       // payload — unpack and route through the past_paper_id field so the
       // engine's existing _handle_past_paper still triggers.

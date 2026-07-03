@@ -272,6 +272,12 @@ class TutorEngine:
 
         lang = state.language
 
+        # ---- explicit "back to greeting" escape ------------------------
+        # Matched EARLY so it always wins, even if some other branch would
+        # otherwise consume the payload. Keeps the dead-end guard's promise.
+        if payload == "action:main_menu":
+            return self._greeting(state)
+
         # ---- top-level actions -----------------------------------------
         if payload == "action:practice_papers" or payload == "pastpapers:back:years":
             # Clear any half-loaded past-paper session before showing the picker.
@@ -306,15 +312,17 @@ class TutorEngine:
             state.stage = Stage.AWAIT_PROBLEM
             state.reset_problem()
             self.sessions.save(state)
+            back = [QuickReply(label=t("btn_back_menu", lang), payload="action:main_menu")]
             return self._localized(state, [t("prompt_solve_hint", lang)],
-                                   translate=False)
+                                   quick_replies=back, translate=False)
 
         if payload == "action:free_form":
             state.stage = Stage.AWAIT_PROBLEM
             state.reset_problem()
             self.sessions.save(state)
+            back = [QuickReply(label=t("btn_back_menu", lang), payload="action:main_menu")]
             return self._localized(state, [t("prompt_free_form", lang)],
-                                   translate=False)
+                                   quick_replies=back, translate=False)
 
         # ---- past-paper navigation -------------------------------------
         if payload.startswith("pastpapers:year:"):

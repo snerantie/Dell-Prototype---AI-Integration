@@ -611,6 +611,10 @@ _STRINGS.update({
         "en": "❓ Ask me anything",
         "zu": "❓ Ngibuze nanoma yini",
     },
+    "btn_back_menu": {
+        "en": "🔙 Main menu",
+        "zu": "🔙 Buyela ekhaya",
+    },
     "prompt_pick_paper": {
         "en": "Great choice — you're preparing like a champion. Which past paper would you like to work on?",
         "zu": "Ukhetho oluhle — uzilungiselela njengeqhawe. Ufuna ukusebenza kuliphi iphepha eladlula?",

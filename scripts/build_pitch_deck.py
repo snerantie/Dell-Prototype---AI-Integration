@@ -1,4 +1,4 @@
-"""Generate the AI Tutor pitch deck as a .pptx.
+"""Generate the EduConnect AI Tutor pitch deck as a .pptx.
 
 Run:  .venv/bin/python scripts/build_pitch_deck.py
 Output: pitch/AI_Tutor_Pitch.pptx
@@ -157,8 +157,8 @@ def slide_cover(prs):
 
     # Big title
     _add_text(s, 0.6, 1.7, 7.6, 1.5,
-              "AI Tutor",
-              size=72, bold=True, color=WHITE)
+              "EduConnect AI Tutor",
+              size=56, bold=True, color=WHITE)
 
     # Sub-title
     _add_text(s, 0.6, 3.35, 7.6, 0.7,
@@ -223,12 +223,12 @@ def slide_cover(prs):
               size=10, color=MUTED, align=PP_ALIGN.CENTER)
 
     _add_speaker_notes(s,
-        "Open with the mission, not the tech. AI Tutor is a public-good "
-        "tutor that reaches every learner in South Africa — smartphone or "
-        "feature phone, any of the 11 official languages. The two device "
-        "mockups are placeholders; final version replaces them with real "
-        "photos of SA learners using the app. Powered by Dell AI Factory. "
-        "Zero-rated on Vodacom. CAPS-aligned.")
+        "Open with the mission, not the tech. EduConnect AI Tutor is a "
+        "public-good tutor that reaches every learner in South Africa — "
+        "smartphone or feature phone, any of the 11 official languages. "
+        "The two device mockups are placeholders; final version replaces "
+        "them with real photos of SA learners using the app. Powered by "
+        "Dell AI Factory. Zero-rated on Vodacom. CAPS-aligned.")
     return s
 
 
@@ -241,8 +241,8 @@ def slide_title(prs):
     _add_pill(s, 0.6, 0.6, 1.6, 0.45, "Dell · Hackathon Finalist",
               fill=GREEN, fg=DARK_TXT, size=12)
     _add_text(s, 0.6, 1.6, 12.1, 1.2,
-              "AI Tutor",
-              size=72, bold=True, color=WHITE)
+              "EduConnect AI Tutor",
+              size=54, bold=True, color=WHITE)
     _add_text(s, 0.6, 2.9, 12.1, 0.7,
               "CAPS-aligned. Multilingual. WhatsApp + USSD.",
               size=28, color=GREEN_SOFT)
@@ -255,9 +255,10 @@ def slide_title(prs):
               "Powered by Dell AI Factory  ·  Zero-rated on Vodacom",
               size=14, color=MUTED)
     _add_speaker_notes(s,
-        "Open with the equity story. We're a CAPS-aligned multilingual "
-        "AI tutor that meets every learner — smartphone or feature phone — "
-        "where they are. Powered by Dell AI Factory. Zero-rated on Vodacom.")
+        "Open with the equity story. EduConnect AI Tutor is a CAPS-aligned "
+        "multilingual tutor that meets every learner — smartphone or feature "
+        "phone — where they are. Powered by Dell AI Factory. Zero-rated on "
+        "Vodacom.")
     return s
 
 
@@ -621,10 +622,10 @@ def slide_demo_flow(prs):
               size=13, color=GREEN_SOFT, align=PP_ALIGN.CENTER, bold=True)
 
     _add_speaker_notes(s,
-        "This is the demo you'll record. Six screens, one continuous flow, "
-        "real NSC content, no answers given away, mark-scheme-authentic. "
-        "When an executive asks 'is this real?' — this is the slide you "
-        "point to.")
+        "This is the EduConnect demo you'll record. Six screens, one "
+        "continuous flow, real NSC content, no answers given away, "
+        "mark-scheme-authentic. When an executive asks 'is this real?' — "
+        "this is the slide you point to.")
     return s
 
 

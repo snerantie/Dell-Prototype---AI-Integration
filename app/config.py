@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     )
 
     # --- General ---
-    app_name: str = "AI Tutor"
+    app_name: str = "EduConnect AI Tutor"
     app_env: str = "development"
     default_language: str = "en"
 

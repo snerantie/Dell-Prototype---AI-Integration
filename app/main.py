@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(messag
 settings = get_settings()
 
 app = FastAPI(
-    title="AI Tutor",
+    title="EduConnect AI Tutor",
     version="0.1.0",
     description="CAPS-aligned multilingual Maths tutor for WhatsApp + USSD "
                 "(Dell AI Factory stack). Swappable mock/real providers.",

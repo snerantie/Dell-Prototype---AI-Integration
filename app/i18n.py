@@ -1,4 +1,4 @@
-"""Localised user-facing strings for the AI Tutor.
+"""Localised user-facing strings for the EduConnect AI Tutor.
 
 The whole user-facing surface (menus, greetings, Socratic prompts, misconception
 hints, diagnosis summaries) lives here so the offline mock demo is fully
@@ -20,10 +20,10 @@ from app.models.schemas import MisconceptionType
 # ----------------------------------------------------------------------------
 _STRINGS: dict[str, dict[str, str]] = {
     "welcome": {
-        "en": "Welcome to AI Tutor",
-        "af": "Welkom by AI Tutor",
-        "zu": "Sawubona, wamukelekile ku-AI Tutor",
-        "xh": "Wamkelekile kwi-AI Tutor",
+        "en": "Welcome to EduConnect AI Tutor",
+        "af": "Welkom by EduConnect AI Tutor",
+        "zu": "Sawubona, wamukelekile ku-EduConnect AI Tutor",
+        "xh": "Wamkelekile kwi-EduConnect AI Tutor",
     },
     "whatsapp_intro": {
         "en": "Hi! I'm your AI Maths tutor. Send me a problem (e.g. 2x+3=7) or a "
@@ -553,13 +553,13 @@ _STRINGS.update({
 # SA Sign Language (sgn-ZA) is a Phase-3 video channel — not a text path.
 # ============================================================================
 _STRINGS["welcome"].update({
-    "nso": "Dumela, o amogetšwe go AI Tutor",
-    "st":  "Dumela, o amohelehile ho AI Tutor",
-    "tn":  "Dumela, o amogetswe mo go AI Tutor",
-    "ss":  "Sawubona, wemukelekile ku-AI Tutor",
-    "ve":  "Ndaa, no ṱanganedzwa kha AI Tutor",
-    "ts":  "Avuxeni, mi amukeriwile eka AI Tutor",
-    "nr":  "Lotjhani, wamukelekile e-AI Tutor",
+    "nso": "Dumela, o amogetšwe go EduConnect AI Tutor",
+    "st":  "Dumela, o amohelehile ho EduConnect AI Tutor",
+    "tn":  "Dumela, o amogetswe mo go EduConnect AI Tutor",
+    "ss":  "Sawubona, wemukelekile ku-EduConnect AI Tutor",
+    "ve":  "Ndaa, no ṱanganedzwa kha EduConnect AI Tutor",
+    "ts":  "Avuxeni, mi amukeriwile eka EduConnect AI Tutor",
+    "nr":  "Lotjhani, wamukelekile e-EduConnect AI Tutor",
 })
 
 _STRINGS["whatsapp_intro"].update({

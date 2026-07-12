@@ -22,6 +22,7 @@ class Stage(str, Enum):
     AWAIT_PROBLEM = "await_problem"
     AWAIT_WORKING = "await_working"
     TUTORING = "tutoring"
+    FREE_FORM = "free_form"
 
 
 @dataclass

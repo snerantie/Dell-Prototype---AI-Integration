@@ -273,6 +273,41 @@ class TutorEngine:
             state.working_steps.append(text)
             return await self._diagnose_and_guide(state)
 
+        # NEW: Free-form / open-ended maths question (factorise, trig, geometry,
+        # concept explanations). This is what the LLM handles. In Dell mode
+        # (real LLM endpoint like Groq) the learner gets a real step-by-step
+        # answer. In mock mode they get a graceful "enable LLM for this" note.
+        # Triggered when we're explicitly in FREE_FORM mode OR the text looks
+        # like a maths question rather than random noise.
+        looks_like_question = (
+            state.stage == Stage.FREE_FORM
+            or any(kw in text.lower() for kw in [
+                "factor", "solve", "simplify", "expand", "evaluate", "prove",
+                "sin", "cos", "tan", "log", "triangle", "circle", "explain",
+                "what is", "what's", "how do", "why does", "derivative", "integrate",
+                "differentiate", "hypotenuse", "theorem", "trig",
+            ])
+            or "²" in text or "^2" in text or "√" in text
+        )
+        if looks_like_question:
+            back = [QuickReply(label=t("btn_back_menu", state.language),
+                               payload="action:main_menu")]
+            answer = await self.reasoning.answer_freely(
+                question=text,
+                language=state.language,
+                grade=state.grade,
+            )
+            # Log the free-form Q for analytics.
+            await analytics.log_event(
+                session_id=state.user_id,
+                channel=state.channel.value,
+                event_type="free_form_answered",
+                language=state.language,
+                grade=state.grade,
+                metadata={"question_len": len(text)},
+            )
+            return self._localized(state, [answer], quick_replies=back, translate=False)
+
         # Not maths we can parse: ask for the equation or a photo (no dead ends).
         return self._localized(
             state,
@@ -407,7 +442,7 @@ class TutorEngine:
                                    quick_replies=back, translate=False)
 
         if payload == "action:free_form":
-            state.stage = Stage.AWAIT_PROBLEM
+            state.stage = Stage.FREE_FORM
             state.reset_problem()
             self.sessions.save(state)
             back = [QuickReply(label=t("btn_back_menu", lang), payload="action:main_menu")]

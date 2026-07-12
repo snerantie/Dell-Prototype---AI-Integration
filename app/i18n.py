@@ -632,7 +632,7 @@ _STRINGS.update({
         "zu": "Bhala isibalo sakho bese ngizokusiza isinyathelo ngasinye. Isibonelo: 2x + 3 = 7",
     },
     "prompt_free_form": {
-        "en": "Ask me anything about your maths — in English or isiZulu. I'll help you understand, not just give answers.",
-        "zu": "Ngibuze noma yini ngezibalo zakho — ngesiNgisi noma ngesiZulu. Ngizokusiza uqonde, hhayi ukukunika nje izimpendulo.",
+        "en": "Ask me anything about your maths — factorise, trig, geometry, concept explanations, or something you saw in class. I'll show you step by step.\n\nTry: 'factorise 6x² - 11x + 3' or 'explain sin(30)'",
+        "zu": "Ngibuze noma yini ngezibalo zakho — ukwenza izici, i-trig, ijometri, noma ukuchaza umqondo. Ngizokukhombisa isinyathelo ngasinye.\n\nZama: 'yenza izici 6x² - 11x + 3' noma 'chaza sin(30)'",
     },
 })

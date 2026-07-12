@@ -64,6 +64,20 @@ class ReasoningProvider(ABC):
         """
         ...
 
+    @abstractmethod
+    async def answer_freely(
+        self,
+        question: str,
+        language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        """Answer an open-ended Maths question step-by-step (factorisation,
+        trigonometry, geometry, concept explanations). Returns a single text
+        block; the caller wraps it into a `TutorResponse`. Never returns the
+        empty string — if the provider can't help, return a graceful message
+        explaining that."""
+        ...
+
 
 class VisionProvider(ABC):
     """Reads handwritten / typed maths from an uploaded screenshot."""

@@ -47,6 +47,20 @@ class MockReasoningProvider(ReasoningProvider):
     ) -> list[str]:
         return pedagogy.compose_templated_guidance(problem, diagnosis, channel, language)
 
+    async def answer_freely(
+        self,
+        question: str,
+        language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        # No LLM in mock mode — return a graceful, honest response.
+        return (
+            f"Great question! To walk you through '{question.strip()[:80]}' step-by-step, "
+            "the tutor needs the live AI model to be enabled.\n\n"
+            "You can still practise past papers or type an equation like 2x + 3 = 7 "
+            "and I'll help you diagnose your working step by step."
+        )
+
 
 def _grounding_text(d: Diagnosis) -> str:
     parts = []
@@ -131,6 +145,43 @@ class DellReasoningProvider(ReasoningProvider):
         except Exception as exc:
             logger.warning("Dell LLM guidance failed, using templated guidance: %s", exc)
             return pedagogy.compose_templated_guidance(problem, diagnosis, channel, language)
+
+    async def answer_freely(
+        self,
+        question: str,
+        language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        lang_name = {"en": "English", "af": "Afrikaans", "zu": "isiZulu",
+                     "xh": "isiXhosa"}.get(language, "English")
+        grade_hint = f"The learner is in Grade {grade}. " if grade else ""
+        system = (
+            "You are EduConnect AI Tutor — a warm, patient South African high-school "
+            "Mathematics tutor aligned to the CAPS curriculum. A learner has asked you "
+            "an open-ended maths question. Answer it step-by-step, showing all working "
+            "clearly. Explain the method as you go, not just the final answer.\n\n"
+            "Rules:\n"
+            "1. Show every step of the working, numbered or laid out clearly.\n"
+            "2. When factorising, state the method (common factor / trinomial / difference of squares / etc.), show the factors, then verify by expansion.\n"
+            "3. When solving trigonometry, cite the identity or rule you use.\n"
+            "4. When answering geometry, state the theorem (Pythagoras / angle rules / properties of triangles etc.) and cite where it applies.\n"
+            "5. Never just state the answer — the working IS the value.\n"
+            "6. Keep the tone warm and encouraging. Short paragraphs. Use plain language a Grade 8-12 learner understands.\n"
+            f"7. Reply in {lang_name}.\n"
+            f"{grade_hint}Keep the response under 400 words."
+        )
+        try:
+            raw = await self._chat(system, question, temperature=0.3)
+            return raw.strip()
+        except Exception as exc:
+            logger.warning("Dell LLM answer_freely failed: %s", exc)
+            # Same fallback wording as the mock so learner UX stays stable
+            # if the endpoint is briefly unreachable.
+            return (
+                f"I'm having trouble reaching the tutor brain right now. "
+                f"Please try that question again in a moment. Your question was: "
+                f"'{question.strip()[:120]}'"
+            )
 
 
 def _extract_json(text: str) -> dict:

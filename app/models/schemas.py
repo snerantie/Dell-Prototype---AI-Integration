@@ -45,10 +45,20 @@ class Language(str, Enum):
 
 
 class Grade(str, Enum):
-    """Supported CAPS grades. Only Grade 9 is fully scaffolded in this
-    prototype; the others are reserved so the UI can show the roadmap."""
-    G8 = "8"
-    G9 = "9"
+    """Supported CAPS grades. Now spans Foundation Phase (Gr 1–3),
+    Intermediate Phase (Gr 4–6), Senior Phase (Gr 7–9), and FET (Gr 10–12)
+    so the tutor can serve primary-school learners as well as NSC candidates.
+    Grade 9 and Grade 12 remain the most fully-scaffolded content tracks;
+    the others are reserved so the UI can show the roadmap."""
+    G1  = "1"
+    G2  = "2"
+    G3  = "3"
+    G4  = "4"
+    G5  = "5"
+    G6  = "6"
+    G7  = "7"
+    G8  = "8"
+    G9  = "9"
     G10 = "10"
     G11 = "11"
     G12 = "12"

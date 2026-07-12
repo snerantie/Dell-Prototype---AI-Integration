@@ -102,6 +102,7 @@ async def past_papers_index() -> list[dict]:
                         {
                             "qno": q.qno, "marks": q.marks,
                             "text": q.text, "memo": q.memo, "source": q.source,
+                            "answers": q.answers,
                         } for q in p.questions
                     ],
                 } for p in y.papers

@@ -51,6 +51,49 @@ def _split_lines(text: str) -> list[str]:
     return [ln.strip() for ln in text.splitlines() if ln.strip()]
 
 
+def _try_arithmetic(text: str) -> Optional[tuple[str, float]]:
+    """Detect and evaluate simple arithmetic (a op b) where op is + - × ÷ * /.
+
+    Returns (rendered_expression, result) if this looks like arithmetic,
+    None otherwise. Deliberately conservative — only handles single-operator
+    expressions with two operands (matches typical primary-school phrasing).
+    Never evaluates general expressions (no eval() — that's a security hole).
+    """
+    import re
+    # Normalise unicode operators
+    t = text.strip().replace("×", "*").replace("÷", "/").replace("−", "-")
+    # Strip an optional trailing "= ?" or "=?"
+    t = re.sub(r"=\s*\??\s*$", "", t).strip()
+    # Match: number op number
+    m = re.fullmatch(r"\s*(-?\d+(?:\.\d+)?)\s*([+\-*/])\s*(-?\d+(?:\.\d+)?)\s*", t)
+    if not m:
+        return None
+    a = float(m.group(1))
+    op = m.group(2)
+    b = float(m.group(3))
+    try:
+        if op == "+":
+            r = a + b
+        elif op == "-":
+            r = a - b
+        elif op == "*":
+            r = a * b
+        elif op == "/":
+            if b == 0:
+                return None  # decline division by zero
+            r = a / b
+        else:
+            return None
+    except Exception:
+        return None
+    # Render the display expression back with pretty operators
+    pretty_op = {"+": "+", "-": "-", "*": "×", "/": "÷"}[op]
+    a_str = str(int(a)) if a.is_integer() else str(a)
+    b_str = str(int(b)) if b.is_integer() else str(b)
+    r_str = str(int(r)) if r.is_integer() else f"{r:.2f}"
+    return (f"{a_str} {pretty_op} {b_str}", float(r_str) if "." in r_str else r)
+
+
 
 class TutorEngine:
     def __init__(
@@ -112,6 +155,31 @@ class TutorEngine:
             return await self._greeting(state)
         if text.lower() == "hint":
             return await self._handle_hint(state)
+
+        # Simple arithmetic (young learners / random maths from any grade).
+        # Only fires for single-operator expressions like "5 + 7" or "20 ÷ 4"
+        # and specifically avoids strings containing "=" so we don't intercept
+        # learner working lines like "2x + 3 = 7" that belong to the
+        # diagnose-and-guide path.
+        if text and "=" not in text:
+            arith = _try_arithmetic(text)
+            if arith is not None:
+                display, result = arith
+                result_str = str(int(result)) if float(result).is_integer() else f"{result:.2f}"
+                screens = [
+                    f"{display} = {result_str}",
+                    f"Well done for asking! Would you like to try another one?",
+                ]
+                # Log for analytics
+                await analytics.log_event(
+                    session_id=state.user_id,
+                    channel=state.channel.value,
+                    event_type="arithmetic_answered",
+                    language=state.language,
+                    grade=state.grade,
+                    metadata={"expression": display, "result": result_str},
+                )
+                return self._localized(state, screens, translate=False)
 
         # An uploaded screenshot of working takes priority.
         if message.image is not None:

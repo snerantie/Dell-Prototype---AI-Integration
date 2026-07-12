@@ -35,13 +35,20 @@
     .input button { background:var(--accent); color:#03110d; border:none;
               border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer; }
 
-    .keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+    .keypad { display:grid; grid-template-columns:repeat(10,1fr); gap:4px;
               margin-top:12px; }
     .keypad button { background:var(--key); color:var(--keytxt); border:none;
-              border-radius:6px; padding:10px 0; font-size:16px; cursor:pointer; }
+              border-radius:6px; padding:8px 0; font-size:13px; cursor:pointer;
+              font-family:inherit; }
     .keypad button:hover { background:#4a5260; }
-    .keypad .send { background:#1a8757; color:#fff; }
-    .keypad .end  { background:#7a1d1d; color:#fff; }
+    .keypad button:active { transform:translateY(1px); }
+    .keypad .space { grid-column:span 3; color:#8696a0; }
+    .keypad .send { grid-column:span 3; background:#1a8757; color:#fff;
+                    font-weight:700; }
+    .keypad .end  { grid-column:span 2; background:#7a1d1d; color:#fff;
+                    font-weight:700; }
+    .keypad .send:hover { background:#1a8757; }
+    .keypad .end:hover  { background:#7a1d1d; }
 
     .help { max-width:340px; font-size:12px; color:#8696a0; line-height:1.5; }
     .help b { color:#cbe7e0; }
@@ -68,13 +75,11 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
     </div>
 
     <div class="keypad">
-      <button data-k="1">1</button><button data-k="2">2 abc</button><button data-k="3">3 def</button>
-      <button data-k="4">4 ghi</button><button data-k="5">5 jkl</button><button data-k="6">6 mno</button>
-      <button data-k="7">7 pqrs</button><button data-k="8">8 tuv</button><button data-k="9">9 wxyz</button>
-      <button data-k="*">*</button><button data-k="0">0</button><button data-k="#">#</button>
-      <button class="send" id="dial">📞 Dial *123#</button>
-      <button data-k="back">⌫</button>
-      <button class="end" id="hangup">End</button>
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="0">0</button>
+      <button data-k="q">q</button><button data-k="w">w</button><button data-k="e">e</button><button data-k="r">r</button><button data-k="t">t</button><button data-k="y">y</button><button data-k="u">u</button><button data-k="i">i</button><button data-k="o">o</button><button data-k="p">p</button>
+      <button data-k="a">a</button><button data-k="s">s</button><button data-k="d">d</button><button data-k="f">f</button><button data-k="g">g</button><button data-k="h">h</button><button data-k="j">j</button><button data-k="k">k</button><button data-k="l">l</button><button data-k="back">⌫</button>
+      <button data-k="z">z</button><button data-k="x">x</button><button data-k="c">c</button><button data-k="v">v</button><button data-k="b">b</button><button data-k="n">n</button><button data-k="m">m</button><button data-k="+">+</button><button data-k="-">-</button><button data-k="=">=</button>
+      <button class="space" data-k=" ">space</button><button data-k="*">*</button><button data-k="#">#</button><button class="send" id="dial">📞 Dial *123#</button><button class="end" id="hangup">End</button>
     </div>
   </div>
 
@@ -83,9 +88,9 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
        (the same endpoint a real aggregator like Africa's Talking would call).
        Each reply is one menu screen, prefixed <code>CON</code> (continue) or
        <code>END</code> (session over).</p>
-    <p><b>Try this flow:</b> Dial → <b>1</b> (English) → <b>1</b> (Maths) →
-       <b>2x+3=7</b> → <b>2x=7+3</b> → see the tutor spot the transposition error
-       in one screen.</p>
+    <p><b>Try this flow:</b> tap <b>📞 Dial</b> → type <b>1</b> for English → <b>1</b> for
+       Maths → then any equation like <b>2x+3=7</b> using the QWERTY keys or your device's
+       own keyboard. Watch the tutor spot errors in real time.</p>
   </div>
 
   <script>

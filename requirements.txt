@@ -2,8 +2,10 @@
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 
-# Config & validation
-pydantic==2.10.4
+# Config & validation — pinned to versions with broad wheel coverage
+# pydantic 2.10.6 has pre-built wheels for CPython 3.9-3.13 on Linux (manylinux + musllinux)
+pydantic==2.10.6
+pydantic-core==2.27.2
 pydantic-settings==2.7.1
 
 # HTTP client for WhatsApp Cloud API + Dell AI Factory (NIM / OpenAI-compatible) calls

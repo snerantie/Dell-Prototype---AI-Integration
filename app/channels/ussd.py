@@ -26,6 +26,7 @@ from fastapi import APIRouter, Form
 from fastapi.responses import PlainTextResponse
 
 from app.i18n import hint_for, t, tf
+from app.models.schemas import Channel
 from app.providers import factory
 from app.tutor.math_analyzer import _fmt
 from app.tutor.past_papers import ARCHIVE, has_content as _year_has_content
@@ -369,6 +370,133 @@ async def _area_flow(extra: list[str], lang: str) -> PlainTextResponse:
 
 
 # ---------------------------------------------------------------------------
+# Topic 0 — Free-form "Ask AI" (LLM-powered, paginated across USSD screens).
+#
+# Same underlying LLM call as WhatsApp's ❓ Ask-me-anything path
+# (reasoning.answer_freely). USSD replies are capped at ~160 chars, so we
+# chunk the answer into ~155-char screens (leaving room for the "1 for more"
+# hint and a "[i/n]" indicator) and cache the chunks in ConversationState.
+# ---------------------------------------------------------------------------
+def _chunk_for_ussd(text: str, per_screen: int = 155) -> list[str]:
+    """Break the LLM answer into ~155-char chunks that fit inside USSD's
+    ~160-char per-screen budget (leaving ~5 chars for the pagination hint).
+    Splits on paragraph breaks first, then on sentence boundaries, then hard
+    at per_screen if a single sentence is longer than the budget.
+    """
+    text = text.strip()
+    if not text:
+        return []
+    chunks: list[str] = []
+    remaining = text
+    while remaining:
+        if len(remaining) <= per_screen:
+            chunks.append(remaining)
+            break
+        # Prefer a paragraph break inside the first per_screen chars
+        cut = remaining.rfind("\n", 0, per_screen)
+        if cut < per_screen // 2:  # no useful paragraph break
+            # Try a sentence break
+            cut = max(
+                remaining.rfind(". ", 0, per_screen),
+                remaining.rfind("! ", 0, per_screen),
+                remaining.rfind("? ", 0, per_screen),
+            )
+            if cut < per_screen // 2:
+                # Try a word boundary
+                cut = remaining.rfind(" ", 0, per_screen)
+            if cut < per_screen // 2:
+                # Hard split
+                cut = per_screen
+            else:
+                cut += 1  # keep the space/punct on the previous chunk
+        chunks.append(remaining[:cut].strip())
+        remaining = remaining[cut:].strip()
+    return chunks
+
+
+async def _freeform_flow(extra: list[str], lang: str, phone_number: str) -> PlainTextResponse:
+    """Free-form 'Ask AI' path — same experience as WhatsApp's Ask-me-anything
+    but paginated across ~155-char USSD screens.
+
+    path tokens (extra):
+      []               -> first arrival, prompt for the question
+      [question]       -> got the question, call LLM, send chunk 0
+      [question, "1", ...] -> "1" = next chunk / another question
+      [question, "0", ...] -> "0" = go back to menu (handled here too)
+    """
+    from app.providers.factory import get_reasoning
+    from app.tutor.engine import _SESSIONS
+
+    # ConversationState keyed by (channel, phone_number). We use USSD channel.
+    session = _SESSIONS.get_or_create(Channel.USSD, phone_number)
+
+    # Screen 1: prompt the learner
+    if len(extra) == 0:
+        session.free_form_chunks = []
+        session.free_form_idx = 0
+        _SESSIONS.save(session)
+        return _con(t("ussd_freeform_intro", lang))
+
+    question = (extra[0] or "").strip()
+    if not question:
+        return _con(t("ussd_freeform_intro", lang))
+
+    # Detect pagination navigation: any subsequent token
+    nav_tokens = extra[1:]
+
+    # "0" at any pagination step = go back to topic menu.
+    for tok in nav_tokens:
+        if tok.strip() == "0":
+            session.free_form_chunks = []
+            session.free_form_idx = 0
+            _SESSIONS.save(session)
+            return _con(t("topic_menu", lang) + "\n4. 📝 NSC Exam practice")
+
+    # If we don't yet have chunks OR this is a fresh question (extra changed),
+    # call the LLM and cache the chunks in session.
+    if not session.free_form_chunks or (len(nav_tokens) == 0 and session.free_form_idx > 0):
+        # Fresh question — call the LLM.
+        try:
+            reasoning = get_reasoning()
+            answer = await reasoning.answer_freely(
+                question=question,
+                language=lang,
+                grade=session.grade,
+            )
+            session.free_form_chunks = _chunk_for_ussd(answer)
+            session.free_form_idx = 0
+            _SESSIONS.save(session)
+        except Exception as exc:
+            return _con(f"AI reached its limit. Try again in a moment.\n({str(exc)[:80]})")
+
+    if not session.free_form_chunks:
+        return _con("No answer received. Try re-phrasing:")
+
+    # If a nav token exists and it's "1", advance to the next chunk
+    for tok in nav_tokens:
+        if tok.strip() == "1":
+            session.free_form_idx += 1
+    _SESSIONS.save(session)
+
+    # Serve the current chunk
+    idx = session.free_form_idx
+    total = len(session.free_form_chunks)
+    if idx >= total:
+        # Exhausted — offer to ask again
+        session.free_form_chunks = []
+        session.free_form_idx = 0
+        _SESSIONS.save(session)
+        return _con(t("ussd_freeform_end", lang))
+
+    chunk = session.free_form_chunks[idx]
+    is_last = idx >= total - 1
+
+    hint = "" if is_last else "\n" + t("ussd_freeform_more", lang)
+    footer = f"\n[{idx + 1}/{total}]"
+    return _con(chunk + footer + hint)
+
+
+# ---------------------------------------------------------------------------
 # Main handler
 # ---------------------------------------------------------------------------
 @router.post("/ussd")
@@ -414,9 +542,6 @@ async def ussd(
     if topic == "4":
         return await _exam_flow(extra, lang)
     if topic == "0":
-        # Free-form path — roadmap; for now route to WhatsApp where the LLM
-        # has more room. (In v1 this would call the LLM directly with a
-        # structured-answer-per-screen pattern.)
-        return _switch_response("", [], lang)
+        return await _freeform_flow(extra, lang, phoneNumber)
 
     return _topic_menu(lang)

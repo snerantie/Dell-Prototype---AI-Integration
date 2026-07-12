@@ -399,10 +399,26 @@ def hint_for(misconception: MisconceptionType, lang: str = "en") -> str:
 # ----------------------------------------------------------------------------
 _STRINGS.update({
     "topic_menu": {
-        "en": "Choose a topic:\n1. Algebra (equations)\n2. Geometry (Pythagoras)\n3. Area (shapes)\n0. Free-form (soon)",
-        "af": "Kies 'n onderwerp:\n1. Algebra (vergelykings)\n2. Meetkunde (Pythagoras)\n3. Oppervlakte (vorms)\n0. Vrye vorm (binnekort)",
-        "zu": "Khetha isihloko:\n1. I-Algebra (izibalo)\n2. I-Geometry (i-Pythagoras)\n3. Indawo (izinhlangothi)\n0. Buza ngokukhululekile (kuyeza)",
-        "xh": "Khetha umxholo:\n1. I-Algebra (izibalo)\n2. I-Geometry (i-Pythagoras)\n3. Ummandla (iimilo)\n0. Buza ngokukhululekile (kuza)",
+        "en": "Choose a topic:\n1. Algebra (equations)\n2. Geometry (Pythagoras)\n3. Area (shapes)\n0. 🤖 Ask AI (any question)",
+        "af": "Kies 'n onderwerp:\n1. Algebra (vergelykings)\n2. Meetkunde (Pythagoras)\n3. Oppervlakte (vorms)\n0. 🤖 Vra AI (enige vraag)",
+        "zu": "Khetha isihloko:\n1. I-Algebra (izibalo)\n2. I-Geometry (i-Pythagoras)\n3. Indawo (izinhlangothi)\n0. 🤖 Buza i-AI (noma yimuphi umbuzo)",
+        "xh": "Khetha umxholo:\n1. I-Algebra (izibalo)\n2. I-Geometry (i-Pythagoras)\n3. Ummandla (iimilo)\n0. 🤖 Buza i-AI (nawuphi umbuzo)",
+    },
+    "ussd_freeform_intro": {
+        "en": "🤖 Ask AI freely. Type any maths question (e.g. factorise 6x²-11x+3, or explain Pythagoras):",
+        "zu": "🤖 Buza i-AI ngokukhululekile. Bhala noma yiluphi umbuzo wezibalo (isb. yenza izici 6x²-11x+3, noma chaza i-Pythagoras):",
+    },
+    "ussd_freeform_more": {
+        "en": "Reply 1 for more · 0 for menu",
+        "zu": "Phendula 1 ukuze uqhubeke · 0 ku-menu",
+    },
+    "ussd_freeform_end": {
+        "en": "That's the full answer. Reply 1 to ask another, or 0 for menu.",
+        "zu": "Yilokho okuphelele. Phendula 1 ukuze ubuze omunye, noma 0 ku-menu.",
+    },
+    "ussd_ask_freely_label": {
+        "en": "Ask AI any question",
+        "zu": "Buza i-AI umbuzo",
     },
     "pyth_intro": {
         "en": "Type your right-triangle problem (e.g. sides 3 and 4 find c):",

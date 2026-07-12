@@ -40,6 +40,13 @@ class ConversationState:
     history: list[str] = field(default_factory=list)
     past_paper_id: Optional[str] = None   # e.g. "2026_jun_nw:p1:1.1.1"
     past_paper_attempts: int = 0
+    # Free-form ("Ask AI") pagination state for USSD. WhatsApp doesn't need
+    # this because it can deliver the whole answer in one message, but USSD
+    # replies are ~160 chars, so we cache the chunked LLM answer and walk an
+    # index across screens. Fields are new + optional (default factories) so
+    # existing WhatsApp sessions are unaffected.
+    free_form_chunks: list[str] = field(default_factory=list)
+    free_form_idx: int = 0
     updated_at: float = field(default_factory=time.time)
 
     def reset_problem(self) -> None:

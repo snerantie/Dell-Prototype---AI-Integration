@@ -12,5 +12,8 @@ httpx==0.28.1
 # Form parsing (USSD aggregators post application/x-www-form-urlencoded)
 python-multipart==0.0.20
 
+# Async SQLite for the analytics event store (Phase 2)
+aiosqlite==0.20.0
+
 # --- Dev / test ---
 pytest==8.3.4

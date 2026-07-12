@@ -16,3 +16,10 @@ env/
 
 # OS / editor
 .DS_Store
+
+# Analytics SQLite DB (created at runtime)
+analytics.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

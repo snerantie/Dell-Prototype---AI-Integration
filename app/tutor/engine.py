@@ -13,6 +13,7 @@ import re
 from functools import lru_cache
 from typing import Optional
 
+from app.analytics import store as analytics
 from app.config import Settings, get_settings
 from app.i18n import t
 from app.models.schemas import (
@@ -67,7 +68,21 @@ class TutorEngine:
         self.settings = settings
 
     async def handle(self, message: InboundMessage) -> TutorResponse:
-        """Public entry point: route the message, then localise the reply."""
+        """Public entry point: route the message, then localise the reply.
+
+        Analytics logging is awaited (not fire-and-forget) so events survive
+        even during graceful shutdown / short-lived test loops. The store
+        functions catch all exceptions internally, so a broken analytics DB
+        can NEVER block or crash a learner reply.
+        """
+        state = self.sessions.get_or_create(message.channel, message.user_id)
+        await analytics.log_event(
+            session_id=message.user_id,
+            channel=message.channel.value,
+            event_type="message",
+            language=(message.language or state.language),
+            grade=(message.grade or state.grade),
+        )
         response = await self._route(message)
         return await self.localize_response(response)
 
@@ -94,7 +109,7 @@ class TutorEngine:
 
         # Global commands first.
         if _is_command(text, _RESET_WORDS) or (state.stage == Stage.NEW and not text and not message.image):
-            return self._greeting(state)
+            return await self._greeting(state)
         if text.lower() == "hint":
             return await self._handle_hint(state)
 
@@ -104,7 +119,7 @@ class TutorEngine:
 
         # Greeting / first contact with no maths content.
         if _is_command(text, _GREETINGS) and not _looks_like_working(text):
-            return self._greeting(state)
+            return await self._greeting(state)
 
         if not text:
             return self._localized(state, [t("ask_problem", state.language)],
@@ -123,7 +138,7 @@ class TutorEngine:
             state.grade = message.grade
         # otherwise keep the already-chosen session language / grade
 
-    def _greeting(self, state: ConversationState) -> TutorResponse:
+    async def _greeting(self, state: ConversationState) -> TutorResponse:
         """Proactive greeting: intro + 3 top-level WhatsApp reply buttons.
 
         This is what a learner sees on first contact, on "hi/hello/reset",
@@ -131,6 +146,13 @@ class TutorEngine:
         button labels double as the text bubble the learner "sends" when
         they tap.
         """
+        await analytics.log_event(
+            session_id=state.user_id,
+            channel=state.channel.value,
+            event_type="session_start",
+            language=state.language,
+            grade=state.grade,
+        )
         state.stage = Stage.AWAIT_PROBLEM
         state.subject = Subject.MATHEMATICS.value
         state.reset_problem()
@@ -276,7 +298,7 @@ class TutorEngine:
         # Matched EARLY so it always wins, even if some other branch would
         # otherwise consume the payload. Keeps the dead-end guard's promise.
         if payload == "action:main_menu":
-            return self._greeting(state)
+            return await self._greeting(state)
 
         # ---- top-level actions -----------------------------------------
         if payload == "action:practice_papers" or payload == "pastpapers:back:years":
@@ -351,7 +373,7 @@ class TutorEngine:
                     grade=state.grade,
                 )
                 return await self._handle_past_paper(proxy, state)
-            return self._greeting(state)
+            return await self._greeting(state)
 
         if payload.startswith("pastpapers:paper:"):
             _, _, rest = payload.partition("pastpapers:paper:")
@@ -368,7 +390,7 @@ class TutorEngine:
             return self._render_question_list(state, year.slug, paper)
 
         # Unknown payload: dead-end guard → back to the greeting.
-        return self._greeting(state)
+        return await self._greeting(state)
 
     def _render_question_list(self, state: ConversationState, year_slug: str, paper) -> TutorResponse:
         """Build the 'pick a question' bubble with up to 3 buttons.
@@ -401,6 +423,14 @@ class TutorEngine:
     # ---------------------------------------------------------------
     async def _handle_past_paper(self, message: InboundMessage, state: ConversationState) -> TutorResponse:
         """Load the question from the archive, seed a bot message, ready for attempts."""
+        await analytics.log_event(
+            session_id=state.user_id,
+            channel=state.channel.value,
+            event_type="past_paper_start",
+            language=state.language,
+            grade=state.grade,
+            metadata={"past_paper_id": message.past_paper_id},
+        )
         from app.tutor.past_papers import find_question
         triple = find_question(message.past_paper_id)
         if not triple:
@@ -444,6 +474,17 @@ class TutorEngine:
             for a in attempts_numeric
         )
         if correct:
+            await analytics.log_event(
+                session_id=state.user_id,
+                channel=state.channel.value,
+                event_type="past_paper_correct",
+                language=state.language,
+                grade=state.grade,
+                metadata={
+                    "past_paper_id": state.past_paper_id,
+                    "attempts": state.past_paper_attempts,
+                },
+            )
             screens = [
                 f"✓ Method (1)  ✓ Working (1)  ✓ Final (1)\n"
                 f"★ TOTAL: {question.marks} / {question.marks} ★\n\n"
@@ -455,6 +496,17 @@ class TutorEngine:
             self.sessions.save(state)
             return self._localized(state, screens, translate=False)
         # Not yet correct — Socratic nudge, do NOT give the answer.
+        await analytics.log_event(
+            session_id=state.user_id,
+            channel=state.channel.value,
+            event_type="past_paper_wrong",
+            language=state.language,
+            grade=state.grade,
+            metadata={
+                "past_paper_id": state.past_paper_id,
+                "attempts": state.past_paper_attempts,
+            },
+        )
         if state.past_paper_attempts >= 3:
             # After 3 wrong attempts, hint at the METHOD (still not the answer).
             method_hint = _method_hint_for(question)

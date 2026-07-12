@@ -39,6 +39,48 @@ class ChatRequest(BaseModel):
     payload: Optional[str] = None            # quick-reply button payload (e.g. "action:practice_papers")
 
 
+class OnboardRequest(BaseModel):
+    """Payload from the first-visit onboarding modal (see index.html).
+
+    All fields except user_id are optional so a learner can skip. The engine
+    still gets sensible defaults from the header dropdowns even if onboarding
+    is skipped, so no logic depends on this being filled in.
+    """
+    user_id: str
+    name_first: Optional[str] = None
+    age: Optional[int] = None
+    grade: Optional[str] = None
+    language: Optional[str] = None
+    school: Optional[str] = None
+
+
+@router.post("/api/onboard")
+async def onboard(req: OnboardRequest) -> dict:
+    """Persist the onboarding form and emit an 'onboarding_complete' event.
+
+    Fire-and-forget-ish: we await both writes here because the frontend blocks
+    the modal closure on the response; if the DB is broken we want to know
+    (the tutor path itself is unaffected — analytics live in a separate DB).
+    """
+    from app.analytics import store as analytics
+    await analytics.upsert_learner(
+        session_id=req.user_id,
+        name_first=req.name_first,
+        age=req.age,
+        grade=req.grade,
+        language=req.language,
+        school=req.school,
+    )
+    await analytics.log_event(
+        session_id=req.user_id,
+        channel="mock_ui",
+        event_type="onboarding_complete",
+        language=req.language,
+        grade=req.grade,
+    )
+    return {"ok": True}
+
+
 @router.get("/api/past-papers")
 async def past_papers_index() -> list[dict]:
     """Snapshot of the past-papers archive for the frontend picker.

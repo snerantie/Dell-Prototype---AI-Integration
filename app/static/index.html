@@ -73,6 +73,78 @@
     #composer button { background:var(--accent); color:#03110d; border:none;
              border-radius:20px; padding:10px 18px; font-weight:600;
              cursor:pointer; }
+
+    /* Header "Restart" link — clears onboarding so the exec demo can re-show it. */
+    header .restart-link {
+      color:var(--muted); text-decoration:none; font-size:11px;
+      padding:4px 8px; border-radius:6px; opacity:.75;
+    }
+    header .restart-link:hover { color:var(--txt); background:#1a242a; opacity:1; }
+
+    /* -------- Onboarding modal (first-visit) -------------------------- */
+    #onboard-overlay {
+      position:fixed; inset:0; background:rgba(11,20,26,0.94);
+      backdrop-filter:blur(6px); z-index:100;
+      display:flex; align-items:center; justify-content:center; padding:20px;
+    }
+    #onboard-card {
+      background:var(--panel); border:1px solid #222d34; border-radius:16px;
+      width:100%; max-width:440px; padding:26px 28px 22px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    }
+    #onboard-card .big-avatar {
+      width:80px; height:80px; border-radius:50%; background:var(--accent);
+      display:grid; place-items:center; margin:0 auto 14px;
+      color:#03110d; font-weight:800; font-size:28px; letter-spacing:1px;
+      box-shadow:0 0 0 4px rgba(0,168,132,0.18);
+    }
+    #onboard-card h2 { text-align:center; margin:0 0 6px; font-size:20px; }
+    #onboard-card .lede {
+      text-align:center; color:var(--muted); font-size:13px; line-height:1.5;
+      margin:0 0 18px;
+    }
+    #onboard-form .row { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+    #onboard-form .row-2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    #onboard-form label {
+      font-size:12px; color:var(--muted); font-weight:600;
+      text-transform:uppercase; letter-spacing:0.6px;
+    }
+    #onboard-form input, #onboard-form select {
+      background:var(--in); color:var(--txt); border:1px solid #2a3942;
+      border-radius:8px; padding:9px 12px; font-size:14px; width:100%;
+      font-family:inherit;
+    }
+    #onboard-form input:focus, #onboard-form select:focus {
+      outline:none; border-color:var(--accent);
+    }
+    #onboard-form .consent {
+      display:flex; align-items:flex-start; gap:8px;
+      font-size:12px; color:var(--muted); line-height:1.4;
+      margin:14px 0 6px;
+    }
+    #onboard-form .consent input { width:16px; height:16px; margin-top:2px; flex-shrink:0; }
+    #onboard-form .consent a { color:var(--accent); text-decoration:none; }
+    #onboard-form .consent a:hover { text-decoration:underline; }
+    #onboard-form .actions {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-top:14px;
+    }
+    #onboard-form button.primary {
+      flex:1; background:var(--accent); color:#03110d; border:none;
+      border-radius:22px; padding:12px 18px; font-weight:700; font-size:14px;
+      cursor:pointer; transition:opacity .15s, transform .05s;
+    }
+    #onboard-form button.primary:disabled {
+      opacity:0.4; cursor:not-allowed;
+    }
+    #onboard-form button.primary:not(:disabled):hover { opacity:0.92; }
+    #onboard-form button.primary:not(:disabled):active { transform:translateY(1px); }
+    #onboard-form .skip {
+      background:none; border:none; color:var(--muted); font-size:12px;
+      cursor:pointer; padding:6px 8px; text-decoration:underline;
+      font-family:inherit;
+    }
+    #onboard-form .skip:hover { color:var(--txt); }
   </style>
 </head>
 <body>
@@ -108,9 +180,83 @@
           <option value="nr">isiNdebele</option>
         </optgroup>
       </select>
+      <a class="restart-link" href="#" id="restart-link"
+         title="Reset onboarding (demo)">&#128274; Restart</a>
       <a class="menu-link" href="/ussd-simulator" title="Switch to USSD simulator">&#8801;</a>
     </div>
   </header>
+
+  <!-- First-visit onboarding modal. Suppressed when localStorage says
+       the learner has already onboarded. The "Restart" link in the
+       header clears that flag so the exec demo can re-play it. -->
+  <div id="onboard-overlay" style="display:none;">
+    <div id="onboard-card">
+      <div class="big-avatar">AI</div>
+      <h2>Welcome to EduConnect AI Tutor</h2>
+      <p class="lede">
+        Before we start, tell us a bit about yourself. This helps us tailor
+        the experience &mdash; and helps our educators improve. Nothing
+        personal is shared.
+      </p>
+      <form id="onboard-form" autocomplete="off">
+        <div class="row">
+          <label for="ob-name">Name <span style="text-transform:none;font-weight:400;">(first name only, optional)</span></label>
+          <input id="ob-name" type="text" placeholder="e.g. Thandi" maxlength="40" />
+        </div>
+        <div class="row row-2col">
+          <div>
+            <label for="ob-age">Age *</label>
+            <input id="ob-age" type="number" min="8" max="18" placeholder="8–18" required />
+          </div>
+          <div>
+            <label for="ob-grade">Grade *</label>
+            <select id="ob-grade" required>
+              <option value="8">Gr 8</option>
+              <option value="9">Gr 9</option>
+              <option value="10">Gr 10</option>
+              <option value="11">Gr 11</option>
+              <option value="12" selected>Gr 12</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <label for="ob-school">School <span style="text-transform:none;font-weight:400;">(optional)</span></label>
+          <input id="ob-school" type="text" placeholder="e.g. Soweto Secondary" maxlength="80" />
+        </div>
+        <div class="row">
+          <label for="ob-lang">Language *</label>
+          <select id="ob-lang" required>
+            <optgroup label="Educator-validated">
+              <option value="en" selected>English</option>
+              <option value="af">Afrikaans</option>
+              <option value="zu">isiZulu</option>
+              <option value="xh">isiXhosa</option>
+            </optgroup>
+            <optgroup label="First-pass">
+              <option value="nso">Sepedi</option>
+              <option value="st">Sesotho</option>
+              <option value="tn">Setswana</option>
+              <option value="ss">siSwati</option>
+              <option value="ve">Tshivenda</option>
+              <option value="ts">Xitsonga</option>
+              <option value="nr">isiNdebele</option>
+            </optgroup>
+          </select>
+        </div>
+        <label class="consent">
+          <input id="ob-consent" type="checkbox" required />
+          <span>
+            I understand my anonymous usage helps improve the tutor.
+            POPIA-aligned. <a href="#" target="_blank" rel="noopener">Learn more</a>
+          </span>
+        </label>
+        <div class="actions">
+          <button type="submit" class="primary" id="ob-submit" disabled>Start Learning &rarr;</button>
+          <button type="button" class="skip" id="ob-skip">Skip for now</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Retained (hidden) so a USSD deep-link handoff query still has a place to
        render meta if we choose to surface it. Not visible by default. -->
@@ -242,8 +388,35 @@
       if (t.value.trim()) { sendText(t.value.trim()); t.value = ''; }
     });
 
-    window.addEventListener('load', async () => {
-      // USSD -> WhatsApp deep-link handoff (kept for backwards compat).
+    // ------------------------------------------------------------------
+    // Onboarding modal wiring
+    // ------------------------------------------------------------------
+    const onboardOverlay = document.getElementById('onboard-overlay');
+    const onboardForm = document.getElementById('onboard-form');
+    const obName    = document.getElementById('ob-name');
+    const obAge     = document.getElementById('ob-age');
+    const obGrade   = document.getElementById('ob-grade');
+    const obSchool  = document.getElementById('ob-school');
+    const obLang    = document.getElementById('ob-lang');
+    const obConsent = document.getElementById('ob-consent');
+    const obSubmit  = document.getElementById('ob-submit');
+    const obSkip    = document.getElementById('ob-skip');
+
+    function validateOnboard() {
+      // Submit is enabled once required fields are all populated. The name
+      // field is deliberately optional; age is required and range-checked.
+      const age = parseInt(obAge.value, 10);
+      const ageOk = Number.isFinite(age) && age >= 8 && age <= 18;
+      const gradeOk = !!obGrade.value;
+      const langOk = !!obLang.value;
+      const consentOk = obConsent.checked;
+      obSubmit.disabled = !(ageOk && gradeOk && langOk && consentOk);
+    }
+    ['input','change'].forEach(evt => onboardForm.addEventListener(evt, validateOnboard));
+
+    async function startGreeting() {
+      // The normal greeting flow, extracted so it can be called from either
+      // page load (already onboarded) or right after the modal is dismissed.
       const qs = new URLSearchParams(window.location.search);
       if (qs.get('from') === 'ussd') {
         const lang = qs.get('lang');
@@ -253,10 +426,71 @@
         const seed = working ? (problem + '\n' + working) : problem;
         if (seed.trim()) { sendText(seed.trim()); return; }
       }
-      // Proactive greeting: fetch the AI's opening question + 3 reply buttons.
       const data = await postChat({ text: 'hi' });
       botMessage(data.text, data.quick_replies);
       diagBubble(data.diagnosis);
+    }
+
+    async function completeOnboarding(profile) {
+      // Sync the header dropdowns with the learner's choices so the rest of
+      // the chat reflects the picked grade/language without a page reload.
+      if (profile.grade)    document.getElementById('grade').value = profile.grade;
+      if (profile.language) document.getElementById('lang').value  = profile.language;
+      try {
+        await fetch('/api/onboard', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            user_id: userId,
+            name_first: profile.name_first || null,
+            age: profile.age || null,
+            grade: profile.grade || null,
+            language: profile.language || null,
+            school: profile.school || null,
+          }),
+        });
+      } catch (e) {
+        // Analytics is fire-and-forget on the frontend too — never block the
+        // learner from starting because a POST hiccupped.
+      }
+      try { localStorage.setItem('educonnect_onboarded', '1'); } catch (e) {}
+      onboardOverlay.style.display = 'none';
+      startGreeting();
+    }
+
+    onboardForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (obSubmit.disabled) return;
+      completeOnboarding({
+        name_first: (obName.value || '').trim() || null,
+        age: parseInt(obAge.value, 10) || null,
+        grade: obGrade.value || null,
+        school: (obSchool.value || '').trim() || null,
+        language: obLang.value || null,
+      });
+    });
+
+    obSkip.addEventListener('click', () => {
+      // "Skip for now" defaults: Grade 12, English — same as the header.
+      completeOnboarding({ grade: '12', language: 'en' });
+    });
+
+    document.getElementById('restart-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      try { localStorage.removeItem('educonnect_onboarded'); } catch (e) {}
+      window.location.reload();
+    });
+
+    window.addEventListener('load', () => {
+      let onboarded = false;
+      try { onboarded = !!localStorage.getItem('educonnect_onboarded'); } catch (e) {}
+      if (onboarded) {
+        // Returning learner: straight to the greeting, no modal.
+        startGreeting();
+      } else {
+        // First visit: show the modal, defer the greeting until dismissed.
+        onboardOverlay.style.display = 'flex';
+        validateOnboard();
+      }
     });
   </script>
 </body>

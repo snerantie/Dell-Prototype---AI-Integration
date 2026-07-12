@@ -11,7 +11,8 @@ import logging
 
 from fastapi import FastAPI
 
-from app.channels import mock_ui, ussd, whatsapp
+from app.analytics import store as analytics
+from app.channels import dashboard, mock_ui, ussd, whatsapp
 from app.config import get_settings
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -28,6 +29,13 @@ app = FastAPI(
 app.include_router(mock_ui.router)
 app.include_router(whatsapp.router)
 app.include_router(ussd.router)
+app.include_router(dashboard.router)
+
+
+@app.on_event("startup")
+async def _init_analytics() -> None:
+    """Create analytics tables on startup (idempotent)."""
+    await analytics.init_db()
 
 
 @app.get("/health", tags=["meta"])

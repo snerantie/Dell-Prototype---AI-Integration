@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EduConnect AI Tutor · Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg:#0b141a; --panel:#111b21; --panel-2:#0e171d; --in:#202c33;
+      --accent:#00a884; --accent-soft:rgba(0,168,132,0.15);
+      --orange:#ffb347; --red:#f15b6c; --blue:#53bdeb; --purple:#c084fc;
+      --txt:#e9edef; --muted:#8696a0; --border:#222d34;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background:var(--bg); color:var(--txt); min-height:100vh;
+    }
+    header {
+      background:var(--panel); padding:14px 24px; display:flex;
+      align-items:center; gap:14px; border-bottom:1px solid var(--border);
+      position:sticky; top:0; z-index:10;
+    }
+    header .avatar {
+      width:38px; height:38px; border-radius:50%;
+      background:var(--accent); display:grid; place-items:center;
+      font-weight:700; color:#03110d; font-size:14px;
+    }
+    header h1 { font-size:16px; margin:0; line-height:1.2; letter-spacing:.2px; }
+    header .sub { font-size:12px; color:var(--muted); margin-top:2px; }
+    header .refresh {
+      margin-left:auto; display:flex; align-items:center; gap:10px;
+      font-size:12px; color:var(--muted);
+    }
+    header .refresh .dot {
+      width:8px; height:8px; border-radius:50%;
+      background:var(--accent); box-shadow:0 0 10px var(--accent);
+      animation: pulse 2s infinite;
+    }
+    header .back-link {
+      color:var(--accent); text-decoration:none; font-size:13px;
+      padding:6px 12px; border-radius:6px; border:1px solid var(--accent);
+    }
+    header .back-link:hover { background:var(--accent-soft); }
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:.35; }
+    }
+
+    .wrap { padding:20px 24px 40px; max-width:1400px; margin:0 auto; }
+    .grid { display:grid; gap:16px; }
+    .cards { grid-template-columns: repeat(4, 1fr); }
+    .row-2  { grid-template-columns: 1.35fr 1fr; }
+    .row-2b { grid-template-columns: 1fr 1.2fr; }
+    @media (max-width: 1000px) {
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .row-2, .row-2b { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:14px; padding:18px 20px;
+    }
+    .panel h2 {
+      font-size:12px; font-weight:600; margin:0 0 10px;
+      text-transform:uppercase; letter-spacing:1.4px; color:var(--muted);
+    }
+
+    /* Big-number cards */
+    .card { position:relative; overflow:hidden; }
+    .card .value {
+      font-size:42px; line-height:1.05; font-weight:700; color:var(--txt);
+      font-variant-numeric: tabular-nums;
+    }
+    .card .label { font-size:12px; color:var(--muted); margin-top:6px; }
+    .card .accent-bar {
+      position:absolute; left:0; top:0; bottom:0; width:4px;
+      background:var(--accent);
+    }
+    .card.orange .accent-bar { background:var(--orange); }
+    .card.blue   .accent-bar { background:var(--blue); }
+    .card.purple .accent-bar { background:var(--purple); }
+
+    /* Charts */
+    .chart-wrap { position:relative; height:260px; }
+    .chart-wrap-donut { position:relative; height:260px; }
+
+    /* Grade bars */
+    .bars { display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+    .bar-row {
+      display:grid; grid-template-columns: 60px 1fr 40px;
+      align-items:center; gap:10px; font-size:13px;
+    }
+    .bar-row .k { color:var(--muted); }
+    .bar-row .track {
+      background:var(--in); border-radius:6px; height:12px; overflow:hidden;
+    }
+    .bar-row .fill { background:var(--accent); height:100%; border-radius:6px; }
+    .bar-row .n { text-align:right; color:var(--txt); font-variant-numeric:tabular-nums; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--border); }
+    th { color:var(--muted); font-weight:600; text-transform:uppercase; font-size:11px; letter-spacing:1px; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    tr:last-child td { border-bottom:none; }
+
+    /* Live feed */
+    .feed { max-height:360px; overflow-y:auto; padding-right:6px; }
+    .feed-item {
+      display:grid; grid-template-columns: 90px 100px 1fr 60px 60px;
+      gap:10px; padding:8px 4px; border-bottom:1px solid var(--border);
+      font-size:12.5px; align-items:center;
+    }
+    .feed-item:last-child { border-bottom:none; }
+    .feed-item .ts { color:var(--muted); font-variant-numeric:tabular-nums; }
+    .feed-item .type {
+      display:inline-block; padding:2px 8px; border-radius:12px;
+      background:var(--in); color:var(--txt); font-size:11px; font-weight:600;
+      text-align:center;
+    }
+    .feed-item .type.message         { background:rgba(0,168,132,.18);  color:var(--accent); }
+    .feed-item .type.session_start   { background:rgba(83,189,235,.18); color:var(--blue); }
+    .feed-item .type.past_paper_start  { background:rgba(255,179,71,.18); color:var(--orange); }
+    .feed-item .type.past_paper_correct { background:rgba(0,168,132,.22); color:var(--accent); }
+    .feed-item .type.past_paper_wrong   { background:rgba(241,91,108,.22); color:var(--red); }
+    .feed-item .type.onboarding_complete { background:rgba(192,132,252,.22); color:var(--purple); }
+    .feed-item .sid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                      font-size:11px; color:var(--muted); overflow:hidden;
+                      text-overflow:ellipsis; white-space:nowrap; }
+    .feed-item .lang, .feed-item .gr {
+      font-size:11px; color:var(--muted); text-align:right;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .empty { color:var(--muted); font-style:italic; padding:20px 0; text-align:center; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="avatar">AI</div>
+    <div>
+      <h1>EduConnect AI Tutor · Analytics</h1>
+      <div class="sub">Live pilot metrics — WhatsApp + USSD + mock UI</div>
+    </div>
+    <div class="refresh">
+      <span class="dot"></span>
+      <span>auto-refresh: 10s</span>
+    </div>
+    <a class="back-link" href="/">&larr; back to demo</a>
+  </header>
+
+  <div class="wrap">
+    <!-- Row 1: big cards -->
+    <div class="grid cards">
+      <div class="panel card">
+        <div class="accent-bar"></div>
+        <div class="value" id="c-learners">–</div>
+        <div class="label">Learners (24h)</div>
+      </div>
+      <div class="panel card blue">
+        <div class="accent-bar"></div>
+        <div class="value" id="c-sessions">–</div>
+        <div class="label">Sessions started (24h)</div>
+      </div>
+      <div class="panel card orange">
+        <div class="accent-bar"></div>
+        <div class="value" id="c-messages">–</div>
+        <div class="label">Messages (24h)</div>
+      </div>
+      <div class="panel card purple">
+        <div class="accent-bar"></div>
+        <div class="value" id="c-success">–</div>
+        <div class="label">Past-paper success rate</div>
+      </div>
+    </div>
+
+    <!-- Row 2: timeline + language mix -->
+    <div class="grid row-2" style="margin-top:16px;">
+      <div class="panel">
+        <h2>Activity — last 24 hours</h2>
+        <div class="chart-wrap"><canvas id="chart-timeline"></canvas></div>
+      </div>
+      <div class="panel">
+        <h2>Language mix — last 7 days</h2>
+        <div class="chart-wrap-donut"><canvas id="chart-lang"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 3: grade bars + past-papers table -->
+    <div class="grid row-2b" style="margin-top:16px;">
+      <div class="panel">
+        <h2>Grade distribution — last 7 days</h2>
+        <div class="bars" id="grade-bars"></div>
+      </div>
+      <div class="panel">
+        <h2>Top past-paper questions attempted</h2>
+        <table id="papers-table">
+          <thead>
+            <tr><th>Question</th><th class="num">Starts</th><th class="num">Correct</th><th class="num">Wrong</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Row 4: live activity feed -->
+    <div class="panel" style="margin-top:16px;">
+      <h2>Live activity feed</h2>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- Palette (kept in sync with the WhatsApp simulator) -------------
+    const PALETTE = ['#00a884','#ffb347','#53bdeb','#c084fc','#f15b6c',
+                     '#7ed4b9','#f7c948','#8e9aff','#ff8ac2','#4fd1c5'];
+    const TXT = '#e9edef';
+    const MUTED = '#8696a0';
+    const BORDER = '#222d34';
+    const IN = '#202c33';
+
+    Chart.defaults.color = MUTED;
+    Chart.defaults.borderColor = BORDER;
+    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+
+    // --- Chart singletons (reused on refresh so we don't leak canvases) --
+    let timelineChart = null;
+    let langChart = null;
+
+    // Language code → friendly name (subset — falls through to code otherwise)
+    const LANG_NAMES = {
+      en:'English', af:'Afrikaans', zu:'isiZulu', xh:'isiXhosa',
+      nso:'Sepedi', st:'Sesotho', tn:'Setswana', ss:'siSwati',
+      ve:'Tshivenda', ts:'Xitsonga', nr:'isiNdebele', unknown:'—'
+    };
+
+    function fmtHour(iso) {
+      // "2026-11-01T14:00" → "14:00"
+      const t = iso.slice(11, 16);
+      return t;
+    }
+    function fmtTs(iso) {
+      if (!iso) return '';
+      return iso.slice(11, 19);
+    }
+
+    async function fetchJson(url) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) return null;
+        return await r.json();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function refreshSummary() {
+      const s = await fetchJson('/api/dashboard/summary');
+      if (!s) return;
+      document.getElementById('c-learners').textContent = s.learners ?? 0;
+      document.getElementById('c-sessions').textContent = s.sessions ?? 0;
+      document.getElementById('c-messages').textContent = s.messages ?? 0;
+      const c = s.past_paper_correct || 0;
+      const w = s.past_paper_wrong || 0;
+      const total = c + w;
+      const pct = total ? Math.round((c / total) * 100) : 0;
+      document.getElementById('c-success').textContent = total ? (pct + '%') : '—';
+    }
+
+    async function refreshTimeline() {
+      const data = await fetchJson('/api/dashboard/timeline');
+      if (!data) return;
+      const labels = data.map(d => fmtHour(d.hour));
+      const values = data.map(d => d.events);
+      const ctx = document.getElementById('chart-timeline').getContext('2d');
+      if (timelineChart) {
+        timelineChart.data.labels = labels;
+        timelineChart.data.datasets[0].data = values;
+        timelineChart.update();
+        return;
+      }
+      timelineChart = new Chart(ctx, {
+        type:'line',
+        data:{ labels, datasets:[{
+          label:'events',
+          data:values,
+          borderColor:PALETTE[0],
+          backgroundColor:'rgba(0,168,132,0.15)',
+          tension:0.35, fill:true, pointRadius:2, borderWidth:2,
+        }]},
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ display:false } },
+          scales:{
+            x:{ grid:{ color:BORDER }, ticks:{ color:MUTED, maxRotation:0 } },
+            y:{ grid:{ color:BORDER }, ticks:{ color:MUTED, precision:0 }, beginAtZero:true },
+          },
+        },
+      });
+    }
+
+    async function refreshLangMix() {
+      const data = await fetchJson('/api/dashboard/language-mix');
+      if (!data) return;
+      const labels = data.map(d => LANG_NAMES[d.language] || d.language);
+      const values = data.map(d => d.count);
+      const colors = data.map((_, i) => PALETTE[i % PALETTE.length]);
+      const ctx = document.getElementById('chart-lang').getContext('2d');
+      if (langChart) {
+        langChart.data.labels = labels;
+        langChart.data.datasets[0].data = values;
+        langChart.data.datasets[0].backgroundColor = colors;
+        langChart.update();
+        return;
+      }
+      langChart = new Chart(ctx, {
+        type:'doughnut',
+        data:{ labels, datasets:[{
+          data:values, backgroundColor:colors,
+          borderColor:'#111b21', borderWidth:2,
+        }]},
+        options:{
+          responsive:true, maintainAspectRatio:false, cutout:'62%',
+          plugins:{
+            legend:{ position:'right', labels:{ color:TXT, font:{ size:12 } } },
+          },
+        },
+      });
+    }
+
+    async function refreshGradeMix() {
+      const data = await fetchJson('/api/dashboard/grade-mix');
+      if (!data) return;
+      const total = data.reduce((s, d) => s + d.count, 0) || 1;
+      const box = document.getElementById('grade-bars');
+      if (!data.length) {
+        box.innerHTML = '<div class="empty">No grade data yet.</div>';
+        return;
+      }
+      box.innerHTML = data.map(d => {
+        const label = d.grade === 'unknown' ? '—' : ('Gr ' + d.grade);
+        const pct = Math.max(2, Math.round((d.count / total) * 100));
+        return `<div class="bar-row">
+          <div class="k">${label}</div>
+          <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+          <div class="n">${d.count}</div>
+        </div>`;
+      }).join('');
+    }
+
+    async function refreshPapers() {
+      const data = await fetchJson('/api/dashboard/top-papers');
+      const tbody = document.querySelector('#papers-table tbody');
+      if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">No past-paper attempts yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(d => `
+        <tr>
+          <td style="font-family:ui-monospace,Menlo,monospace;font-size:12px;">${d.past_paper_id ?? '—'}</td>
+          <td class="num">${d.starts}</td>
+          <td class="num" style="color:var(--accent)">${d.correct}</td>
+          <td class="num" style="color:var(--red)">${d.wrong}</td>
+        </tr>`).join('');
+    }
+
+    async function refreshFeed() {
+      const data = await fetchJson('/api/dashboard/recent');
+      const feed = document.getElementById('feed');
+      if (!data || !data.length) {
+        feed.innerHTML = '<div class="empty">Waiting for first events…</div>';
+        return;
+      }
+      feed.innerHTML = data.map(e => {
+        const type = (e.event_type || '').replace(/[^a-z_]/gi, '');
+        const gr = e.grade ? ('Gr ' + e.grade) : '—';
+        const lang = e.language || '—';
+        const sid = e.session_id || '—';
+        return `<div class="feed-item">
+          <div class="ts">${fmtTs(e.ts)}</div>
+          <div><span class="type ${type}">${type.replace(/_/g,' ')}</span></div>
+          <div class="sid" title="${sid}">${sid}</div>
+          <div class="lang">${lang}</div>
+          <div class="gr">${gr}</div>
+        </div>`;
+      }).join('');
+    }
+
+    async function refreshAll() {
+      // Kick everything off in parallel — dashboards should feel snappy.
+      await Promise.all([
+        refreshSummary(), refreshTimeline(), refreshLangMix(),
+        refreshGradeMix(), refreshPapers(), refreshFeed(),
+      ]);
+    }
+
+    refreshAll();
+    setInterval(refreshAll, 10000);
+  </script>
+</body>
+</html>

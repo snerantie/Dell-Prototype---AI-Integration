@@ -526,16 +526,35 @@ class TutorEngine:
     # ---------------------------------------------------------------
     async def _handle_past_paper(self, message: InboundMessage, state: ConversationState) -> TutorResponse:
         """Load the question from the archive, seed a bot message, ready for attempts."""
-        await analytics.log_event(
-            session_id=state.user_id,
-            channel=state.channel.value,
-            event_type="past_paper_start",
-            language=state.language,
-            grade=state.grade,
-            metadata={"past_paper_id": message.past_paper_id},
-        )
         from app.tutor.past_papers import find_question
         triple = find_question(message.past_paper_id)
+        # Log AFTER find_question so we can enrich metadata with topic + marks —
+        # otherwise the dashboard has no way to compute per-topic weakness. If
+        # the question was not found, skip topic/marks and record the start
+        # with only the id so the miss stays visible in the feed.
+        if triple:
+            _, _, _q = triple
+            await analytics.log_event(
+                session_id=state.user_id,
+                channel=state.channel.value,
+                event_type="past_paper_start",
+                language=state.language,
+                grade=state.grade,
+                metadata={
+                    "past_paper_id": message.past_paper_id,
+                    "topic": _brief_topic_from_memo(_q),
+                    "marks": _q.marks,
+                },
+            )
+        else:
+            await analytics.log_event(
+                session_id=state.user_id,
+                channel=state.channel.value,
+                event_type="past_paper_start",
+                language=state.language,
+                grade=state.grade,
+                metadata={"past_paper_id": message.past_paper_id},
+            )
         if not triple:
             state.past_paper_id = None
             return self._localized(
@@ -585,6 +604,7 @@ class TutorEngine:
                 grade=state.grade,
                 metadata={
                     "past_paper_id": state.past_paper_id,
+                    "topic": _brief_topic_from_memo(question),
                     "attempts": state.past_paper_attempts,
                 },
             )
@@ -607,6 +627,7 @@ class TutorEngine:
             grade=state.grade,
             metadata={
                 "past_paper_id": state.past_paper_id,
+                "topic": _brief_topic_from_memo(question),
                 "attempts": state.past_paper_attempts,
             },
         )

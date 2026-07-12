@@ -54,3 +54,15 @@ async def recent() -> list[dict]:
 @router.get("/api/dashboard/top-papers")
 async def top_papers() -> list[dict]:
     return await analytics.top_past_papers(10)
+
+
+@router.get("/api/dashboard/learners")
+async def learners() -> list[dict]:
+    """Table row for each learner — used by the dashboard's Learners panel."""
+    return await analytics.learners_summary(50)
+
+
+@router.get("/api/dashboard/learner/{session_id}")
+async def learner(session_id: str) -> dict:
+    """Deep profile for one learner — feeds the expandable-row drill-down."""
+    return await analytics.learner_profile(session_id)

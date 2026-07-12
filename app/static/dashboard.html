@@ -134,6 +134,80 @@
     }
 
     .empty { color:var(--muted); font-style:italic; padding:20px 0; text-align:center; }
+
+    /* Learners table — dense, clickable rows with a drill-down region that
+       expands inline below the row when clicked. Kept in the shared dark
+       aesthetic (#111b21 panels, #00a884 accent) so it feels part of the
+       dashboard, not a bolt-on. */
+    table.learners { width:100%; }
+    table.learners th {
+      color:var(--muted); text-transform:uppercase; letter-spacing:1px;
+      font-size:11px; font-weight:600;
+    }
+    table.learners tr.summary {
+      cursor:pointer; transition:background .12s;
+    }
+    table.learners tr.summary:hover td { background:#182129; }
+    table.learners tr.summary.expanded td { background:#182129; }
+    table.learners td { vertical-align:middle; }
+    table.learners td .sid {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size:11px; color:var(--muted);
+    }
+    table.learners td .caret {
+      display:inline-block; width:12px; color:var(--muted);
+      transition:transform .12s;
+    }
+    table.learners tr.summary.expanded .caret { transform:rotate(90deg); color:var(--accent); }
+    table.learners td.pos { color:var(--accent); font-variant-numeric:tabular-nums; }
+    table.learners td.neg { color:var(--red); font-variant-numeric:tabular-nums; }
+
+    /* Drill-down region: onboarding profile + weak topics + recent events.
+       Rendered as a full-width TR that spans all columns. */
+    tr.drill td {
+      background:#0b141a; padding:0;
+    }
+    .drill-inner {
+      display:grid; grid-template-columns: 1fr 1.2fr 1fr; gap:16px;
+      padding:14px 18px 16px; border-top:1px solid var(--border);
+    }
+    @media (max-width: 900px) {
+      .drill-inner { grid-template-columns: 1fr; }
+    }
+    .drill-inner h3 {
+      font-size:11px; text-transform:uppercase; letter-spacing:1px;
+      color:var(--muted); margin:0 0 8px; font-weight:600;
+    }
+    .drill-inner .kv { font-size:12.5px; line-height:1.7; }
+    .drill-inner .kv .k { color:var(--muted); display:inline-block; min-width:78px; }
+    .drill-inner .kv .v { color:var(--txt); }
+    .drill-inner .topic-row {
+      display:grid; grid-template-columns: 1fr auto; gap:8px;
+      align-items:center; font-size:12.5px; margin-bottom:6px;
+    }
+    .drill-inner .topic-row .topic-name { color:var(--txt); text-transform:capitalize; }
+    .drill-inner .topic-row .topic-stat {
+      color:var(--muted); font-variant-numeric:tabular-nums; font-size:11.5px;
+    }
+    .drill-inner .topic-bar {
+      grid-column:1 / -1;
+      background:var(--in); border-radius:4px; height:6px; overflow:hidden;
+      margin-top:-2px; margin-bottom:6px;
+    }
+    .drill-inner .topic-bar .fill { background:var(--accent); height:100%; }
+    .drill-inner .topic-bar .fill.low { background:var(--red); }
+    .drill-inner .topic-bar .fill.mid { background:var(--orange); }
+    .drill-inner .recent-list {
+      max-height:180px; overflow-y:auto; padding-right:6px;
+      font-size:11.5px; line-height:1.5;
+    }
+    .drill-inner .recent-list .r {
+      display:grid; grid-template-columns: 68px 1fr;
+      gap:8px; padding:3px 0; border-bottom:1px solid #1a2429;
+    }
+    .drill-inner .recent-list .r:last-child { border-bottom:none; }
+    .drill-inner .recent-list .r .ts { color:var(--muted); font-variant-numeric:tabular-nums; }
+    .drill-inner .recent-list .r .ev { color:var(--txt); }
   </style>
 </head>
 <body>
@@ -208,6 +282,28 @@
     <div class="panel" style="margin-top:16px;">
       <h2>Live activity feed</h2>
       <div class="feed" id="feed"></div>
+    </div>
+
+    <!-- Row 5: learners panel — one row per learner, click to expand -->
+    <div class="panel" style="margin-top:16px;">
+      <h2>Learners — who is using the tutor</h2>
+      <div style="overflow-x:auto;">
+        <table id="learners-table" class="learners">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Session</th>
+              <th>Grade</th>
+              <th>Lang</th>
+              <th class="num">Msgs</th>
+              <th class="num">Correct</th>
+              <th class="num">Wrong</th>
+              <th>Last seen</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -387,11 +483,163 @@
       }).join('');
     }
 
+    // --- Learners panel ------------------------------------------------
+    // Remember which learner rows are expanded so a 10-second refresh
+    // doesn't collapse the drill-down while an exec is reading it.
+    const expandedLearners = new Set();
+    const learnerProfileCache = {};   // session_id -> last profile response
+
+    function fmtLastSeen(iso) {
+      if (!iso) return '—';
+      // ISO comes UTC; render short local time with date if not today.
+      try {
+        const d = new Date(iso);
+        const today = new Date();
+        const sameDay = d.toDateString() === today.toDateString();
+        if (sameDay) {
+          return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        }
+        return d.toLocaleDateString([], {month:'short', day:'numeric'})
+          + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      } catch (e) { return iso.slice(0, 16).replace('T', ' '); }
+    }
+
+    function shortSid(sid) {
+      if (!sid) return '—';
+      return sid.length > 12 ? sid.slice(0, 12) : sid;
+    }
+
+    function renderDrill(profile) {
+      if (!profile) return '<div class="empty">Loading…</div>';
+      const l = profile.learner || {};
+      const kv = (k, v) => `<div><span class="k">${k}</span><span class="v">${v ?? '—'}</span></div>`;
+      const profileHtml = `
+        <div>
+          <h3>Onboarding profile</h3>
+          <div class="kv">
+            ${kv('Name',     l.name_first)}
+            ${kv('Age',      l.age)}
+            ${kv('Grade',    l.grade ? 'Gr ' + l.grade : null)}
+            ${kv('Language', l.language)}
+            ${kv('School',   l.school)}
+            ${kv('First seen', l.first_seen ? fmtLastSeen(l.first_seen) : null)}
+            ${kv('Last seen',  l.last_seen ? fmtLastSeen(l.last_seen) : null)}
+          </div>
+        </div>`;
+      const topics = profile.weak_topics || [];
+      const topicsHtml = `
+        <div>
+          <h3>Weak-topic breakdown</h3>
+          ${topics.length ? topics.map(t => {
+            const rate = t.success_rate_pct;
+            const cls = rate < 34 ? 'low' : (rate < 67 ? 'mid' : '');
+            return `<div class="topic-row">
+              <div class="topic-name">${t.topic || '—'}</div>
+              <div class="topic-stat">${t.correct}/${t.attempts} · ${rate}%</div>
+              <div class="topic-bar"><div class="fill ${cls}" style="width:${Math.max(2, rate)}%"></div></div>
+            </div>`;
+          }).join('') : '<div class="empty" style="text-align:left;padding:6px 0;">No past-paper attempts yet.</div>'}
+        </div>`;
+      const rec = profile.recent || [];
+      const recentHtml = `
+        <div>
+          <h3>Recent activity (last ${rec.length})</h3>
+          <div class="recent-list">
+            ${rec.length ? rec.map(r => {
+              const evLabel = (r.event_type || '').replace(/_/g, ' ');
+              const md = r.metadata;
+              let detail = '';
+              if (md && typeof md === 'object') {
+                if (md.topic) detail = ' · ' + md.topic;
+                else if (md.past_paper_id) detail = ' · ' + md.past_paper_id;
+              }
+              return `<div class="r"><div class="ts">${fmtTs(r.ts)}</div><div class="ev">${evLabel}${detail}</div></div>`;
+            }).join('') : '<div class="empty" style="text-align:left;padding:6px 0;">No events yet.</div>'}
+          </div>
+        </div>`;
+      return `<div class="drill-inner">${profileHtml}${topicsHtml}${recentHtml}</div>`;
+    }
+
+    async function toggleLearner(sid, summaryRow) {
+      const drillId = 'drill-' + sid;
+      const existing = document.getElementById(drillId);
+      if (existing) {
+        // Collapse.
+        expandedLearners.delete(sid);
+        existing.remove();
+        summaryRow.classList.remove('expanded');
+        return;
+      }
+      // Expand.
+      expandedLearners.add(sid);
+      summaryRow.classList.add('expanded');
+      const tr = document.createElement('tr');
+      tr.id = drillId;
+      tr.className = 'drill';
+      const td = document.createElement('td');
+      td.colSpan = 8;
+      td.innerHTML = '<div class="drill-inner"><div class="empty">Loading…</div></div>';
+      tr.appendChild(td);
+      summaryRow.parentNode.insertBefore(tr, summaryRow.nextSibling);
+      const profile = await fetchJson('/api/dashboard/learner/' + encodeURIComponent(sid));
+      learnerProfileCache[sid] = profile;
+      td.innerHTML = renderDrill(profile);
+    }
+
+    async function refreshLearners() {
+      const data = await fetchJson('/api/dashboard/learners');
+      const tbody = document.querySelector('#learners-table tbody');
+      if (!tbody) return;
+      if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty">No learners yet — waiting for first onboarding…</td></tr>';
+        return;
+      }
+      // Preserve expansion state across refreshes: build the new tbody,
+      // then re-open any rows the user had already expanded.
+      tbody.innerHTML = '';
+      data.forEach(l => {
+        const sid = l.session_id;
+        const isExpanded = expandedLearners.has(sid);
+        const summaryTr = document.createElement('tr');
+        summaryTr.className = 'summary' + (isExpanded ? ' expanded' : '');
+        summaryTr.dataset.sid = sid;
+        summaryTr.innerHTML = `
+          <td><span class="caret">&#9656;</span> ${l.name_first || '—'}</td>
+          <td><span class="sid" title="${sid}">${shortSid(sid)}</span></td>
+          <td>${l.grade ? 'Gr ' + l.grade : '—'}</td>
+          <td>${l.language || '—'}</td>
+          <td class="num">${l.messages || 0}</td>
+          <td class="num pos">${l.correct || 0}</td>
+          <td class="num neg">${l.wrong || 0}</td>
+          <td>${fmtLastSeen(l.last_seen)}</td>`;
+        summaryTr.addEventListener('click', () => toggleLearner(sid, summaryTr));
+        tbody.appendChild(summaryTr);
+        if (isExpanded) {
+          const drillTr = document.createElement('tr');
+          drillTr.id = 'drill-' + sid;
+          drillTr.className = 'drill';
+          const td = document.createElement('td');
+          td.colSpan = 8;
+          td.innerHTML = renderDrill(learnerProfileCache[sid]);
+          drillTr.appendChild(td);
+          tbody.appendChild(drillTr);
+          // Refresh the cached profile in the background so the drill-down
+          // stays live as new events land for this learner.
+          fetchJson('/api/dashboard/learner/' + encodeURIComponent(sid)).then(p => {
+            learnerProfileCache[sid] = p;
+            const cell = document.querySelector('#drill-' + CSS.escape(sid) + ' td');
+            if (cell) cell.innerHTML = renderDrill(p);
+          });
+        }
+      });
+    }
+
     async function refreshAll() {
       // Kick everything off in parallel — dashboards should feel snappy.
       await Promise.all([
         refreshSummary(), refreshTimeline(), refreshLangMix(),
         refreshGradeMix(), refreshPapers(), refreshFeed(),
+        refreshLearners(),
       ]);
     }
 

@@ -356,3 +356,105 @@ async def top_past_papers(limit: int = 10) -> list[dict]:
     except Exception:
         logger.exception("analytics.top_past_papers failed")
     return out
+
+
+
+async def learners_summary(limit: int = 20) -> list[dict]:
+    """List learners with their session activity — for the dashboard's
+    'People currently using the tutor' table. Each row includes the
+    onboarding profile (grade, language, age, school, first_seen) plus
+    lifetime message + past-paper counts so the exec can see at a glance
+    who is active and how they're doing.
+    """
+    out: list[dict] = []
+    try:
+        path = await _ensure_ready()
+        async with aiosqlite.connect(path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT l.session_id, l.name_first, l.grade, l.language, "
+                "l.age, l.school, l.first_seen, l.last_seen, "
+                "COALESCE((SELECT COUNT(*) FROM events e WHERE e.session_id = l.session_id AND e.event_type = 'message'), 0) AS messages, "
+                "COALESCE((SELECT COUNT(*) FROM events e WHERE e.session_id = l.session_id AND e.event_type = 'past_paper_correct'), 0) AS correct, "
+                "COALESCE((SELECT COUNT(*) FROM events e WHERE e.session_id = l.session_id AND e.event_type = 'past_paper_wrong'), 0) AS wrong "
+                "FROM learners l ORDER BY l.last_seen DESC LIMIT ?",
+                (int(limit),),
+            ) as cur:
+                async for row in cur:
+                    out.append(dict(row))
+    except Exception:
+        logger.exception("analytics.learners_summary failed")
+    return out
+
+
+async def learner_profile(session_id: str) -> dict:
+    """Deep profile: onboarding data + weak-topic breakdown for one learner.
+
+    Used by the dashboard's expandable-row drill-down. Returns:
+      - learner:      onboarding row (or None if never onboarded)
+      - weak_topics:  past-paper attempts grouped by topic, ordered wrong-desc
+                      so the biggest struggles surface first
+      - recent:       last 20 events for this learner (any type)
+    """
+    profile: dict = {"session_id": session_id, "learner": None,
+                     "weak_topics": [], "recent": []}
+    try:
+        path = await _ensure_ready()
+        async with aiosqlite.connect(path) as db:
+            db.row_factory = aiosqlite.Row
+            # Onboarding data
+            async with db.execute(
+                "SELECT session_id, name_first, grade, language, age, school, "
+                "first_seen, last_seen FROM learners WHERE session_id = ?",
+                (session_id,),
+            ) as cur:
+                row = await cur.fetchone()
+                profile["learner"] = dict(row) if row else None
+            # Weakness breakdown: past-paper attempts grouped by topic
+            async with db.execute(
+                "SELECT "
+                "  json_extract(metadata, '$.topic') AS topic, "
+                "  SUM(CASE WHEN event_type='past_paper_correct' THEN 1 ELSE 0 END) AS correct, "
+                "  SUM(CASE WHEN event_type='past_paper_wrong' THEN 1 ELSE 0 END) AS wrong "
+                "FROM events "
+                "WHERE session_id = ? "
+                "  AND event_type LIKE 'past_paper_%' "
+                "  AND json_extract(metadata, '$.topic') IS NOT NULL "
+                "GROUP BY topic "
+                "ORDER BY wrong DESC, correct DESC",
+                (session_id,),
+            ) as cur:
+                async for row in cur:
+                    correct = int(row["correct"] or 0)
+                    wrong = int(row["wrong"] or 0)
+                    total = correct + wrong
+                    rate = round((correct / total) * 100) if total else 0
+                    profile["weak_topics"].append({
+                        "topic": row["topic"],
+                        "correct": correct,
+                        "wrong": wrong,
+                        "attempts": total,
+                        "success_rate_pct": rate,
+                    })
+            # Recent activity for this learner (last 20 events)
+            async with db.execute(
+                "SELECT ts, event_type, language, grade, metadata "
+                "FROM events WHERE session_id = ? "
+                "ORDER BY id DESC LIMIT 20",
+                (session_id,),
+            ) as cur:
+                async for row in cur:
+                    md = None
+                    if row["metadata"]:
+                        try:
+                            md = json.loads(row["metadata"])
+                        except Exception:
+                            md = row["metadata"]
+                    profile["recent"].append({
+                        "ts": row["ts"], "event_type": row["event_type"],
+                        "language": row["language"], "grade": row["grade"],
+                        "metadata": md,
+                    })
+    except Exception:
+        logger.exception("analytics.learner_profile failed")
+    return profile

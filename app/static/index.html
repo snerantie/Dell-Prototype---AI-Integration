@@ -189,7 +189,7 @@
         </optgroup>
       </select>
       <a class="restart-link" href="#" id="restart-link"
-         title="Reset onboarding (demo)">&#128274; Restart</a>
+         title="Reset onboarding (Shift+click for a fresh learner id)">&#128274; Restart</a>
       <a class="menu-link" href="/ussd-simulator" title="Switch to USSD simulator">&#8801;</a>
     </div>
   </header>
@@ -287,7 +287,18 @@
 
   <script>
     const chat = document.getElementById('chat');
-    const userId = 'web-' + Math.random().toString(36).slice(2, 8);
+    const userId = (function loadOrCreateUserId() {
+      // Persist the learner's session id in localStorage so the analytics DB
+      // sees the same person across reloads, tabs, and days. Only regenerate
+      // if localStorage is unavailable or the key hasn't been set yet.
+      try {
+        const existing = localStorage.getItem('educonnect_user_id');
+        if (existing) return existing;
+      } catch (e) { /* private browsing etc. */ }
+      const fresh = 'web-' + Math.random().toString(36).slice(2, 10);
+      try { localStorage.setItem('educonnect_user_id', fresh); } catch (e) {}
+      return fresh;
+    })();
 
     function bubble(text, cls) {
       const d = document.createElement('div');
@@ -492,7 +503,15 @@
 
     document.getElementById('restart-link').addEventListener('click', (e) => {
       e.preventDefault();
-      try { localStorage.removeItem('educonnect_onboarded'); } catch (e) {}
+      // Soft reset: clear onboarding flag so the modal shows again, but KEEP
+      // the persisted user_id so analytics still see the same learner. Hold
+      // Shift while clicking (or check ?hard=1 in the URL) for a full reset
+      // that also cycles the user_id — useful for cold "new learner" demos.
+      const hard = e.shiftKey || new URLSearchParams(window.location.search).get('hard') === '1';
+      try {
+        localStorage.removeItem('educonnect_onboarded');
+        if (hard) localStorage.removeItem('educonnect_user_id');
+      } catch (err) {}
       window.location.reload();
     });
 

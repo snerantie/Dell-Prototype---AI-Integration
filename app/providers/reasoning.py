@@ -78,6 +78,21 @@ class MockReasoningProvider(ReasoningProvider):
             "and I'll help you step-by-step."
         )
 
+    async def answer_with_document(
+        self, question: str, document_text: str,
+        document_filename: str = "document", language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        preview = (document_text or "").strip()[:200]
+        return (
+            f"I received your document '{document_filename}' "
+            f"({len(document_text)} characters extracted). To read it and give "
+            f"a step-by-step answer, the tutor needs the live AI model enabled.\n\n"
+            f"Preview of what I extracted:\n{preview}...\n\n"
+            f"For now, you can copy-paste the question you're stuck on into the "
+            f"chat, and I'll help you work through it."
+        )
+
 
 def _grounding_text(d: Diagnosis) -> str:
     parts = []
@@ -260,6 +275,48 @@ class DellReasoningProvider(ReasoningProvider):
                 "I couldn't process the image right now. Try describing the problem "
                 "in words (e.g. 'right triangle, sides 3 and 4, find hypotenuse') "
                 "and I'll help step-by-step."
+            )
+
+    async def answer_with_document(
+        self, question: str, document_text: str,
+        document_filename: str = "document", language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        lang_name = {"en": "English", "af": "Afrikaans", "zu": "isiZulu",
+                     "xh": "isiXhosa"}.get(language, "English")
+        grade_hint = f"The learner is in Grade {grade}. " if grade else ""
+        system = (
+            "You are EduConnect AI Tutor — a warm, patient South African "
+            "high-school Mathematics tutor. A learner has uploaded a document "
+            "(past paper, worksheet, homework, textbook page) and asked you a "
+            "question about it. Read the document text carefully and answer "
+            "step-by-step, referring to the document by section/question number "
+            "where possible.\n\n"
+            "Rules:\n"
+            "1. If the document has multiple questions, focus on the specific one "
+            "the learner asked about. If unclear, answer the FIRST question.\n"
+            "2. Show every step of your working.\n"
+            "3. Cite the document (e.g. 'Question 2.1 asks...') so the learner "
+            "can follow along in their own copy.\n"
+            "4. If the document seems unrelated to Maths, politely say so and "
+            "invite a maths question.\n"
+            f"5. Reply in {lang_name}.\n"
+            f"{grade_hint}Keep the response under 500 words."
+        )
+        user_message = (
+            f"Learner's question: {question}\n\n"
+            f"Document '{document_filename}':\n"
+            f"{document_text}"
+        )
+        try:
+            raw = await self._chat(system, user_message, temperature=0.3)
+            return raw.strip()
+        except Exception as exc:
+            logger.warning("Dell LLM answer_with_document failed: %s", exc)
+            return (
+                f"I couldn't process the document right now. Try copy-pasting "
+                f"the specific question you're stuck on directly into the chat, "
+                f"and I'll help step-by-step."
             )
 
 

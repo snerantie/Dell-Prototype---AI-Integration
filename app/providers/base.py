@@ -93,6 +93,21 @@ class ReasoningProvider(ABC):
         a graceful fallback explaining that."""
         ...
 
+    @abstractmethod
+    async def answer_with_document(
+        self,
+        question: str,
+        document_text: str,
+        document_filename: str = "document",
+        language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        """Answer a question with an accompanying document (PDF or DOCX text
+        already extracted). The tutor's job is to read the document, understand
+        what the learner is asking about it, and respond step-by-step.
+        Returns a single text block."""
+        ...
+
 
 class VisionProvider(ABC):
     """Reads handwritten / typed maths from an uploaded screenshot."""

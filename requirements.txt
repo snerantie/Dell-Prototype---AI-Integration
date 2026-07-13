@@ -17,5 +17,10 @@ python-multipart==0.0.20
 # Async SQLite for the analytics event store (Phase 2)
 aiosqlite==0.20.0
 
+# Document extraction for PDF + Word uploads (past papers, worksheets, homework).
+# Both are pure-Python (no native deps, no cargo) — safe on Render's free tier.
+pypdf==5.1.0
+python-docx==1.1.2
+
 # --- Dev / test ---
 pytest==8.3.4

@@ -42,6 +42,10 @@ class ChatRequest(BaseModel):
     grade: Optional[str] = None              # CAPS grade hint, "8".."12"
     past_paper_id: Optional[str] = None      # e.g. "2026_jun_nw:p1:1.1.1"
     payload: Optional[str] = None            # quick-reply button payload (e.g. "action:practice_papers")
+    # Document upload: PDF / DOCX shipped from the composer's 📎 button.
+    document_base64_data: Optional[str] = None
+    document_type: Optional[str] = None      # "pdf" or "docx"
+    document_filename: Optional[str] = None
 
 
 class OnboardRequest(BaseModel):
@@ -116,10 +120,66 @@ async def past_papers_index() -> list[dict]:
     ]
 
 
+def _extract_document_text(base64_data: str, doc_type: str) -> str:
+    """Extract text from an uploaded PDF or DOCX. Returns empty string on
+    failure so the caller can gracefully degrade. Pure Python — no native
+    deps, safe on Render's free tier."""
+    import base64
+    import io
+    if not base64_data:
+        return ""
+    try:
+        raw = base64.b64decode(base64_data)
+    except Exception:
+        return ""
+    doc_type = (doc_type or "").lower()
+    try:
+        if doc_type == "pdf":
+            from pypdf import PdfReader
+            reader = PdfReader(io.BytesIO(raw))
+            pages_text = []
+            for page in reader.pages[:20]:  # cap at 20 pages for LLM context
+                try:
+                    pages_text.append(page.extract_text() or "")
+                except Exception:
+                    pages_text.append("")
+            return "\n\n".join(pages_text).strip()
+        if doc_type == "docx":
+            from docx import Document
+            doc = Document(io.BytesIO(raw))
+            return "\n".join(p.text for p in doc.paragraphs if p.text.strip()).strip()
+    except Exception:
+        pass
+    return ""
+
+
 @router.post("/api/chat")
 async def chat(req: ChatRequest) -> dict:
     engine = get_engine()
-    if req.image_caption or req.image_base64_data:
+    if req.document_base64_data and req.document_type:
+        # Extract text server-side so the LLM prompt can be enriched.
+        # Truncate to ~4000 chars to fit inside common LLM context windows
+        # while still capturing full past papers / worksheets.
+        extracted = _extract_document_text(req.document_base64_data, req.document_type)
+        if len(extracted) > 4000:
+            extracted = extracted[:4000] + "\n\n[...document truncated at 4000 chars...]"
+        msg = InboundMessage(
+            channel=Channel.MOCK_UI, user_id=req.user_id,
+            text=req.text or "",
+            language=req.language, grade=req.grade,
+            past_paper_id=req.past_paper_id, payload=req.payload,
+            document_base64_data=req.document_base64_data,
+            document_type=req.document_type,
+            document_filename=req.document_filename or f"upload.{req.document_type}",
+        )
+        # Attach the extracted text as a session attribute so the engine can
+        # combine it with the learner's question. We piggyback on `text` if
+        # no explicit text was supplied.
+        if not msg.text:
+            msg.text = "Please help me with this document"
+        # Prepend extracted text as context so the LLM sees both.
+        msg.text = f"{msg.text}\n\n[Document '{msg.document_filename}' contents:]\n{extracted}"
+    elif req.image_caption or req.image_base64_data:
         msg = InboundMessage(
             channel=Channel.MOCK_UI, user_id=req.user_id, type=MessageType.IMAGE,
             image=ImageAttachment(

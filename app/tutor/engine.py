@@ -156,6 +156,39 @@ class TutorEngine:
         if text.lower() == "hint":
             return await self._handle_hint(state)
 
+        # Document upload (PDF / DOCX) — extract text was already prepended to
+        # message.text by mock_ui, but we also route explicitly through the
+        # LLM's document-aware method so the system prompt is tuned for
+        # document Q&A.
+        if message.document_base64_data and message.document_type:
+            from app.channels.mock_ui import _extract_document_text
+            extracted = _extract_document_text(
+                message.document_base64_data, message.document_type
+            )
+            question = (text or "Please help me with this document").split("\n\n[Document")[0]
+            answer = await self.reasoning.answer_with_document(
+                question=question,
+                document_text=extracted,
+                document_filename=message.document_filename or "document",
+                language=state.language,
+                grade=state.grade,
+            )
+            back = [QuickReply(label=t("btn_back_menu", state.language),
+                               payload="action:main_menu")]
+            await analytics.log_event(
+                session_id=state.user_id,
+                channel=state.channel.value,
+                event_type="document_question_answered",
+                language=state.language,
+                grade=state.grade,
+                metadata={
+                    "doc_type": message.document_type,
+                    "doc_size_kb": len(message.document_base64_data) // 1024,
+                    "doc_filename": message.document_filename,
+                },
+            )
+            return self._localized(state, [answer], quick_replies=back, translate=False)
+
         # Simple arithmetic (young learners / random maths from any grade).
         # Only fires for single-operator expressions like "5 + 7" or "20 ÷ 4"
         # and specifically avoids strings containing "=" so we don't intercept

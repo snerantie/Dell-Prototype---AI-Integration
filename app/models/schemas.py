@@ -116,6 +116,11 @@ class InboundMessage(BaseModel):
     grade: Optional[str] = None                # CAPS grade hint, "8".."12"
     past_paper_id: Optional[str] = None        # e.g. "2026_jun_nw:p1:1.1.1"
     payload: Optional[str] = None              # quick-reply button payload from the frontend
+    # Document upload (PDF / DOCX): learner-supplied past papers, worksheets,
+    # homework. Extracted server-side to text before hitting the LLM.
+    document_base64_data: Optional[str] = None      # base64-encoded PDF or DOCX
+    document_type: Optional[str] = None             # "pdf" or "docx"
+    document_filename: Optional[str] = None         # for display / logging
     received_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

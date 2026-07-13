@@ -237,6 +237,46 @@ class TutorEngine:
         return self._localized(state, screens, quick_replies=replies, translate=False)
 
     async def _handle_image(self, message: InboundMessage, state: ConversationState) -> TutorResponse:
+        # Real image bytes + free-form-style question → vision LLM.
+        # This is what enables geometry-with-diagrams and photos of textbook
+        # problems. The learner uploads a photo (via the 📸 button on the
+        # frontend) and we route it to the vision-capable LLM for a direct
+        # step-by-step answer, rather than trying to OCR their working.
+        if message.image and message.image.base64_data:
+            caption = (message.image.caption or "").strip()
+            looks_like_geometry_or_question = (
+                state.stage == Stage.FREE_FORM
+                or any(kw in caption.lower() for kw in [
+                    "find", "solve", "prove", "explain", "geometry",
+                    "triangle", "circle", "angle", "square", "rectangle",
+                    "diagram", "shape", "help", "what",
+                ])
+                or len(caption) < 5  # very short/empty caption = "look at this photo"
+            )
+            if looks_like_geometry_or_question:
+                question = caption or "What is the answer to this problem?"
+                answer = await self.reasoning.answer_with_image(
+                    question=question,
+                    image_base64=message.image.base64_data,
+                    image_mime=message.image.mime_type or "image/jpeg",
+                    language=state.language,
+                    grade=state.grade,
+                )
+                back = [QuickReply(label=t("btn_back_menu", state.language),
+                                   payload="action:main_menu")]
+                await analytics.log_event(
+                    session_id=state.user_id,
+                    channel=state.channel.value,
+                    event_type="image_question_answered",
+                    language=state.language,
+                    grade=state.grade,
+                    metadata={"image_kb": len(message.image.base64_data) // 1024,
+                              "caption_len": len(caption)},
+                )
+                return self._localized(state, [answer], quick_replies=back, translate=False)
+
+        # Fallback to the existing OCR transcription flow (for structured
+        # working-step uploads where the learner explicitly wants diagnosis).
         result = await self.vision.transcribe_working(message.image, hint=state.problem)
         if not result.steps and not result.problem:
             return self._localized(state, [t("ask_working", state.language)],

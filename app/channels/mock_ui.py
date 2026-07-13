@@ -33,6 +33,11 @@ class ChatRequest(BaseModel):
     text: Optional[str] = None
     # Simulates an uploaded screenshot by carrying the transcribed working.
     image_caption: Optional[str] = None
+    # Real image bytes (base64-encoded, no data:URL prefix) for the vision LLM.
+    # When present, the engine routes to answer_with_image for geometry / diagram
+    # Q&A instead of the OCR-only transcription flow.
+    image_base64_data: Optional[str] = None
+    image_mime_type: Optional[str] = "image/jpeg"
     language: Optional[str] = None
     grade: Optional[str] = None              # CAPS grade hint, "8".."12"
     past_paper_id: Optional[str] = None      # e.g. "2026_jun_nw:p1:1.1.1"
@@ -114,11 +119,15 @@ async def past_papers_index() -> list[dict]:
 @router.post("/api/chat")
 async def chat(req: ChatRequest) -> dict:
     engine = get_engine()
-    if req.image_caption:
+    if req.image_caption or req.image_base64_data:
         msg = InboundMessage(
             channel=Channel.MOCK_UI, user_id=req.user_id, type=MessageType.IMAGE,
-            image=ImageAttachment(caption=req.image_caption), text=req.text,
-            language=req.language, grade=req.grade,
+            image=ImageAttachment(
+                caption=req.image_caption,
+                base64_data=req.image_base64_data,
+                mime_type=req.image_mime_type or "image/jpeg",
+            ),
+            text=req.text, language=req.language, grade=req.grade,
             past_paper_id=req.past_paper_id,
             payload=req.payload,
         )

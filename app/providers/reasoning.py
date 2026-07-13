@@ -61,6 +61,23 @@ class MockReasoningProvider(ReasoningProvider):
             "and I'll help you diagnose your working step by step."
         )
 
+    async def answer_with_image(
+        self,
+        question: str,
+        image_base64: str,
+        image_mime: str = "image/jpeg",
+        language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        # No vision LLM in mock mode — return a helpful, honest message.
+        return (
+            f"I can see you've shared an image (about {len(image_base64) // 1024}KB). "
+            "To read diagrams, geometry sketches, or handwritten working, the tutor needs "
+            "the live vision AI model enabled.\n\n"
+            "For now, you can type the problem in words (e.g. 'right triangle with sides 3 and 4') "
+            "and I'll help you step-by-step."
+        )
+
 
 def _grounding_text(d: Diagnosis) -> str:
     parts = []
@@ -181,6 +198,68 @@ class DellReasoningProvider(ReasoningProvider):
                 f"I'm having trouble reaching the tutor brain right now. "
                 f"Please try that question again in a moment. Your question was: "
                 f"'{question.strip()[:120]}'"
+            )
+
+    async def answer_with_image(
+        self,
+        question: str,
+        image_base64: str,
+        image_mime: str = "image/jpeg",
+        language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        """Multimodal Q&A. Sends a data-URL image + text prompt to the
+        OpenAI-compatible vision endpoint (e.g. Groq's
+        llama-3.2-11b-vision-preview). Falls back to a graceful message on
+        any transport / parse error so the learner never dead-ends."""
+        lang_name = {"en": "English", "af": "Afrikaans", "zu": "isiZulu",
+                     "xh": "isiXhosa"}.get(language, "English")
+        grade_hint = f"The learner is in Grade {grade}. " if grade else ""
+        system = (
+            "You are EduConnect AI Tutor — a warm, patient South African high-school "
+            "Mathematics tutor. A learner has shared a photo of a Maths problem (which "
+            "may include diagrams, geometry sketches, handwritten working, or an "
+            "equation from a textbook). Look at the image carefully and answer "
+            "step-by-step, showing every step of the working.\n\n"
+            "Rules:\n"
+            "1. Describe what you see in the image first (e.g. 'I can see a right-angled "
+            "triangle with sides labelled 3, 4, and x').\n"
+            "2. Identify what the learner is being asked to find.\n"
+            "3. State the method or theorem you'll use (Pythagoras, sine rule, etc.).\n"
+            "4. Show every step of the working, clearly numbered or laid out.\n"
+            "5. Give the final answer.\n"
+            f"6. Reply in {lang_name}.\n"
+            f"{grade_hint}Keep the response under 400 words."
+        )
+        # Build the multimodal user message (OpenAI vision-format content parts).
+        data_url = f"data:{image_mime};base64,{image_base64}"
+        user_content = [
+            {"type": "text", "text": question or "Please help me solve this problem."},
+            {"type": "image_url", "image_url": {"url": data_url}},
+        ]
+        try:
+            payload = {
+                "model": self._model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user_content},
+                ],
+                "temperature": 0.3,
+            }
+            headers = {"Authorization": f"Bearer {self._api_key}"}
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.post(
+                    f"{self._base_url}/chat/completions", json=payload, headers=headers
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                return data["choices"][0]["message"]["content"].strip()
+        except Exception as exc:
+            logger.warning("Dell LLM answer_with_image failed: %s", exc)
+            return (
+                "I couldn't process the image right now. Try describing the problem "
+                "in words (e.g. 'right triangle, sides 3 and 4, find hypotenuse') "
+                "and I'll help step-by-step."
             )
 
 

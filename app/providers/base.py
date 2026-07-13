@@ -78,6 +78,21 @@ class ReasoningProvider(ABC):
         explaining that."""
         ...
 
+    @abstractmethod
+    async def answer_with_image(
+        self,
+        question: str,
+        image_base64: str,
+        image_mime: str = "image/jpeg",
+        language: str = "en",
+        grade: Optional[str] = None,
+    ) -> str:
+        """Answer a Maths question with an accompanying image (e.g. a geometry
+        diagram, a photo of handwritten working). Uses a vision-capable LLM.
+        Returns a single text block. If no vision model is available, returns
+        a graceful fallback explaining that."""
+        ...
+
 
 class VisionProvider(ABC):
     """Reads handwritten / typed maths from an uploaded screenshot."""

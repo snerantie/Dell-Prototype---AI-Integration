@@ -630,6 +630,303 @@ def slide_demo_flow(prs):
 
 
 # ============================================================================
+# Slide 6a — AI/LLM Models (detailed)
+# ============================================================================
+def slide_ai_models(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.4, 12.1, 0.5, "AI/LLM Models",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.85, 12.1, 0.7,
+              "Sovereign, open-weight, swap-able",
+              size=26, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.75, 4)
+
+    # ----- Two-column layout -----
+    col_top = 2.15
+    left_x = 0.6
+    right_x = 6.95
+    col_w = 5.75
+
+    # LEFT column — Text Reasoning
+    _add_text(s, left_x, col_top, col_w, 0.4,
+              "Text Reasoning",
+              size=16, color=GREEN_SOFT, bold=True)
+    _add_pill(s, left_x, col_top + 0.55, col_w, 0.6,
+              "🧠 Meta Llama 3.3 70B",
+              fill=GREEN, fg=DARK_TXT, size=16)
+    _add_bullets(s, left_x, col_top + 1.35, col_w, 4.0, [
+        "70 billion parameters, instruction-tuned",
+        "Open-weight (self-hostable on Dell hardware)",
+        "Handles: factorisation, trig, calculus, Socratic dialogue",
+        "isiZulu + English fluency",
+        "Pilot: Groq API (free tier)",
+        "Production: Dell AI Factory NIM (in-country)",
+    ], size=14, color=TEXT, spacing=8)
+
+    # RIGHT column — Vision / Multimodal
+    _add_text(s, right_x, col_top, col_w, 0.4,
+              "Vision / Multimodal",
+              size=16, color=GREEN_SOFT, bold=True)
+    _add_pill(s, right_x, col_top + 0.55, col_w, 0.6,
+              "👁️ Llama 4 Scout / Llama 3.2 Vision",
+              fill=ORANGE, fg=DARK_TXT, size=16)
+    _add_bullets(s, right_x, col_top + 1.35, col_w, 4.0, [
+        "Multimodal — text + image input",
+        "Reads geometry diagrams, handwritten working",
+        "Textbook page understanding",
+        "Same OpenAI-compatible API",
+        "Pilot: Groq API (free)",
+        "Production: Dell AI Factory NIM",
+    ], size=14, color=TEXT, spacing=8)
+
+    # Bottom banner
+    banner_y = 6.55
+    banner = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.6), Inches(banner_y), Inches(12.1), Inches(0.6),
+    )
+    banner.fill.solid()
+    banner.fill.fore_color.rgb = PANEL
+    banner.line.color.rgb = GREEN
+    banner.line.width = Pt(1)
+    banner.text_frame.text = ""
+    _add_text(s, 0.6, banner_y + 0.1, 12.1, 0.4,
+              "Why open-weight Llama over GPT-4/Claude/Gemini: "
+              "POPIA sovereignty · no vendor lock-in · zero pilot cost · fully auditable",
+              size=12, color=GREEN_SOFT, align=PP_ALIGN.CENTER, bold=True)
+
+    _add_speaker_notes(s,
+        "Meta Llama is the family; Groq is our pilot host; Dell AI Factory "
+        "NIM is our production host. Same API contract on both sides — "
+        "swap via one env var.")
+    return s
+
+
+# ============================================================================
+# Slide 6b — Architecture · Data Flow (detailed vertical diagram)
+# ============================================================================
+def _add_down_arrow(slide, left, top, width, height, *, color=GREEN):
+    arrow = slide.shapes.add_shape(
+        MSO_SHAPE.DOWN_ARROW,
+        Inches(left), Inches(top), Inches(width), Inches(height),
+    )
+    arrow.fill.solid()
+    arrow.fill.fore_color.rgb = color
+    arrow.line.fill.background()
+    return arrow
+
+
+def _add_layer(slide, left, top, width, height, *, fill, border=None, border_pt=0):
+    shape = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(left), Inches(top), Inches(width), Inches(height),
+    )
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill
+    if border is not None:
+        shape.line.color.rgb = border
+        shape.line.width = Pt(border_pt)
+    else:
+        shape.line.fill.background()
+    shape.text_frame.text = ""
+    return shape
+
+
+def slide_data_flow(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.35, 12.1, 0.5, "Architecture · Data Flow",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.75, 12.1, 0.6,
+              "One request, end-to-end",
+              size=24, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.5, 4)
+
+    # ----- Vertical stack of 6 layers -----
+    # Slide usable region: y ~1.75 .. 6.55 (~4.8 inches)
+    # 6 layers + 5 arrows. Layer h = 0.55, arrow h = 0.20.
+    # Total = 6*0.55 + 5*0.20 = 4.30 → fits with gaps.
+    stack_left = 3.5
+    stack_w = 6.3
+    layer_h = 0.55
+    arrow_h = 0.22
+    gap_after_arrow = 0.02  # tiny visual breather
+    y = 1.75
+
+    def add_layer_with_sub(y, main_text, main_color, main_fg, sub_text,
+                           *, border=None):
+        _add_layer(s, stack_left, y, stack_w, layer_h,
+                   fill=main_color, border=border,
+                   border_pt=1 if border else 0)
+        _add_text(s, stack_left + 0.15, y + 0.05, stack_w - 0.3, 0.30,
+                  main_text, size=13, color=main_fg, bold=True,
+                  align=PP_ALIGN.CENTER)
+        _add_text(s, stack_left + 0.15, y + 0.32, stack_w - 0.3, 0.22,
+                  sub_text, size=9, color=main_fg,
+                  align=PP_ALIGN.CENTER)
+
+    # 1. Learner input (GREEN)
+    add_layer_with_sub(
+        y,
+        "1 · Learner input  ·  WhatsApp / USSD / Browser",
+        GREEN, DARK_TXT,
+        "text · photo · PDF/DOCX · quick-reply button",
+    )
+    y1_center_bottom = y + layer_h
+    y += layer_h
+    _add_down_arrow(s, stack_left + stack_w / 2 - 0.15, y, 0.30, arrow_h)
+    y += arrow_h + gap_after_arrow
+
+    # 2. Channel handler (ORANGE)
+    add_layer_with_sub(
+        y,
+        "2 · Channel handler  ·  app/channels/*.py",
+        ORANGE, DARK_TXT,
+        "Normalises to InboundMessage schema",
+    )
+    y += layer_h
+    _add_down_arrow(s, stack_left + stack_w / 2 - 0.15, y, 0.30, arrow_h)
+    y += arrow_h + gap_after_arrow
+
+    # 3. Tutor Engine (GREEN_SOFT panel)
+    add_layer_with_sub(
+        y,
+        "3 · Tutor Engine  ·  app/tutor/engine.py",
+        GREEN_SOFT, DARK_TXT,
+        "Routes by input type · session state · language / grade",
+    )
+    y += layer_h
+    _add_down_arrow(s, stack_left + stack_w / 2 - 0.15, y, 0.30, arrow_h)
+    y += arrow_h + gap_after_arrow
+
+    # 4. Router decision — 5 small pills inside a light frame
+    router_y = y
+    router_h = 0.75
+    # Light frame
+    _add_layer(s, stack_left, router_y, stack_w, router_h,
+               fill=PANEL, border=MUTED, border_pt=0.5)
+    # Center label above pills
+    _add_text(s, stack_left + 0.1, router_y + 0.04, stack_w - 0.2, 0.20,
+              "4 · Router decision",
+              size=10, color=GREEN_SOFT, bold=True, align=PP_ALIGN.CENTER)
+    # 5 pills side by side
+    pills_y = router_y + 0.28
+    pills_h = 0.40
+    n_pills = 5
+    inner_margin = 0.12
+    total_pill_w = stack_w - (2 * inner_margin) - ((n_pills - 1) * 0.05)
+    pill_w = total_pill_w / n_pills
+    pill_specs = [
+        ("📝 Past-paper?",   RGBColor(0xFF, 0xE0, 0x66), DARK_TXT,
+         "canonical answer + memo"),
+        ("🧮 Arithmetic?",   RGBColor(0x66, 0xB2, 0xFF), DARK_TXT,
+         "deterministic evaluator"),
+        ("🔤 Equation?",     GREEN, DARK_TXT,
+         "math_analyzer (Python)"),
+        ("🖼️ Image?",        RGBColor(0xC8, 0x9E, 0xFF), DARK_TXT,
+         "vision LLM"),
+        ("📄 Doc?",          ORANGE, DARK_TXT,
+         "PDF/DOCX → LLM"),
+    ]
+    for i, (label, fill_c, fg_c, sub) in enumerate(pill_specs):
+        px = stack_left + inner_margin + i * (pill_w + 0.05)
+        # Pill
+        pill_shape = s.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(px), Inches(pills_y),
+            Inches(pill_w), Inches(pills_h / 2),
+        )
+        pill_shape.fill.solid()
+        pill_shape.fill.fore_color.rgb = fill_c
+        pill_shape.line.fill.background()
+        tf = pill_shape.text_frame
+        tf.margin_left = tf.margin_right = Inches(0.03)
+        tf.margin_top = tf.margin_bottom = Inches(0.02)
+        p = tf.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        r = p.add_run()
+        r.text = label
+        r.font.size = Pt(9)
+        r.font.bold = True
+        r.font.color.rgb = fg_c
+        r.font.name = "Calibri"
+        # Sub-label below pill
+        _add_text(s, px, pills_y + pills_h / 2 + 0.02,
+                  pill_w, 0.18, sub,
+                  size=7, color=MUTED, align=PP_ALIGN.CENTER)
+
+    y = router_y + router_h
+    _add_down_arrow(s, stack_left + stack_w / 2 - 0.15, y, 0.30, arrow_h)
+    y += arrow_h + gap_after_arrow
+
+    # 5. AI Providers (PANEL) — with right-side pill for Groq/Dell NIM
+    providers_y = y
+    add_layer_with_sub(
+        y,
+        "5 · AI Providers  ·  app/providers/*.py",
+        PANEL, GREEN_SOFT,
+        "Reasoning · Vision · Translation (all pluggable)",
+        border=MUTED,
+    )
+    # Right-side pill offset to the right with an arrow
+    right_pill_x = stack_left + stack_w + 0.3
+    right_pill_y = providers_y + 0.05
+    right_pill_w = 3.15
+    right_pill_h = layer_h - 0.1
+    _add_pill(s, right_pill_x, right_pill_y,
+              right_pill_w, right_pill_h,
+              "Groq / Dell AI Factory NIM",
+              fill=GREEN, fg=DARK_TXT, size=11)
+    # Arrow from providers box to right-side pill
+    arrow_from_x = stack_left + stack_w
+    arrow_from_y = providers_y + layer_h / 2 - 0.10
+    conn_arrow = s.shapes.add_shape(
+        MSO_SHAPE.RIGHT_ARROW,
+        Inches(arrow_from_x), Inches(arrow_from_y),
+        Inches(0.3), Inches(0.20),
+    )
+    conn_arrow.fill.solid()
+    conn_arrow.fill.fore_color.rgb = GREEN
+    conn_arrow.line.fill.background()
+
+    y += layer_h
+    _add_down_arrow(s, stack_left + stack_w / 2 - 0.15, y, 0.30, arrow_h)
+    y += arrow_h + gap_after_arrow
+
+    # 6. Response back to learner (GREEN)
+    add_layer_with_sub(
+        y,
+        "6 · Response back to learner",
+        GREEN, DARK_TXT,
+        "TutorResponse → Channel serialiser → learner",
+    )
+
+    # Bottom banner
+    banner_y = 6.85
+    banner = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.6), Inches(banner_y), Inches(12.1), Inches(0.45),
+    )
+    banner.fill.solid()
+    banner.fill.fore_color.rgb = PANEL
+    banner.line.color.rgb = GREEN
+    banner.line.width = Pt(1)
+    banner.text_frame.text = ""
+    _add_text(s, 0.6, banner_y + 0.06, 12.1, 0.35,
+              "Every layer swappable · Every input format supported · "
+              "No hallucination on deterministic maths",
+              size=11, color=GREEN_SOFT, align=PP_ALIGN.CENTER, bold=True)
+
+    _add_speaker_notes(s,
+        "This is the request path in production. Green = deterministic "
+        "guarantees, orange = channel-specific, panel-grey = generic "
+        "infrastructure. The 5-pill router row is the KEY design decision: "
+        "not everything hits the LLM.")
+    return s
+
+
+# ============================================================================
 # Slide 5 — Differentiators
 # ============================================================================
 def slide_differentiators(prs):
@@ -908,6 +1205,8 @@ def main():
     slide_solution(prs)
     slide_architecture(prs)
     slide_demo_flow(prs)
+    slide_ai_models(prs)
+    slide_data_flow(prs)
     slide_differentiators(prs)
     slide_uplift(prs)
     slide_segment(prs)

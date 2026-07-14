@@ -53,3 +53,26 @@ async def config() -> dict:
         "whatsapp_provider": settings.whatsapp_provider.value,
         "default_language": settings.default_language,
     }
+
+
+@app.get("/health/whatsapp", tags=["meta"])
+async def whatsapp_health() -> dict:
+    """Check whether Meta WhatsApp Cloud API is fully configured.
+
+    Useful for the team to verify readiness before sending real messages.
+    Returns 200 with a status object regardless of configuration state —
+    they can read the JSON to see what's missing.
+    """
+    return {
+        "provider": settings.whatsapp_provider.value,
+        "phone_number_id_set": bool(settings.whatsapp_phone_number_id),
+        "access_token_set": bool(settings.whatsapp_access_token),
+        "verify_token_set": bool(settings.whatsapp_verify_token) and settings.whatsapp_verify_token != "ai-tutor-verify",
+        "api_base": settings.whatsapp_api_base,
+        "ready_for_meta": (
+            settings.whatsapp_provider.value == "cloud"
+            and bool(settings.whatsapp_phone_number_id)
+            and bool(settings.whatsapp_access_token)
+            and bool(settings.whatsapp_verify_token)
+        ),
+    }

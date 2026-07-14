@@ -171,16 +171,6 @@
     </div>
     <div class="meta">
       <select id="grade" title="CAPS Grade">
-        <option value="R">Gr R</option>
-        <option value="1">Gr 1</option>
-        <option value="2">Gr 2</option>
-        <option value="3">Gr 3</option>
-        <option value="4">Gr 4</option>
-        <option value="5">Gr 5</option>
-        <option value="6">Gr 6</option>
-        <option value="7">Gr 7</option>
-        <option value="8">Gr 8</option>
-        <option value="9">Gr 9</option>
         <option value="10">Gr 10</option>
         <option value="11">Gr 11</option>
         <option value="12" selected>Gr 12</option>
@@ -216,21 +206,11 @@
         <div class="row row-2col">
           <div>
             <label for="ob-age">Age *</label>
-            <input id="ob-age" type="number" min="5" max="18" placeholder="5–18" required />
+            <input id="ob-age" type="number" min="14" max="19" placeholder="14–19" required />
           </div>
           <div>
             <label for="ob-grade">Grade *</label>
             <select id="ob-grade" required>
-              <option value="R">Gr R</option>
-              <option value="1">Gr 1</option>
-              <option value="2">Gr 2</option>
-              <option value="3">Gr 3</option>
-              <option value="4">Gr 4</option>
-              <option value="5">Gr 5</option>
-              <option value="6">Gr 6</option>
-              <option value="7">Gr 7</option>
-              <option value="8">Gr 8</option>
-              <option value="9">Gr 9</option>
               <option value="10">Gr 10</option>
               <option value="11">Gr 11</option>
               <option value="12" selected>Gr 12</option>
@@ -544,7 +524,7 @@
       // Submit is enabled once required fields are all populated. The name
       // field is deliberately optional; age is required and range-checked.
       const age = parseInt(obAge.value, 10);
-      const ageOk = Number.isFinite(age) && age >= 5 && age <= 18;
+      const ageOk = Number.isFinite(age) && age >= 14 && age <= 19;
       const gradeOk = !!obGrade.value;
       const langOk = !!obLang.value;
       const consentOk = obConsent.checked;

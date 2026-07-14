@@ -146,8 +146,12 @@ class TutorEngine:
         # grading a subsequent attempt on the same one.
         if message.past_paper_id:
             return await self._handle_past_paper(message, state)
-        if state.past_paper_id and message.text and not _is_command(text.lower(), _RESET_WORDS):
+        if state.past_paper_id and message.text and not _is_command(text.lower(), _RESET_WORDS | _GREETINGS):
             # Continuing an existing past-paper session.
+            # A greeting ("hi", "hello", "sawubona"…) always escapes the
+            # trap — this is what the frontend sends on page refresh, so
+            # without this bypass a stuck learner keeps racking up
+            # "wrong attempt" counts every time they reload the page.
             return await self._grade_past_paper_attempt(message, state)
 
         # Global commands first.
@@ -212,7 +216,9 @@ class TutorEngine:
                     grade=state.grade,
                     metadata={"expression": display, "result": result_str},
                 )
-                return self._localized(state, screens, translate=False)
+                return self._localized(state, screens,
+                                       quick_replies=[self._menu_button(state.language)],
+                                       translate=False)
 
         # An uploaded screenshot of working takes priority.
         if message.image is not None:
@@ -224,7 +230,8 @@ class TutorEngine:
 
         if not text:
             return self._localized(state, [t("ask_problem", state.language)],
-                                    requires_image=True)
+                                    requires_image=True,
+                                    quick_replies=[self._menu_button(state.language)])
 
         return await self._handle_text(text, state)
 
@@ -313,7 +320,9 @@ class TutorEngine:
         result = await self.vision.transcribe_working(message.image, hint=state.problem)
         if not result.steps and not result.problem:
             return self._localized(state, [t("ask_working", state.language)],
-                                   requires_image=True, translate=False)
+                                   requires_image=True,
+                                   quick_replies=[self._menu_button(state.language)],
+                                   translate=False)
         if result.problem:
             state.problem = result.problem
         state.working_steps = result.steps or state.working_steps
@@ -340,6 +349,7 @@ class TutorEngine:
                 return self._localized(
                     state,
                     [t("lets_work", state.language), t("ask_working", state.language)],
+                    quick_replies=[self._menu_button(state.language)],
                     translate=False,
                 )
             # Otherwise it's another working line for the current problem.
@@ -386,6 +396,7 @@ class TutorEngine:
             state,
             [t("no_equation", state.language), t("ask_problem", state.language)],
             requires_image=True,
+            quick_replies=[self._menu_button(state.language)],
             translate=False,
         )
 
@@ -404,22 +415,45 @@ class TutorEngine:
             history=state.history, channel=state.channel, language=state.language,
         )
         self.sessions.save(state)
-        return self._localized(state, screens, diagnosis=diagnosis, translate=False)
+        # Always give the learner a way out — a hint (if the diagnosis
+        # supports it) and a Main-menu escape. Meta caps interactive reply
+        # buttons at 3 per message, so we keep it tight.
+        replies = [
+            QuickReply(label=t("btn_hint", state.language), payload="action:hint"),
+            self._menu_button(state.language),
+        ]
+        return self._localized(state, screens, diagnosis=diagnosis,
+                               quick_replies=replies, translate=False)
 
 
 
     async def _handle_hint(self, state: ConversationState) -> TutorResponse:
         if not state.last_diagnosis or not state.problem:
             return self._localized(state, [t("ask_problem", state.language)],
-                                   requires_image=True, translate=False)
+                                   requires_image=True,
+                                   quick_replies=[self._menu_button(state.language)],
+                                   translate=False)
         state.hint_level += 1
         screens = pedagogy.escalated_guidance(
             state.problem, state.last_diagnosis, state.hint_level,
             state.channel, state.language,
         )
         self.sessions.save(state)
+        replies = [
+            QuickReply(label=t("btn_hint", state.language), payload="action:hint"),
+            self._menu_button(state.language),
+        ]
         return self._localized(state, screens, diagnosis=state.last_diagnosis,
-                               translate=False)
+                               quick_replies=replies, translate=False)
+
+    def _menu_button(self, lang: str) -> QuickReply:
+        """The always-safe escape hatch — 🏠 Main menu.
+
+        Every response path that isn't itself the menu should end with this
+        button so a learner is never stranded. Payload jumps straight to
+        _greeting (via _handle_payload), which also clears past-paper state.
+        """
+        return QuickReply(label=t("btn_main_menu", lang), payload="action:main_menu")
 
     def _localized(
         self,
@@ -475,6 +509,47 @@ class TutorEngine:
         # otherwise consume the payload. Keeps the dead-end guard's promise.
         if payload == "action:main_menu":
             return await self._greeting(state)
+
+        # ---- hint button (equivalent to typing "HINT") -----------------
+        if payload == "action:hint":
+            return await self._handle_hint(state)
+
+        # ---- reveal the memo on a stuck past-paper attempt -------------
+        # Only fires when a past-paper session is in flight (state has
+        # past_paper_id). Emits a fresh "memo" screen and clears the
+        # trap so the learner can move on cleanly.
+        if payload == "action:show_memo":
+            from app.tutor.past_papers import find_question
+            triple = find_question(state.past_paper_id) if state.past_paper_id else None
+            if not triple:
+                return await self._greeting(state)
+            _, _, question = triple
+            await analytics.log_event(
+                session_id=state.user_id,
+                channel=state.channel.value,
+                event_type="past_paper_memo_revealed",
+                language=state.language,
+                grade=state.grade,
+                metadata={
+                    "past_paper_id": state.past_paper_id,
+                    "attempts": state.past_paper_attempts,
+                    "topic": _brief_topic_from_memo(question),
+                },
+            )
+            from app.i18n import tf
+            screens = [tf("memo_reveal", state.language,
+                          memo=question.memo, source=question.source)]
+            state.past_paper_id = None
+            state.past_paper_attempts = 0
+            state.reset_problem()
+            self.sessions.save(state)
+            replies = [
+                QuickReply(label=t("btn_try_another", state.language),
+                           payload="action:practice_papers"),
+                self._menu_button(state.language),
+            ]
+            return self._localized(state, screens, quick_replies=replies,
+                                   translate=False)
 
         # ---- top-level actions -----------------------------------------
         if payload == "action:practice_papers" or payload == "pastpapers:back:years":
@@ -632,6 +707,7 @@ class TutorEngine:
             state.past_paper_id = None
             return self._localized(
                 state, ["I couldn't find that past-paper question — try picking it again from the archive."],
+                quick_replies=[self._menu_button(state.language)],
                 translate=False,
             )
         year, paper, question = triple
@@ -649,7 +725,10 @@ class TutorEngine:
             f"{question.text}\n\n"
             f"Show your working. Type your final answer when ready (e.g. x=3 or x=-6)."
         )
-        return self._localized(state, [intro], translate=False)
+        # Escape hatch present from the very first past-paper screen.
+        return self._localized(state, [intro],
+                               quick_replies=[self._menu_button(state.language)],
+                               translate=False)
 
     async def _grade_past_paper_attempt(self, message: InboundMessage, state: ConversationState) -> TutorResponse:
         """Check the learner's latest attempt against the stored past-paper answer."""
@@ -690,7 +769,15 @@ class TutorEngine:
             state.past_paper_id = None  # exam complete
             state.past_paper_attempts = 0
             self.sessions.save(state)
-            return self._localized(state, screens, translate=False)
+            # Success: offer another question or a return to the top menu
+            # so the learner never lands on a dead-end screen.
+            replies = [
+                QuickReply(label=t("btn_try_another", state.language),
+                           payload="action:practice_papers"),
+                self._menu_button(state.language),
+            ]
+            return self._localized(state, screens, quick_replies=replies,
+                                   translate=False)
         # Not yet correct — Socratic nudge, do NOT give the answer.
         await analytics.log_event(
             session_id=state.user_id,
@@ -712,14 +799,23 @@ class TutorEngine:
                 f"{method_hint}\n"
                 f"Try one more x= value:"
             ]
+            # After 3+ attempts add a graceful "give up" option so a learner
+            # can reveal the memo and move on. Every wrong-attempt reply
+            # also carries a Main-menu escape (Meta 3-button cap).
+            replies = [
+                QuickReply(label=t("btn_show_memo", state.language),
+                           payload="action:show_memo"),
+                self._menu_button(state.language),
+            ]
         else:
             screens = [
                 f"NSC marking: not yet correct.\n"
                 f"Marks awarded so far: 0 / {question.marks}\n"
                 f"Re-check your working, then type your next x= attempt:"
             ]
+            replies = [self._menu_button(state.language)]
         self.sessions.save(state)
-        return self._localized(state, screens, translate=False)
+        return self._localized(state, screens, quick_replies=replies, translate=False)
 
 
 

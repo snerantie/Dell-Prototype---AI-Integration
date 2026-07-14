@@ -180,9 +180,11 @@
         <option value="en">English</option>
         <option value="zu">isiZulu</option>
       </select>
+      <a class="restart-link" href="#" id="menu-link"
+         title="Return to the main menu (no refresh)">&#127968; Menu</a>
       <a class="restart-link" href="#" id="restart-link"
          title="Reset onboarding (Shift+click for a fresh learner id)">&#128274; Restart</a>
-      <a class="menu-link" href="/ussd-simulator" title="Switch to USSD simulator">&#8801;</a>
+      <a class="menu-link" href="/ussd-simulator" title="Switch to USSD simulator">&#128241;</a>
     </div>
   </header>
 
@@ -361,13 +363,11 @@
     async function handleQuickReply(qr, btnEl) {
       // Echo the button label as the learner's message bubble.
       bubble(qr.label, 'user');
-      // Real WhatsApp Business greys out buttons ONLY in the message that
-      // was tapped — buttons in older messages remain tappable so learners
-      // can re-navigate. Match that behaviour.
-      const row = btnEl && btnEl.closest && btnEl.closest('.quick-replies');
-      if (row) {
-        row.querySelectorAll('.quick-reply').forEach(b => { b.disabled = true; });
-      }
+      // Real WhatsApp Business greys out ONLY the tapped button — its
+      // sibling buttons in the same row remain live so a learner who
+      // changes their mind can immediately pick a different option
+      // without having to scroll up (or refresh — never refresh).
+      if (btnEl) { btnEl.disabled = true; }
       // Terminal question buttons carry the past-paper id inside their
       // payload — unpack and route through the past_paper_id field so the
       // engine's existing _handle_past_paper still triggers.
@@ -592,13 +592,33 @@
       completeOnboarding({ grade: '12', language: 'en' });
     });
 
-    document.getElementById('restart-link').addEventListener('click', (e) => {
+    // Persistent "Menu" affordance in the header — always tappable, always
+    // returns the learner to the top-level greeting without a page reload.
+    // Fires the exact same action:main_menu payload as the "🏠 Main menu"
+    // quick-reply so the engine path is identical.
+    document.getElementById('menu-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      handleQuickReply({ label: '🏠 Main menu', payload: 'action:main_menu' }, null);
+    });
+
+    document.getElementById('restart-link').addEventListener('click', async (e) => {
       e.preventDefault();
       // Soft reset: clear onboarding flag so the modal shows again, but KEEP
       // the persisted user_id so analytics still see the same learner. Hold
       // Shift while clicking (or check ?hard=1 in the URL) for a full reset
       // that also cycles the user_id — useful for cold "new learner" demos.
       const hard = e.shiftKey || new URLSearchParams(window.location.search).get('hard') === '1';
+      // Wipe the SERVER-side session too — otherwise a stuck past-paper
+      // attempt survives the reload because it's keyed on user_id, and the
+      // learner ends up right back where they were. Fire-and-forget: the
+      // reload happens even if this POST fails so the learner is never
+      // blocked.
+      try {
+        await fetch('/api/reset', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ user_id: userId }),
+        });
+      } catch (err) { /* offline / network hiccup — proceed to reload anyway */ }
       try {
         localStorage.removeItem('educonnect_onboarded');
         if (hard) localStorage.removeItem('educonnect_user_id');

@@ -670,13 +670,48 @@ class TutorEngine:
             paper = next((p for p in year.papers if p.slug == paper_slug), None)
             if paper is None or not paper.questions:
                 return await self._handle_payload("pastpapers:back:years", state)
-            return self._render_question_list(state, year.slug, paper)
+            return self._render_question_list(state, year.slug, paper, page=0)
+
+        # Pagination: pastpapers:page:<year>:<paper>:<N> jumps to the Nth
+        # window (0-indexed) of the question list. Bad indices bounce
+        # back to the years menu rather than crashing.
+        if payload.startswith("pastpapers:page:"):
+            _, _, rest = payload.partition("pastpapers:page:")
+            parts = rest.split(":")
+            if len(parts) < 3:
+                return await self._handle_payload("pastpapers:back:years", state)
+            year_slug, paper_slug, page_str = parts[0], parts[1], parts[2]
+            try:
+                page = max(0, int(page_str))
+            except ValueError:
+                return await self._handle_payload("pastpapers:back:years", state)
+            year = get_year_by_slug(year_slug)
+            if not year:
+                return await self._handle_payload("pastpapers:back:years", state)
+            paper = next((p for p in year.papers if p.slug == paper_slug), None)
+            if paper is None or not paper.questions:
+                return await self._handle_payload("pastpapers:back:years", state)
+            return self._render_question_list(state, year.slug, paper, page=page)
 
         # Unknown payload: dead-end guard → back to the greeting.
         return await self._greeting(state)
 
-    def _render_question_list(self, state: ConversationState, year_slug: str, paper) -> TutorResponse:
+    def _render_question_list(
+        self,
+        state: ConversationState,
+        year_slug: str,
+        paper,
+        page: int = 0,
+    ) -> TutorResponse:
         """Build the 'pick a question' bubble with up to 3 buttons.
+
+        Papers with more than 2 questions are PAGINATED. Each page shows
+        2 questions + a third button that is either 'More questions ↓' (if
+        there are further pages) or 'Back to years' (on the last page).
+
+        Meta's Interactive Reply Buttons cap us at exactly 3 buttons per
+        message, so this two-and-a-navigator layout is the tightest
+        one-tap-per-question flow we can offer.
 
         The learner taps a question; the frontend translates the button's
         payload (`pastpapers:question:<year>:<paper>:<qno>`) into a
@@ -686,19 +721,34 @@ class TutorEngine:
         """
         lang = state.language
         replies: list[QuickReply] = []
-        # Meta cap: up to 3 interactive reply buttons per message. Reserve
-        # slot 3 for "back to years" so the learner always has an escape.
-        for q in paper.questions[:2]:
+        per_page = 2
+        start = page * per_page
+        window = paper.questions[start:start + per_page]
+        for q in window:
             topic = _brief_topic_from_memo(q)
             replies.append(QuickReply(
                 label=f"✍️ Q{q.qno} · {q.marks} marks · {topic}",
                 payload=f"pastpapers:question:{year_slug}:{paper.slug}:{q.qno}",
             ))
-        replies.append(QuickReply(
-            label=t("btn_back_years", lang),
-            payload="pastpapers:back:years",
-        ))
-        screens = [t("prompt_pick_question", lang)]
+        # Third button: pagination-aware.
+        has_more_pages = (start + per_page) < len(paper.questions)
+        if has_more_pages:
+            replies.append(QuickReply(
+                label="↓ More questions",
+                payload=f"pastpapers:page:{year_slug}:{paper.slug}:{page + 1}",
+            ))
+        else:
+            replies.append(QuickReply(
+                label=t("btn_back_years", lang),
+                payload="pastpapers:back:years",
+            ))
+        # Show a page indicator when the paper is paginated so the learner
+        # doesn't feel lost. Kept tiny and cheerful.
+        total_pages = (len(paper.questions) + per_page - 1) // per_page
+        header = t("prompt_pick_question", lang)
+        if total_pages > 1:
+            header = f"{header}\n\n(Page {page + 1} of {total_pages})"
+        screens = [header]
         return self._localized(state, screens, quick_replies=replies, translate=False)
 
     # ---------------------------------------------------------------
@@ -841,13 +891,58 @@ def _method_hint_for(question) -> str:
 
 
 def _brief_topic_from_memo(question) -> str:
-    """Short topic label for question buttons — read off the memo/text."""
+    """Short topic label for question buttons — read off the memo + text.
+
+    Ordered longest-signal-first so a question containing both 'quadratic'
+    and 'formula' picks 'quadratic formula', not the generic 'quadratic'.
+    Keep labels short so they fit inside a WhatsApp Interactive Reply
+    Button (Meta caps display text at 20 chars, though we get away with
+    slightly more in the web simulator).
+    """
     memo = (question.memo or "").lower()
     text = (question.text or "").lower()
+    joined = memo + " " + text
+
+    # --- Calculus signals ---
+    if any(kw in joined for kw in [
+        "first principles", "differentiat", "derivative", "f'(x)",
+        "d/dx", "turning point", "point of inflection", "f''(x)"
+    ]):
+        return "calculus"
+    # --- Financial signals ---
+    if any(kw in joined for kw in [
+        "compound interest", "simple interest", "sinking fund",
+        "future value", "present value", "annuit", "monthly instal",
+        "amortis"
+    ]):
+        return "financial"
+    # --- Sequences & series ---
+    if any(kw in joined for kw in [
+        "arithmetic", "geometric", "sum to infinity", "sigma",
+        "common difference", "common ratio", "nth term",
+        "second difference"
+    ]):
+        return "sequences"
+    # --- Inequalities (check BEFORE functions so 'Parabola opens up' in an
+    #     inequality memo doesn't get grabbed as a functions question) ---
+    if "inequalit" in text or "≥" in text or "≤" in text:
+        return "inequalities"
+    # --- Functions / graphs ---
+    # Short/ambiguous keywords like "range" and "domain" match too loosely
+    # ("Rearrange" contains "range"), so we use full phrases only.
+    if any(kw in joined for kw in [
+        "axis of symmetry", "y-intercept", "x-intercept",
+        "asymptote", "domain and range", "parabola", "hyperbola",
+        "graph of", "inverse function",
+    ]):
+        return "functions"
+    # --- Algebra / trig / geometry sub-labels ---
     if "quadratic formula" in memo or "decimal" in text or "formula" in memo:
         return "quadratic formula"
     if "factor" in memo or "(x" in memo:
         return "factorisation"
+    if "exponent" in joined or "same base" in memo:
+        return "exponents"
     if "x²" in text or "x^2" in text:
         return "quadratic"
     return "algebra"

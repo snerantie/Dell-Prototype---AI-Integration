@@ -87,6 +87,26 @@ ARCHIVE: list[PastPaperYear] = [
                               "x ≈ 3.61  or  x ≈ -1.11    (A)"),
                         source="NSC Maths P1, Grade 12, NW June 2026, Q1.1.2",
                     ),
+                    PastPaperQuestion(
+                        qno="1.2", marks=3,
+                        text="Solve for x:  2ˣ - 2ˣ⁻¹ = 32   (no calculator)",
+                        answers=[6.0],
+                        memo=("Factor out 2ˣ⁻¹: 2ˣ⁻¹(2 - 1) = 32    (M)\n"
+                              "So 2ˣ⁻¹ = 32 = 2⁵    (A)\n"
+                              "x - 1 = 5  →  x = 6    (A)"),
+                        source="NSC Maths P1, Grade 12, NW June 2026, Q1.2",
+                    ),
+                    PastPaperQuestion(
+                        qno="2.1", marks=4,
+                        text=("An arithmetic sequence has first term a = 3 and "
+                              "common difference d = 4.\n"
+                              "Find T₁₀ (the 10th term)."),
+                        answers=[39.0],
+                        memo=("Formula: T_n = a + (n - 1)d    (M)\n"
+                              "T₁₀ = 3 + (10 - 1)·4    (S)\n"
+                              "    = 3 + 36 = 39    (A)"),
+                        source="NSC Maths P1, Grade 12, NW June 2026, Q2.1",
+                    ),
                 ],
             ),
         ],
@@ -138,6 +158,43 @@ ARCHIVE: list[PastPaperYear] = [
                               "x ≤ -1  or  x ≥ 6"),
                         source="NSC Maths P1, Grade 12, DBE Nov 2025, Q1.1.3",
                     ),
+                    PastPaperQuestion(
+                        qno="2.1", marks=5,
+                        text=("Find the sum of the first 20 terms of the arithmetic "
+                              "series:  2 + 5 + 8 + 11 + ..."),
+                        answers=[610.0],
+                        memo=("a = 2,  d = 3,  n = 20    (A)\n"
+                              "S_n = n/2 · [2a + (n - 1)d]    (M)\n"
+                              "S₂₀ = 20/2 · [2·2 + 19·3]    (S)\n"
+                              "    = 10 · [4 + 57] = 10 · 61 = 610    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2025, Q2.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="4.1", marks=4,
+                        text=("R5 000 is invested at 8% per year compound interest, "
+                              "compounded monthly. Calculate the value after 3 years "
+                              "(correct to the nearest rand)."),
+                        answers=[6348.0, 6349.0],
+                        memo=("A = P·(1 + r/m)^(m·n)    (M)\n"
+                              "  = 5000·(1 + 0.08/12)^(12·3)    (S)\n"
+                              "  = 5000·(1.00667)^36    (A)\n"
+                              "  ≈ R6 348    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2025, Q4.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="5.2", marks=5,
+                        text=("Given  f(x) = x³ - 3x² - 9x + 2.\n"
+                              "Find the x-coordinate of the local MAXIMUM turning point."),
+                        answers=[-1.0],
+                        memo=("f'(x) = 3x² - 6x - 9    (M)\n"
+                              "Set f'(x) = 0: 3x² - 6x - 9 = 0    (M)\n"
+                              "  →  x² - 2x - 3 = 0\n"
+                              "  →  (x - 3)(x + 1) = 0\n"
+                              "  →  x = 3 or x = -1    (A)\n"
+                              "f''(x) = 6x - 6; check x = -1: f''(-1) = -12 < 0 → max\n"
+                              "Local maximum at x = -1    (A)(A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2025, Q5.2",
+                    ),
                 ],
             ),
         ],
@@ -174,6 +231,40 @@ ARCHIVE: list[PastPaperYear] = [
                               "x ≈ 4.30  or  x ≈ 0.70    (A)(A)"),
                         source="NSC Maths P1, Grade 12, DBE Nov 2024, Q1.1.2",
                     ),
+                    PastPaperQuestion(
+                        qno="2.2", marks=4,
+                        text=("A geometric series has first term a = 4 and common "
+                              "ratio r = 0,5.\n"
+                              "Calculate the sum to infinity."),
+                        answers=[8.0],
+                        memo=("Check convergence: |r| = 0,5 < 1  ✓    (M)\n"
+                              "S_∞ = a / (1 - r)    (M)\n"
+                              "    = 4 / (1 - 0,5)    (S)\n"
+                              "    = 4 / 0,5 = 8    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2024, Q2.2",
+                    ),
+                    PastPaperQuestion(
+                        qno="3.1", marks=3,
+                        text=("Given  f(x) = x² - 4x - 5.\n"
+                              "Find the x-value of the axis of symmetry."),
+                        answers=[2.0],
+                        memo=("Axis of symmetry:  x = -b / (2a)    (M)\n"
+                              "  a = 1,  b = -4    (S)\n"
+                              "  x = -(-4) / (2·1) = 4 / 2 = 2    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2024, Q3.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="5.1", marks=4,
+                        text=("Determine f'(x) from FIRST PRINCIPLES if  f(x) = x² - 3.\n"
+                              "Give f'(2) as your final numeric answer."),
+                        answers=[4.0],
+                        memo=("f(x + h) - f(x) = ((x+h)² - 3) - (x² - 3)\n"
+                              "                = 2xh + h²    (M)\n"
+                              "[f(x+h) - f(x)] / h = 2x + h    (A)\n"
+                              "lim (h → 0) [2x + h] = 2x    (M)\n"
+                              "So f'(x) = 2x → f'(2) = 4    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2024, Q5.1",
+                    ),
                 ],
             ),
         ],
@@ -209,6 +300,31 @@ ARCHIVE: list[PastPaperYear] = [
                               "So x = 3    (A)\n"
                               "Verification: 3³ = 27 ✓    (CA)"),
                         source="NSC Maths P1, Grade 12, DBE Nov 2023, Q1.1.3",
+                    ),
+                    PastPaperQuestion(
+                        qno="2.1", marks=4,
+                        text=("In an arithmetic sequence, T₃ = 11 and T₇ = 27.\n"
+                              "Find the common difference d."),
+                        answers=[4.0],
+                        memo=("Use T_n = a + (n - 1)d    (M)\n"
+                              "T₇ - T₃ = 4d\n"
+                              "27 - 11 = 4d    (S)\n"
+                              "16 = 4d\n"
+                              "d = 4    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2023, Q2.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="4.1", marks=5,
+                        text=("Thabo takes a loan of R100 000 at 12% p.a. compounded "
+                              "monthly, repaid in equal monthly instalments over 5 years. "
+                              "Calculate the monthly instalment (nearest rand)."),
+                        answers=[2224.0, 2225.0, 2226.0],
+                        memo=("P = x · [1 - (1 + i)^(-n)] / i    (M) — present value formula\n"
+                              "i = 0,12 / 12 = 0,01;  n = 60    (S)\n"
+                              "100000 = x · [1 - 1,01^(-60)] / 0,01    (S)\n"
+                              "100000 = x · 44,955\n"
+                              "x ≈ R2 224 per month    (A)(A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2023, Q4.1",
                     ),
                 ],
             ),
@@ -247,6 +363,29 @@ ARCHIVE: list[PastPaperYear] = [
                               "x ≈ 0.73  or  x ≈ -2.73    (A)(A)"),
                         source="NSC Maths P1, Grade 12, DBE Nov 2022, Q1.1.2",
                     ),
+                    PastPaperQuestion(
+                        qno="3.2", marks=3,
+                        text=("Determine the y-intercept of the graph of "
+                              "f(x) = -x² + 4x + 5."),
+                        answers=[5.0],
+                        memo=("The y-intercept is f(0)    (M)\n"
+                              "f(0) = -(0)² + 4(0) + 5    (S)\n"
+                              "     = 5    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2022, Q3.2",
+                    ),
+                    PastPaperQuestion(
+                        qno="4.2", marks=4,
+                        text=("Sarah saves R500 at the end of each month into a "
+                              "sinking fund earning 6% p.a. compounded monthly. "
+                              "Calculate the value after 2 years (nearest rand)."),
+                        answers=[12716.0, 12717.0, 12718.0],
+                        memo=("Future value: F = x · [(1 + i)^n - 1] / i    (M)\n"
+                              "i = 0,06 / 12 = 0,005;  n = 24    (S)\n"
+                              "F = 500 · [1,005^24 - 1] / 0,005    (S)\n"
+                              "F = 500 · 25,4320\n"
+                              "F ≈ R12 716    (A)(A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2022, Q4.2",
+                    ),
                 ],
             ),
         ],
@@ -283,6 +422,27 @@ ARCHIVE: list[PastPaperYear] = [
                               "x = [-2 ± √76] / 6    (A)\n"
                               "x ≈ 1.10  or  x ≈ -1.77    (A)(A)"),
                         source="NSC Maths P1, Grade 12, DBE Nov 2021, Q1.1.2",
+                    ),
+                    PastPaperQuestion(
+                        qno="2.1", marks=3,
+                        text=("For the sequence 4, 7, 12, 19, 28, ...\n"
+                              "Find the constant second difference."),
+                        answers=[2.0],
+                        memo=("First differences:  7-4=3,  12-7=5,  19-12=7,  28-19=9\n"
+                              "Second differences:  5-3=2,  7-5=2,  9-7=2    (M)(A)\n"
+                              "Constant second difference = 2    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2021, Q2.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="5.3", marks=4,
+                        text=("Given  f(x) = 2x³ - 3x².\n"
+                              "Find the x-coordinate of the point of inflection."),
+                        answers=[0.5],
+                        memo=("f'(x) = 6x² - 6x    (M)\n"
+                              "f''(x) = 12x - 6    (M)\n"
+                              "Point of inflection where f''(x) = 0:\n"
+                              "12x - 6 = 0  →  x = 1/2 = 0,5    (A)(A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2021, Q5.3",
                     ),
                 ],
             ),

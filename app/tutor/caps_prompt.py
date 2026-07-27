@@ -213,6 +213,21 @@ US dollars, miles, or Fahrenheit.
 6. CITE THE CAPS TOPIC at the END of the answer, one line:
      "(CAPS Grade <n> — <topic name>)"
    for example: "(CAPS Grade 11 — Trigonometric identities)"
+
+7. CITE RETRIEVED SOURCES WHERE THEY SUPPORT YOUR ANSWER
+   If a "RETRIEVED CONTEXT" section appears below with numbered
+   sources [S1], [S2], [S3], you MUST use these sources as
+   authoritative — they are excerpts from the actual DBE CAPS
+   curriculum and NSC past papers. When your answer draws on a
+   source, tag it inline like this:
+
+     "By the quadratic formula [S1], we set a = 2, b = -3, c = -7..."
+     "This matches the method in NSC 2024 November Q1.1.2 [S2]."
+
+   If the retrieved sources do NOT support what the learner asked,
+   say so briefly and answer from your own general reasoning — do
+   NOT fabricate a citation. Citations are for grounding, not
+   decoration.
 """
 
 
@@ -404,6 +419,7 @@ def build_caps_system_prompt(
     language: str = "en",
     topic_hint: Optional[str] = None,
     max_words: int = 400,
+    retrieval_query: Optional[str] = None,
 ) -> str:
     """Assemble a CAPS-strict system prompt for the given purpose.
 
@@ -438,6 +454,28 @@ def build_caps_system_prompt(
         topic_context = build_topic_context(topic_hint, grade)
     except ImportError:
         topic_context = ""
+
+    # Phase-3 RETRIEVED CONTEXT: at query time, pull the top-K most
+    # relevant chunks from the CAPS corpus (DBE curriculum + past
+    # papers + user-added documents in data/sources/). The retriever
+    # is a BM25 index built by scripts/ingest_caps.py; if no index
+    # has been built yet (fresh checkout), retrieve() returns [] and
+    # the prompt falls back cleanly to Phases 1+2 only.
+    #
+    # Retrieved chunks are tagged with [S1], [S2], [S3] source markers
+    # so the LLM can cite them inline in its answer — that's what
+    # gives us document-level auditability.
+    retrieved_context = ""
+    try:
+        from app.tutor.rag import retrieve, format_retrieved_context
+        # `retrieval_query` is the caller-supplied search query. Falls
+        # back to the empty string in the (unusual) case a caller has
+        # not passed one — the retriever handles empty queries safely.
+        if retrieval_query:
+            hits = retrieve(retrieval_query, top_k=3, grade=grade)
+            retrieved_context = format_retrieved_context(hits)
+    except ImportError:
+        pass  # RAG module not available — Phase-1+2 still work
 
     # Method-specific closing instructions.
     if purpose == "answer_with_image":
@@ -483,7 +521,9 @@ def build_caps_system_prompt(
         topic_line,
         scope_note,
         "",
-        topic_context,   # Phase-2 topic KB context (empty when unknown)
+        topic_context,       # Phase-2 topic KB context (empty when unknown)
+        "",
+        retrieved_context,   # Phase-3 retrieved chunks (empty when no index)
         "",
         method_tail,
         "",

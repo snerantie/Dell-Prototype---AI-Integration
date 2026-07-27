@@ -9,7 +9,9 @@
 | **Reasoning LLM** | Text step-by-step tutoring | Groq → `openai/gpt-oss-120b` (free tier) | Dell AI Factory NIM → `openai/gpt-oss-120b` (self-hosted) |
 | **Vision LLM** | Photos of maths (geometry, handwriting) | Groq → `meta-llama/llama-4-scout-17b-16e-instruct` | Dell AI Factory NIM → same model |
 | **Deterministic maths** | Linear equations, arithmetic, past-paper grading | Pure Python (`math_analyzer.py`, `past_papers.py`) | Same — never touches an LLM |
-| **CAPS alignment** | System prompts + curriculum scope + topic detection | `app/tutor/caps_prompt.py` | Same + RAG (Phase 3) + fine-tune (Phase 4) |
+| **CAPS alignment (Layer 1)** | System prompts + curriculum scope + topic detection | `app/tutor/caps_prompt.py` | Same, plus fine-tune |
+| **CAPS knowledge base (Layer 2)** | Structured per-topic sub-skills, formulae, misconceptions | `app/tutor/caps_kb.py` | Same |
+| **RAG retrieval (Layer 3)** | BM25 over 52-chunk CAPS corpus with citations | `app/tutor/rag.py` + `data/caps_index.json` | Add PGVector + neural embeddings on Dell AI Factory |
 | **Translation** | isiZulu ↔ English etc. | LLM-based (same OpenAI-compatible API) | Same |
 | **Provider abstraction** | Swap Groq ↔ Dell with zero code changes | `app/providers/factory.py` | Same |
 

@@ -237,6 +237,7 @@ class DellReasoningProvider(ReasoningProvider):
             language=language,
             topic_hint=topic,
             max_words=400,
+            retrieval_query=question,
         )
         try:
             # Pass conversation history through so the LLM can resolve
@@ -281,6 +282,7 @@ class DellReasoningProvider(ReasoningProvider):
             language=language,
             topic_hint=topic,
             max_words=400,
+            retrieval_query=question,
         )
         # Build the multimodal user message (OpenAI vision-format content parts).
         data_url = f"data:{image_mime};base64,{image_base64}"
@@ -341,6 +343,9 @@ class DellReasoningProvider(ReasoningProvider):
             language=language,
             topic_hint=topic,
             max_words=500,
+            # For documents, retrieve on the question — not the full doc body —
+            # so the RAG hits stay focused on what the learner asked about.
+            retrieval_query=question,
         )
         user_message = (
             f"Learner's question: {question}\n\n"

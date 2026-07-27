@@ -5,7 +5,14 @@ services:
     plan: free
     buildCommand: |
       pip install --upgrade pip &&
-      pip install --only-binary=:all: -r requirements.txt
+      pip install --only-binary=:all: -r requirements.txt &&
+      python scripts/ingest_caps.py
+    # The ingest step rebuilds data/caps_index.json from caps_kb.py,
+    # past_papers.py, and any documents in data/sources/. It runs on
+    # every deploy so the RAG index is always in sync with the latest
+    # code + content. Cheap (< 5 s), safe (idempotent), and means the
+    # committed index is treated as a build artefact — never the
+    # source of truth.
     startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION

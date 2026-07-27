@@ -20,7 +20,7 @@ Judges tend to fall into four buckets. Answers are grouped by bucket so you can 
 ## **"How is your AI CAPS-aligned? Isn't it just a wrapper on ChatGPT?"**
 
 **30-second answer:**
-It's not a ChatGPT wrapper — it's a four-layer alignment stack on **open-weight Llama-family models running on Groq today, moving to Dell AI Factory in production**. Layer 1 is live now: every LLM call is prefixed with a ~4.4 KB CAPS-conventions prompt that enforces NSC mark codes ((M)/(A)/(CA)), exact-form notation, DBE phrasing, and grade-scope guardrails. Layers 2–4 add curriculum knowledge base, retrieval over the actual DBE CAPS PDF, and eventually LoRA fine-tuning on our own hardware.
+It's not a ChatGPT wrapper — it's a four-layer alignment stack on **open-weight Llama-family models running on Groq today, moving to Dell AI Factory in production**. Three layers are live: (1) every LLM call is prefixed with a CAPS-conventions prompt enforcing NSC mark codes, exact-form notation, and grade-scope guardrails; (2) a structured curriculum knowledge base with sub-skills / formulae / misconceptions per (grade × topic); and (3) **BM25 retrieval over a 52-chunk CAPS corpus** at every query, with `[S1]`, `[S2]`, `[S3]` source tags the model cites inline. Verify at `/health/rag`. Layer 4 (LoRA fine-tune on Dell AI Factory) is the post-pilot deliverable.
 
 **2-minute deep dive:**
 Generic Groq / GPT-4 will happily solve a quadratic — but with an American decimal answer, no mark tags, and no grade citation. Our Layer 1 (already shipping) injects a system prompt that tells the model:
@@ -33,6 +33,36 @@ Generic Groq / GPT-4 will happily solve a quadratic — but with an American dec
 - Cite the CAPS topic at the end of every answer
 
 **Evidence:** [`app/tutor/caps_prompt.py`](../app/tutor/caps_prompt.py) — the `build_caps_system_prompt()` function is what runs before every LLM call. See [`docs/CAPS_ALIGNMENT.md`](CAPS_ALIGNMENT.md) for the full four-layer strategy.
+
+---
+
+## **"Where is the RAG? How sure are we the model actually uses DBE / CAPS content?"**
+
+**30-second answer:**
+The RAG is live and runs on **every LLM call**. It's a BM25 retriever (Okapi BM25 — the same scoring function Elasticsearch uses) over a 52-chunk corpus built from the CAPS knowledge base, 27 real NSC past-paper questions with memos, and hand-authored CAPS scope references. Every question retrieves the top-3 most relevant chunks, which are injected into the system prompt with `[S1]`, `[S2]`, `[S3]` tags. The model is instructed to cite them inline. Hit `/health/rag` on the deployment to see the exact chunk count, breakdown by source, grade, and topic.
+
+**2-minute deep dive:**
+Full pipeline:
+1. Learner asks a question → engine calls `answer_freely(question, grade, history)`.
+2. `build_caps_system_prompt()` fires `retrieve(question, top_k=3, grade=learner_grade)`.
+3. `BM25Retriever` scores every chunk against the query using term frequency, inverse document frequency, and length normalisation. Grade acts as a soft filter (higher-grade chunks are penalised, not excluded).
+4. Top-3 chunks are formatted as `[S1] CAPS Grade 11 Trigonometry · KB entry\n<body>\n[S2] NSC Maths P1, Grade 12, DBE Nov 2024, Q1.1.2 · Q1.1.2 · 4 marks\n<body>...`.
+5. This block is injected between the Phase-2 topic KB context and the method-specific instructions.
+6. The CAPS conventions text (rule 7) tells the model: *"If your answer draws on a source, tag it inline like this: 'By the quadratic formula [S1]...'. If retrieved sources do NOT support the question, say so and reason from general knowledge — do NOT fabricate a citation."*
+7. LLM's answer now contains inline `[S1]` / `[S2]` markers pointing at specific sources.
+
+**Corpus sources today (52 chunks total):**
+- 21 chunks from `app/tutor/caps_kb.py` — one per (grade × topic) with sub-skills, formulae, misconceptions
+- 27 chunks from `app/tutor/past_papers.py` — one per seeded NSC question with the full DBE memo
+- 4 chunks from `data/sources/caps_mathematics_scope_grades_10_12.md` — hand-authored CAPS scope reference
+
+**Adding real DBE PDFs is a 10-minute drop-in:**
+Download the CAPS Mathematics PDF from [education.gov.za](https://www.education.gov.za) into `data/sources/`, run `python scripts/ingest_caps.py`, redeploy. The ingestion script auto-extracts PDF text via `pypdf` (already in requirements) and adds it to the searchable corpus. Zero code changes.
+
+**Why BM25 instead of neural embeddings?**
+Free-tier friendly (fits in Render's 512 MB RAM). Fast (~1 ms per query). Excellent on curriculum content where the vocabulary is highly specific ("compound angle", "discriminant", "sinking fund"). Neural-embedding upgrade path (fastembed + ONNX) is a one-line change post-sponsorship.
+
+**Evidence:** Hit `https://educonnect-tutor.onrender.com/health/rag` in front of any judge — returns the chunk count, source breakdown, grade breakdown, and topic breakdown. Then hit `/api/chat` with a real trig question and inspect the response — it will contain inline `[S1]`, `[S2]` citations tied to the retrieved chunks.
 
 ---
 
@@ -358,8 +388,8 @@ CAPS alignment is a four-layer stack — past papers are only part of Layer 3. L
 
 | Ask a judge is likely to make | 5-word core answer |
 |---|---|
-| "How is it CAPS-aligned?" | "Four-layer stack; Layer 1 live" |
-| "How prevent hallucination?" | "Deterministic maths + LLM grounding" |
+| "How is it CAPS-aligned?" | "Four-layer stack; Layers 1-3 live" |
+| "How prevent hallucination?" | "Deterministic maths + RAG grounding + inline citations" |
 | "Which LLM?" | "Open-weight `gpt-oss-120b` on Groq/Dell" |
 | "POPIA?" | "In-country Dell hosting for production" |
 | "Cost per learner?" | "Under R0.02 per conversation" |

@@ -53,12 +53,23 @@ class MockReasoningProvider(ReasoningProvider):
         language: str = "en",
         grade: Optional[str] = None,
     ) -> str:
-        # No LLM in mock mode — return a graceful, honest response.
+        # No LLM in mock mode — return a graceful, honest response that
+        # still mentions the CAPS alignment so demos in mock mode
+        # communicate the product vision.
+        from app.tutor.caps_prompt import detect_topic
+        topic = detect_topic(question)
+        topic_line = (
+            f"That looks like a CAPS {topic.replace('_', ' ')} question. "
+            if topic else ""
+        )
         return (
-            f"Great question! To walk you through '{question.strip()[:80]}' step-by-step, "
-            "the tutor needs the live AI model to be enabled.\n\n"
-            "You can still practise past papers or type an equation like 2x + 3 = 7 "
-            "and I'll help you diagnose your working step by step."
+            f"Great question! {topic_line}To walk you through "
+            f"'{question.strip()[:80]}' step-by-step in full NSC style "
+            f"(with (M)/(A)/(CA) mark codes and CAPS-scoped notation), "
+            f"the tutor needs the live AI model to be enabled.\n\n"
+            "For now, you can still practise past papers, or type an "
+            "equation like 2x + 3 = 7 and I'll diagnose your working "
+            "step-by-step using the deterministic maths engine."
         )
 
     async def answer_with_image(
@@ -184,23 +195,18 @@ class DellReasoningProvider(ReasoningProvider):
         language: str = "en",
         grade: Optional[str] = None,
     ) -> str:
-        lang_name = {"en": "English", "af": "Afrikaans", "zu": "isiZulu",
-                     "xh": "isiXhosa"}.get(language, "English")
-        grade_hint = f"The learner is in Grade {grade}. " if grade else ""
-        system = (
-            "You are EduConnect AI Tutor — a warm, patient South African high-school "
-            "Mathematics tutor aligned to the CAPS curriculum. A learner has asked you "
-            "an open-ended maths question. Answer it step-by-step, showing all working "
-            "clearly. Explain the method as you go, not just the final answer.\n\n"
-            "Rules:\n"
-            "1. Show every step of the working, numbered or laid out clearly.\n"
-            "2. When factorising, state the method (common factor / trinomial / difference of squares / etc.), show the factors, then verify by expansion.\n"
-            "3. When solving trigonometry, cite the identity or rule you use.\n"
-            "4. When answering geometry, state the theorem (Pythagoras / angle rules / properties of triangles etc.) and cite where it applies.\n"
-            "5. Never just state the answer — the working IS the value.\n"
-            "6. Keep the tone warm and encouraging. Short paragraphs. Use plain language a Grade 8-12 learner understands.\n"
-            f"7. Reply in {lang_name}.\n"
-            f"{grade_hint}Keep the response under 400 words."
+        # CAPS-aligned system prompt: notation, mark codes, grade scope, and
+        # per-topic guidance all come from the caps_prompt module so every
+        # answer method shares the same conventions. See docs/AI_MODELS.md
+        # for the four-layer CAPS strategy (this is Phase 1: prompt eng).
+        from app.tutor.caps_prompt import build_caps_system_prompt, detect_topic
+        topic = detect_topic(question)
+        system = build_caps_system_prompt(
+            purpose="answer_freely",
+            grade=grade,
+            language=language,
+            topic_hint=topic,
+            max_words=400,
         )
         try:
             raw = await self._chat(system, question, temperature=0.3)
@@ -227,24 +233,17 @@ class DellReasoningProvider(ReasoningProvider):
         OpenAI-compatible vision endpoint (e.g. Groq's
         llama-3.2-11b-vision-preview). Falls back to a graceful message on
         any transport / parse error so the learner never dead-ends."""
-        lang_name = {"en": "English", "af": "Afrikaans", "zu": "isiZulu",
-                     "xh": "isiXhosa"}.get(language, "English")
-        grade_hint = f"The learner is in Grade {grade}. " if grade else ""
-        system = (
-            "You are EduConnect AI Tutor — a warm, patient South African high-school "
-            "Mathematics tutor. A learner has shared a photo of a Maths problem (which "
-            "may include diagrams, geometry sketches, handwritten working, or an "
-            "equation from a textbook). Look at the image carefully and answer "
-            "step-by-step, showing every step of the working.\n\n"
-            "Rules:\n"
-            "1. Describe what you see in the image first (e.g. 'I can see a right-angled "
-            "triangle with sides labelled 3, 4, and x').\n"
-            "2. Identify what the learner is being asked to find.\n"
-            "3. State the method or theorem you'll use (Pythagoras, sine rule, etc.).\n"
-            "4. Show every step of the working, clearly numbered or laid out.\n"
-            "5. Give the final answer.\n"
-            f"6. Reply in {lang_name}.\n"
-            f"{grade_hint}Keep the response under 400 words."
+        # Topic detection is best-effort here — the caption may hint at the
+        # CAPS topic (e.g. "help me with this Pythagoras question") even
+        # before the model has seen the image.
+        from app.tutor.caps_prompt import build_caps_system_prompt, detect_topic
+        topic = detect_topic(question)
+        system = build_caps_system_prompt(
+            purpose="answer_with_image",
+            grade=grade,
+            language=language,
+            topic_hint=topic,
+            max_words=400,
         )
         # Build the multimodal user message (OpenAI vision-format content parts).
         data_url = f"data:{image_mime};base64,{image_base64}"
@@ -282,26 +281,19 @@ class DellReasoningProvider(ReasoningProvider):
         document_filename: str = "document", language: str = "en",
         grade: Optional[str] = None,
     ) -> str:
-        lang_name = {"en": "English", "af": "Afrikaans", "zu": "isiZulu",
-                     "xh": "isiXhosa"}.get(language, "English")
-        grade_hint = f"The learner is in Grade {grade}. " if grade else ""
-        system = (
-            "You are EduConnect AI Tutor — a warm, patient South African "
-            "high-school Mathematics tutor. A learner has uploaded a document "
-            "(past paper, worksheet, homework, textbook page) and asked you a "
-            "question about it. Read the document text carefully and answer "
-            "step-by-step, referring to the document by section/question number "
-            "where possible.\n\n"
-            "Rules:\n"
-            "1. If the document has multiple questions, focus on the specific one "
-            "the learner asked about. If unclear, answer the FIRST question.\n"
-            "2. Show every step of your working.\n"
-            "3. Cite the document (e.g. 'Question 2.1 asks...') so the learner "
-            "can follow along in their own copy.\n"
-            "4. If the document seems unrelated to Maths, politely say so and "
-            "invite a maths question.\n"
-            f"5. Reply in {lang_name}.\n"
-            f"{grade_hint}Keep the response under 500 words."
+        # For a document Q, run the topic detector across BOTH the learner's
+        # question AND (a prefix of) the document body — the question alone
+        # often just says "please help", so the doc text is where the topic
+        # signal really lives.
+        from app.tutor.caps_prompt import build_caps_system_prompt, detect_topic
+        combined = f"{question}\n{document_text[:2000]}"
+        topic = detect_topic(combined)
+        system = build_caps_system_prompt(
+            purpose="answer_with_document",
+            grade=grade,
+            language=language,
+            topic_hint=topic,
+            max_words=500,
         )
         user_message = (
             f"Learner's question: {question}\n\n"

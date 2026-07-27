@@ -52,10 +52,12 @@ class MockReasoningProvider(ReasoningProvider):
         question: str,
         language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
         # No LLM in mock mode — return a graceful, honest response that
         # still mentions the CAPS alignment so demos in mock mode
-        # communicate the product vision.
+        # communicate the product vision. History is accepted but unused
+        # since the mock has no reasoning engine.
         from app.tutor.caps_prompt import detect_topic
         topic = detect_topic(question)
         topic_line = (
@@ -79,8 +81,10 @@ class MockReasoningProvider(ReasoningProvider):
         image_mime: str = "image/jpeg",
         language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
         # No vision LLM in mock mode — return a helpful, honest message.
+        # History is accepted but unused in mock mode.
         return (
             f"I can see you've shared an image (about {len(image_base64) // 1024}KB). "
             "To read diagrams, geometry sketches, or handwritten working, the tutor needs "
@@ -93,7 +97,9 @@ class MockReasoningProvider(ReasoningProvider):
         self, question: str, document_text: str,
         document_filename: str = "document", language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
+        # History accepted but unused in mock mode.
         preview = (document_text or "").strip()[:200]
         return (
             f"I received your document '{document_filename}' "
@@ -127,13 +133,36 @@ class DellReasoningProvider(ReasoningProvider):
         self._model = settings.dell_llm_model
         self._timeout = settings.http_timeout
 
-    async def _chat(self, system: str, user: str, temperature: float = 0.3) -> str:
+    async def _chat(
+        self,
+        system: str,
+        user: str,
+        temperature: float = 0.3,
+        history: Optional[list[dict]] = None,
+    ) -> str:
+        """Send a chat completion request. When `history` is supplied the
+        multi-turn conversation is preserved so the LLM sees earlier
+        exchanges — that's what makes 'is that the full solution?' work.
+        History entries are inserted BETWEEN the system prompt and the
+        current user message, matching OpenAI's canonical format.
+
+        We defensively strip anything that isn't role='user' or 'assistant'
+        with a non-empty string content, so a malformed history entry can
+        never poison the request."""
+        messages: list[dict] = [{"role": "system", "content": system}]
+        if history:
+            for turn in history:
+                if not isinstance(turn, dict):
+                    continue
+                role = turn.get("role")
+                content = turn.get("content")
+                if role not in ("user", "assistant") or not isinstance(content, str) or not content:
+                    continue
+                messages.append({"role": role, "content": content})
+        messages.append({"role": "user", "content": user})
         payload = {
             "model": self._model,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
+            "messages": messages,
             "temperature": temperature,
         }
         headers = {"Authorization": f"Bearer {self._api_key}"}
@@ -194,6 +223,7 @@ class DellReasoningProvider(ReasoningProvider):
         question: str,
         language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
         # CAPS-aligned system prompt: notation, mark codes, grade scope, and
         # per-topic guidance all come from the caps_prompt module so every
@@ -209,7 +239,9 @@ class DellReasoningProvider(ReasoningProvider):
             max_words=400,
         )
         try:
-            raw = await self._chat(system, question, temperature=0.3)
+            # Pass conversation history through so the LLM can resolve
+            # follow-ups ('is that the full solution?', 'explain step 3').
+            raw = await self._chat(system, question, temperature=0.3, history=history)
             return raw.strip()
         except Exception as exc:
             logger.warning("Dell LLM answer_freely failed: %s", exc)
@@ -228,11 +260,16 @@ class DellReasoningProvider(ReasoningProvider):
         image_mime: str = "image/jpeg",
         language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
         """Multimodal Q&A. Sends a data-URL image + text prompt to the
         OpenAI-compatible vision endpoint (e.g. Groq's
         llama-3.2-11b-vision-preview). Falls back to a graceful message on
-        any transport / parse error so the learner never dead-ends."""
+        any transport / parse error so the learner never dead-ends.
+
+        ``history`` is a list of prior text-only turns; we sandwich them
+        BETWEEN the system prompt and the new image+text user message so
+        the model resolves follow-ups without re-uploading old images."""
         # Topic detection is best-effort here — the caption may hint at the
         # CAPS topic (e.g. "help me with this Pythagoras question") even
         # before the model has seen the image.
@@ -251,13 +288,22 @@ class DellReasoningProvider(ReasoningProvider):
             {"type": "text", "text": question or "Please help me solve this problem."},
             {"type": "image_url", "image_url": {"url": data_url}},
         ]
+        # Assemble messages: system, then prior text-only turns, then the
+        # multimodal user message.
+        messages: list[dict] = [{"role": "system", "content": system}]
+        if history:
+            for turn in history:
+                if not isinstance(turn, dict):
+                    continue
+                role = turn.get("role")
+                content = turn.get("content")
+                if role in ("user", "assistant") and isinstance(content, str) and content:
+                    messages.append({"role": role, "content": content})
+        messages.append({"role": "user", "content": user_content})
         try:
             payload = {
                 "model": self._model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user_content},
-                ],
+                "messages": messages,
                 "temperature": 0.3,
             }
             headers = {"Authorization": f"Bearer {self._api_key}"}
@@ -280,6 +326,7 @@ class DellReasoningProvider(ReasoningProvider):
         self, question: str, document_text: str,
         document_filename: str = "document", language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
         # For a document Q, run the topic detector across BOTH the learner's
         # question AND (a prefix of) the document body — the question alone
@@ -301,7 +348,7 @@ class DellReasoningProvider(ReasoningProvider):
             f"{document_text}"
         )
         try:
-            raw = await self._chat(system, user_message, temperature=0.3)
+            raw = await self._chat(system, user_message, temperature=0.3, history=history)
             return raw.strip()
         except Exception as exc:
             logger.warning("Dell LLM answer_with_document failed: %s", exc)

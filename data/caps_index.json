@@ -1,0 +1,418 @@
+[
+  {
+    "text": "CAPS Grade 10 Mathematics — Algebra\n\nSub-skills a learner should demonstrate:\n  - factorise common factors from an expression\n  - factorise trinomials of the form ax² + bx + c\n  - factorise difference of squares\n  - solve linear equations by inverse operations on both sides\n  - solve quadratic equations by factorisation\n  - solve simultaneous linear equations (elimination and substitution)\n  - apply the laws of exponents (including negative and rational)\n\nKey formulae for this topic:\n  - Difference of squares: a² - b² = (a - b)(a + b)\n  - Perfect square trinomial: a² ± 2ab + b² = (a ± b)²\n\nCommon learner misconceptions:\n  - flipping only ONE sign when moving a term across the =\n  - distributing a negative into only the first term of the bracket\n  - cancelling terms across + instead of ÷ (a fraction slip)\n  - forgetting the ± when taking a square root\n\nTypical NSC weighting: Paper 1 ≈ 45 marks",
+    "source": "CAPS Grade 10 · Algebra",
+    "section": "KB entry",
+    "grade": "10",
+    "topic": "algebra",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 10 Mathematics — Functions\n\nSub-skills a learner should demonstrate:\n  - find x- and y-intercepts of a straight line\n  - find x- and y-intercepts of a parabola\n  - identify the axis of symmetry and turning point of a parabola\n  - sketch the hyperbola y = a/x + q\n  - identify the asymptotes of exponential graphs y = b^x + q\n\nCommon learner misconceptions:\n  - swapping x- and y-intercept calculations\n  - treating y = 1/x as y = x⁻¹ with a linear domain\n  - forgetting the horizontal asymptote of the exponential (y = q)\n\nTypical NSC weighting: Paper 1 ≈ 25 marks",
+    "source": "CAPS Grade 10 · Functions",
+    "section": "KB entry",
+    "grade": "10",
+    "topic": "functions",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 10 Mathematics — Trigonometry\n\nSub-skills a learner should demonstrate:\n  - define sin, cos, tan using SOHCAHTOA in a right triangle\n  - solve for an unknown side of a right triangle\n  - solve for an unknown angle of a right triangle\n  - recognise special angles (0°, 30°, 45°, 60°, 90°)\n\nKey formulae for this topic:\n  - SOHCAHTOA: sin = opp/hyp, cos = adj/hyp, tan = opp/adj\n  - Pythagoras: a² + b² = c²\n\nCommon learner misconceptions:\n  - confusing opposite, adjacent, and hypotenuse relative to the reference angle\n  - using degrees when the calculator is in radians (or vice versa)\n  - rounding intermediate values (should keep exact form until the end)\n\nTypical NSC weighting: Paper 2 ≈ 30 marks",
+    "source": "CAPS Grade 10 · Trigonometry",
+    "section": "KB entry",
+    "grade": "10",
+    "topic": "trigonometry",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 10 Mathematics — Analytical Geometry\n\nSub-skills a learner should demonstrate:\n  - find the distance between two points\n  - find the midpoint of a line segment\n  - find the gradient of a line\n\nKey formulae for this topic:\n  - Distance: d = √((x₂-x₁)² + (y₂-y₁)²)\n  - Midpoint: M = ((x₁+x₂)/2, (y₁+y₂)/2)\n  - Gradient: m = (y₂-y₁) / (x₂-x₁)\n\nCommon learner misconceptions:\n  - confusing (x₁-x₂) with (x₂-x₁) in gradient calculations (sign only)\n  - using distance formula but forgetting to square both differences\n\nTypical NSC weighting: Paper 2 ≈ 25 marks",
+    "source": "CAPS Grade 10 · Analytical Geometry",
+    "section": "KB entry",
+    "grade": "10",
+    "topic": "analytical_geometry",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 10 Mathematics — Financial\n\nSub-skills a learner should demonstrate:\n  - calculate simple interest\n  - calculate compound interest (annual and non-annual)\n  - compare simple vs compound over time\n\nKey formulae for this topic:\n  - Simple: A = P(1 + rn)\n  - Compound: A = P(1 + r/m)^(mn)\n\nCommon learner misconceptions:\n  - using rate as a percentage instead of decimal (5 instead of 0.05)\n  - forgetting to convert monthly interest rate to annual\n\nTypical NSC weighting: Paper 1 ≈ 15 marks",
+    "source": "CAPS Grade 10 · Financial",
+    "section": "KB entry",
+    "grade": "10",
+    "topic": "financial",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 10 Mathematics — Statistics\n\nSub-skills a learner should demonstrate:\n  - calculate mean, median, and mode of a data set\n  - construct a five-number summary\n  - draw and interpret a box-and-whisker plot\n\nCommon learner misconceptions:\n  - confusing the median position with the median value\n  - using n/2 instead of (n+1)/2 for the median of an odd dataset\n\nTypical NSC weighting: Paper 2 ≈ 15 marks",
+    "source": "CAPS Grade 10 · Statistics",
+    "section": "KB entry",
+    "grade": "10",
+    "topic": "statistics",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 10 Mathematics — Probability\n\nSub-skills a learner should demonstrate:\n  - identify mutually exclusive events\n  - use complement rule: P(not A) = 1 - P(A)\n  - read/interpret Venn diagrams\n\nTypical NSC weighting: Paper 2 ≈ 10 marks",
+    "source": "CAPS Grade 10 · Probability",
+    "section": "KB entry",
+    "grade": "10",
+    "topic": "probability",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 11 Mathematics — Algebra\n\nSub-skills a learner should demonstrate:\n  - solve a quadratic equation by the quadratic formula\n  - solve a quadratic equation by completing the square\n  - solve quadratic inequalities using critical values + sign analysis\n  - solve simultaneous equations (one linear, one quadratic)\n  - use the discriminant Δ = b² - 4ac to describe the nature of roots\n  - work with surds and rationalise a monomial denominator\n\nKey formulae for this topic:\n  - Quadratic formula: x = (-b ± √(b² - 4ac)) / (2a)\n  - Discriminant: Δ = b² - 4ac\n  - Nature of roots: Δ > 0 (real, distinct), Δ = 0 (equal), Δ < 0 (non-real)\n\nCommon learner misconceptions:\n  - using the quadratic formula without first rearranging to = 0\n  - keeping a squared inequality without accounting for sign changes\n  - when Δ = 0: reporting two roots instead of one repeated root\n  - when Δ < 0: reporting complex roots (out of CAPS scope)\n\nTypical NSC weighting: Paper 1 ≈ 50 marks\nSeeded practice questions: 2026_jun_nw:p1:1.1.1, 2026_jun_nw:p1:1.1.2, 2026_jun_nw:p1:1.2, 2025_nov_dbe:p1:1.1.1, 2025_nov_dbe:p1:1.1.2, 2025_nov_dbe:p1:1.1.3, 2024_nov_dbe:p1:1.1.1, 2024_nov_dbe:p1:1.1.2, 2023_nov_dbe:p1:1.1.1, 2023_nov_dbe:p1:1.1.2, 2022_nov_dbe:p1:1.1.1, 2022_nov_dbe:p1:1.1.2, 2021_nov_dbe:p1:1.1.1, 2021_nov_dbe:p1:1.1.2",
+    "source": "CAPS Grade 11 · Algebra",
+    "section": "KB entry",
+    "grade": "11",
+    "topic": "algebra",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 11 Mathematics — Trigonometry\n\nSub-skills a learner should demonstrate:\n  - prove and use the quotient identity tan θ = sin θ / cos θ\n  - prove and use the square identity sin²θ + cos²θ = 1\n  - apply reduction formulae in each quadrant\n  - use co-function identities: sin(90°-θ) = cos θ, etc.\n  - expand compound angles: sin(A±B), cos(A±B), tan(A±B)\n  - find the general solution of a trig equation\n  - apply the sine, cosine, and area rules to non-right triangles\n\nKey formulae for this topic:\n  - sin(A + B) = sin A · cos B + cos A · sin B\n  - sin(A - B) = sin A · cos B - cos A · sin B\n  - cos(A + B) = cos A · cos B - sin A · sin B\n  - cos(A - B) = cos A · cos B + sin A · sin B\n  - sin²θ + cos²θ = 1\n  - General solution of sin θ = k: θ = sin⁻¹(k) + 360°n or (180° - sin⁻¹(k)) + 360°n\n\nCommon learner misconceptions:\n  - sin²θ vs sin(θ²) — sin²θ means (sin θ)² not sin of θ squared\n  - forgetting to check which quadrant the angle lies in when applying reduction\n  - dropping the ± when solving sin θ = k\n  - confusing compound angle sin(A + B) with sin A + sin B (which is WRONG)\n\nTypical NSC weighting: Paper 2 ≈ 40 marks",
+    "source": "CAPS Grade 11 · Trigonometry",
+    "section": "KB entry",
+    "grade": "11",
+    "topic": "trigonometry",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 11 Mathematics — Functions\n\nSub-skills a learner should demonstrate:\n  - transform functions with shifts, reflections, and stretches\n  - identify the inverse of a linear function\n  - sketch parabola y = a(x - p)² + q from turning point form\n\nCommon learner misconceptions:\n  - confusing the direction of a horizontal shift (x - h moves RIGHT, not left)\n  - reflecting only one axis when both should reflect\n\nTypical NSC weighting: Paper 1 ≈ 25 marks",
+    "source": "CAPS Grade 11 · Functions",
+    "section": "KB entry",
+    "grade": "11",
+    "topic": "functions",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 11 Mathematics — Analytical Geometry\n\nSub-skills a learner should demonstrate:\n  - find the equation of a line given two points\n  - test for parallel (equal gradients) and perpendicular (m₁·m₂ = -1) lines\n  - calculate the angle of inclination of a line\n\nKey formulae for this topic:\n  - Equation of a line: y - y₁ = m(x - x₁)\n  - Angle of inclination: tan θ = m (with θ measured from +x axis)\n\nTypical NSC weighting: Paper 2 ≈ 25 marks",
+    "source": "CAPS Grade 11 · Analytical Geometry",
+    "section": "KB entry",
+    "grade": "11",
+    "topic": "analytical_geometry",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 11 Mathematics — Euclidean Geometry\n\nSub-skills a learner should demonstrate:\n  - apply the tangent-radius theorem (tangent ⊥ radius at point of contact)\n  - apply the inscribed-angle theorem (angle at centre = 2 × angle at circumference)\n  - prove properties of cyclic quadrilaterals\n\nCommon learner misconceptions:\n  - citing a wrong theorem name in the (R) mark reason column\n  - assuming a chord is a diameter without justification\n  - confusing inscribed-angle with central-angle in the same segment\n\nTypical NSC weighting: Paper 2 ≈ 35 marks",
+    "source": "CAPS Grade 11 · Euclidean Geometry",
+    "section": "KB entry",
+    "grade": "11",
+    "topic": "euclidean_geometry",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 11 Mathematics — Financial\n\nSub-skills a learner should demonstrate:\n  - calculate the future value of an annuity\n  - calculate the present value of an annuity\n  - convert between nominal and effective interest rates\n\nKey formulae for this topic:\n  - Future value: F = x · [(1 + i)^n - 1] / i\n  - Present value: P = x · [1 - (1 + i)^(-n)] / i\n  - Effective rate: (1 + i_eff) = (1 + i_nom/m)^m\n\nTypical NSC weighting: Paper 1 ≈ 15 marks",
+    "source": "CAPS Grade 11 · Financial",
+    "section": "KB entry",
+    "grade": "11",
+    "topic": "financial",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 12 Mathematics — Algebra\n\nSub-skills a learner should demonstrate:\n  - identify arithmetic sequences: constant common difference\n  - identify geometric sequences: constant common ratio\n  - find the nth term T_n of arithmetic + geometric sequences\n  - find the sum S_n of arithmetic + geometric series\n  - find the sum to infinity of a convergent geometric series (|r| < 1)\n  - convert sigma notation to expanded form and vice versa\n\nKey formulae for this topic:\n  - Arithmetic T_n = a + (n-1)d\n  - Arithmetic S_n = n/2 · [2a + (n-1)d]\n  - Geometric T_n = a · r^(n-1)\n  - Geometric S_n = a(r^n - 1) / (r - 1)   for r ≠ 1\n  - Sum to infinity S_∞ = a / (1 - r)   for |r| < 1\n\nCommon learner misconceptions:\n  - confusing common difference (arithmetic) with common ratio (geometric)\n  - attempting sum to infinity when |r| ≥ 1 (series diverges)\n  - off-by-one in T_n vs T_(n-1) when applying recursive definitions\n\nTypical NSC weighting: Paper 1 ≈ 25 marks\nSeeded practice questions: 2026_jun_nw:p1:2.1, 2025_nov_dbe:p1:2.1, 2024_nov_dbe:p1:2.2, 2023_nov_dbe:p1:2.1, 2021_nov_dbe:p1:2.1",
+    "source": "CAPS Grade 12 · Algebra",
+    "section": "KB entry",
+    "grade": "12",
+    "topic": "algebra",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 12 Mathematics — Calculus\n\nSub-skills a learner should demonstrate:\n  - compute limits by direct substitution + factor-then-simplify\n  - differentiate from first principles\n  - apply the rules of differentiation (power, sum, chain, product, quotient)\n  - find turning points and points of inflection of a cubic\n  - sketch a cubic function using calculus\n  - solve optimisation problems (max/min in a real-world context)\n\nKey formulae for this topic:\n  - First principles: f'(x) = lim (h→0) [f(x+h) - f(x)] / h\n  - Power rule: d/dx (x^n) = n·x^(n-1)\n  - Product: (uv)' = u'v + uv'\n  - Quotient: (u/v)' = (u'v - uv') / v²\n  - Chain: (f(g(x)))' = f'(g(x)) · g'(x)\n\nCommon learner misconceptions:\n  - differentiating a constant to get itself (should be 0)\n  - using the chain rule when the power rule suffices (adds errors)\n  - confusing sign of second derivative for concavity\n  - in optimisation: forgetting to verify max vs min with the second derivative\n\nTypical NSC weighting: Paper 1 ≈ 35 marks\nSeeded practice questions: 2025_nov_dbe:p1:5.2, 2024_nov_dbe:p1:5.1, 2021_nov_dbe:p1:5.3",
+    "source": "CAPS Grade 12 · Calculus",
+    "section": "KB entry",
+    "grade": "12",
+    "topic": "calculus",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 12 Mathematics — Functions\n\nSub-skills a learner should demonstrate:\n  - find the inverse of a function (linear, quadratic-restricted, exponential)\n  - identify the logarithmic function as the inverse of the exponential\n  - solve equations of the form log_b(x) = k using the definition\n\nKey formulae for this topic:\n  - y = log_b(x)  ⇔  b^y = x\n  - log_b(xy) = log_b(x) + log_b(y)\n  - log_b(x/y) = log_b(x) - log_b(y)\n  - log_b(x^n) = n · log_b(x)\n\nTypical NSC weighting: Paper 1 ≈ 15 marks",
+    "source": "CAPS Grade 12 · Functions",
+    "section": "KB entry",
+    "grade": "12",
+    "topic": "functions",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 12 Mathematics — Trigonometry\n\nSub-skills a learner should demonstrate:\n  - use double-angle formulae for sin, cos, tan\n  - solve 2D applications using sine, cosine, and area rules\n  - solve 3D applications using sine, cosine, and area rules\n  - prove and manipulate identities involving compound + double angles\n\nKey formulae for this topic:\n  - sin 2A = 2 sin A cos A\n  - cos 2A = cos²A - sin²A = 1 - 2sin²A = 2cos²A - 1\n  - tan 2A = 2 tan A / (1 - tan²A)\n\nTypical NSC weighting: Paper 2 ≈ 35 marks",
+    "source": "CAPS Grade 12 · Trigonometry",
+    "section": "KB entry",
+    "grade": "12",
+    "topic": "trigonometry",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 12 Mathematics — Analytical Geometry\n\nSub-skills a learner should demonstrate:\n  - find the equation of a circle in centre-radius form\n  - find the equation of a tangent to a circle at a given point\n\nKey formulae for this topic:\n  - Circle centre (a, b) radius r: (x - a)² + (y - b)² = r²\n  - Tangent at (x₁, y₁) on circle: perpendicular to radius at that point\n\nTypical NSC weighting: Paper 2 ≈ 20 marks",
+    "source": "CAPS Grade 12 · Analytical Geometry",
+    "section": "KB entry",
+    "grade": "12",
+    "topic": "analytical_geometry",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 12 Mathematics — Euclidean Geometry\n\nSub-skills a learner should demonstrate:\n  - prove the midpoint theorem\n  - apply the proportionality theorem in triangles\n  - prove similarity of two triangles (AA, SSS, SAS)\n\nTypical NSC weighting: Paper 2 ≈ 30 marks",
+    "source": "CAPS Grade 12 · Euclidean Geometry",
+    "section": "KB entry",
+    "grade": "12",
+    "topic": "euclidean_geometry",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 12 Mathematics — Financial\n\nSub-skills a learner should demonstrate:\n  - calculate sinking-fund payments\n  - apply the future- and present-value formulae in bond / loan scenarios\n  - handle amortisation with partial repayments\n\nTypical NSC weighting: Paper 1 ≈ 15 marks\nSeeded practice questions: 2025_nov_dbe:p1:4.1, 2023_nov_dbe:p1:4.1, 2022_nov_dbe:p1:4.2",
+    "source": "CAPS Grade 12 · Financial",
+    "section": "KB entry",
+    "grade": "12",
+    "topic": "financial",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "CAPS Grade 12 Mathematics — Probability\n\nSub-skills a learner should demonstrate:\n  - apply the fundamental counting principle\n  - use factorial notation to count arrangements without repetition\n  - compute the number of arrangements when some objects are alike\n\nKey formulae for this topic:\n  - Number of permutations of n distinct objects: n!\n  - Permutations of n objects with k alike: n! / k!\n\nTypical NSC weighting: Paper 2 ≈ 12 marks",
+    "source": "CAPS Grade 12 · Probability",
+    "section": "KB entry",
+    "grade": "12",
+    "topic": "probability",
+    "doc_id": "caps_kb"
+  },
+  {
+    "text": "NSC past-paper question — 2026 June (NW Provincial)\nQuestion 1.1.1 (3 marks):\nSolve for x:  x² + x - 30 = 0\n\nMemo (DBE-style working):\nFactorise: (x + 6)(x - 5) = 0    (M)\nSet each factor = 0:\nx + 6 = 0  →  x = -6    (A)\nx - 5 = 0  →  x = 5     (A)",
+    "source": "NSC Maths P1, Grade 12, NW June 2026, Q1.1.1",
+    "section": "Q1.1.1 · 3 marks",
+    "grade": "12",
+    "topic": "factorisation",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2026 June (NW Provincial)\nQuestion 1.1.2 (4 marks):\nSolve for x:  2x² - 8 = 5x  (correct to TWO decimal places)\n\nMemo (DBE-style working):\nRearrange to standard form: 2x² - 5x - 8 = 0    (M)\nQuadratic formula: x = [5 ± √(25 + 64)] / 4    (M)\nx = [5 ± √89] / 4    (A)\nx ≈ 3.61  or  x ≈ -1.11    (A)",
+    "source": "NSC Maths P1, Grade 12, NW June 2026, Q1.1.2",
+    "section": "Q1.1.2 · 4 marks",
+    "grade": "12",
+    "topic": "quadratic formula",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2026 June (NW Provincial)\nQuestion 1.2 (3 marks):\nSolve for x:  2ˣ - 2ˣ⁻¹ = 32   (no calculator)\n\nMemo (DBE-style working):\nFactor out 2ˣ⁻¹: 2ˣ⁻¹(2 - 1) = 32    (M)\nSo 2ˣ⁻¹ = 32 = 2⁵    (A)\nx - 1 = 5  →  x = 6    (A)",
+    "source": "NSC Maths P1, Grade 12, NW June 2026, Q1.2",
+    "section": "Q1.2 · 3 marks",
+    "grade": "12",
+    "topic": "factorisation",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2026 June (NW Provincial)\nQuestion 2.1 (4 marks):\nAn arithmetic sequence has first term a = 3 and common difference d = 4.\nFind T₁₀ (the 10th term).\n\nMemo (DBE-style working):\nFormula: T_n = a + (n - 1)d    (M)\nT₁₀ = 3 + (10 - 1)·4    (S)\n    = 3 + 36 = 39    (A)",
+    "source": "NSC Maths P1, Grade 12, NW June 2026, Q2.1",
+    "section": "Q2.1 · 4 marks",
+    "grade": "12",
+    "topic": "sequences",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2025 November (DBE National)\nQuestion 1.1.1 (3 marks):\nSolve for x:  x² - 7x + 12 = 0\n\nMemo (DBE-style working):\nFactorise: (x - 3)(x - 4) = 0    (M)\nSet each factor = 0:\nx - 3 = 0  →  x = 3    (A)\nx - 4 = 0  →  x = 4    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2025, Q1.1.1",
+    "section": "Q1.1.1 · 3 marks",
+    "grade": "12",
+    "topic": "factorisation",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2025 November (DBE National)\nQuestion 1.1.2 (4 marks):\nSolve for x:  2x² - 3x - 7 = 0  (correct to TWO decimal places)\n\nMemo (DBE-style working):\nStandard form: 2x² - 3x - 7 = 0\nQuadratic formula: x = [3 ± √(9 + 56)] / 4    (M)(S)\nx = [3 ± √65] / 4    (A)\nx ≈ 2.27  or  x ≈ -1.54    (A)(A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2025, Q1.1.2",
+    "section": "Q1.1.2 · 4 marks",
+    "grade": "12",
+    "topic": "quadratic formula",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2025 November (DBE National)\nQuestion 1.1.3 (3 marks):\nSolve for x:  x² - 5x ≥ 6\n\nMemo (DBE-style working):\nRearrange: x² - 5x - 6 ≥ 0    (M)\nFactorise: (x - 6)(x + 1) ≥ 0    (M)\nCritical values: x = -1 and x = 6    (A)\nParabola opens up, so inequality holds outside the roots:\nx ≤ -1  or  x ≥ 6",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2025, Q1.1.3",
+    "section": "Q1.1.3 · 3 marks",
+    "grade": "12",
+    "topic": "inequalities",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2025 November (DBE National)\nQuestion 2.1 (5 marks):\nFind the sum of the first 20 terms of the arithmetic series:  2 + 5 + 8 + 11 + ...\n\nMemo (DBE-style working):\na = 2,  d = 3,  n = 20    (A)\nS_n = n/2 · [2a + (n - 1)d]    (M)\nS₂₀ = 20/2 · [2·2 + 19·3]    (S)\n    = 10 · [4 + 57] = 10 · 61 = 610    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2025, Q2.1",
+    "section": "Q2.1 · 5 marks",
+    "grade": "12",
+    "topic": "sequences",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2025 November (DBE National)\nQuestion 4.1 (4 marks):\nR5 000 is invested at 8% per year compound interest, compounded monthly. Calculate the value after 3 years (correct to the nearest rand).\n\nMemo (DBE-style working):\nA = P·(1 + r/m)^(m·n)    (M)\n  = 5000·(1 + 0.08/12)^(12·3)    (S)\n  = 5000·(1.00667)^36    (A)\n  ≈ R6 348    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2025, Q4.1",
+    "section": "Q4.1 · 4 marks",
+    "grade": "12",
+    "topic": "financial",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2025 November (DBE National)\nQuestion 5.2 (5 marks):\nGiven  f(x) = x³ - 3x² - 9x + 2.\nFind the x-coordinate of the local MAXIMUM turning point.\n\nMemo (DBE-style working):\nf'(x) = 3x² - 6x - 9    (M)\nSet f'(x) = 0: 3x² - 6x - 9 = 0    (M)\n  →  x² - 2x - 3 = 0\n  →  (x - 3)(x + 1) = 0\n  →  x = 3 or x = -1    (A)\nf''(x) = 6x - 6; check x = -1: f''(-1) = -12 < 0 → max\nLocal maximum at x = -1    (A)(A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2025, Q5.2",
+    "section": "Q5.2 · 5 marks",
+    "grade": "12",
+    "topic": "calculus",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2024 November (DBE National)\nQuestion 1.1.1 (3 marks):\nSolve for x:  x² + 3x - 10 = 0\n\nMemo (DBE-style working):\nFactorise: (x - 2)(x + 5) = 0    (M)\nSet each factor = 0:\nx - 2 = 0  →  x = 2    (A)\nx + 5 = 0  →  x = -5   (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2024, Q1.1.1",
+    "section": "Q1.1.1 · 3 marks",
+    "grade": "12",
+    "topic": "factorisation",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2024 November (DBE National)\nQuestion 1.1.2 (4 marks):\nSolve for x:  x² - 5x + 3 = 0  (correct to TWO decimal places)\n\nMemo (DBE-style working):\nStandard form: x² - 5x + 3 = 0    (already there)\nQuadratic formula: x = [5 ± √(25 - 12)] / 2    (M)(S)\nx = [5 ± √13] / 2    (A)\nx ≈ 4.30  or  x ≈ 0.70    (A)(A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2024, Q1.1.2",
+    "section": "Q1.1.2 · 4 marks",
+    "grade": "12",
+    "topic": "quadratic formula",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2024 November (DBE National)\nQuestion 2.2 (4 marks):\nA geometric series has first term a = 4 and common ratio r = 0,5.\nCalculate the sum to infinity.\n\nMemo (DBE-style working):\nCheck convergence: |r| = 0,5 < 1  ✓    (M)\nS_∞ = a / (1 - r)    (M)\n    = 4 / (1 - 0,5)    (S)\n    = 4 / 0,5 = 8    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2024, Q2.2",
+    "section": "Q2.2 · 4 marks",
+    "grade": "12",
+    "topic": "sequences",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2024 November (DBE National)\nQuestion 3.1 (3 marks):\nGiven  f(x) = x² - 4x - 5.\nFind the x-value of the axis of symmetry.\n\nMemo (DBE-style working):\nAxis of symmetry:  x = -b / (2a)    (M)\n  a = 1,  b = -4    (S)\n  x = -(-4) / (2·1) = 4 / 2 = 2    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2024, Q3.1",
+    "section": "Q3.1 · 3 marks",
+    "grade": "12",
+    "topic": "functions",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2024 November (DBE National)\nQuestion 5.1 (4 marks):\nDetermine f'(x) from FIRST PRINCIPLES if  f(x) = x² - 3.\nGive f'(2) as your final numeric answer.\n\nMemo (DBE-style working):\nf(x + h) - f(x) = ((x+h)² - 3) - (x² - 3)\n                = 2xh + h²    (M)\n[f(x+h) - f(x)] / h = 2x + h    (A)\nlim (h → 0) [2x + h] = 2x    (M)\nSo f'(x) = 2x → f'(2) = 4    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2024, Q5.1",
+    "section": "Q5.1 · 4 marks",
+    "grade": "12",
+    "topic": "calculus",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2023 November (DBE National)\nQuestion 1.1.1 (3 marks):\nSolve for x:  x² - x - 12 = 0\n\nMemo (DBE-style working):\nFactorise: (x - 4)(x + 3) = 0    (M)\nSet each factor = 0:\nx - 4 = 0  →  x = 4    (A)\nx + 3 = 0  →  x = -3   (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2023, Q1.1.1",
+    "section": "Q1.1.1 · 3 marks",
+    "grade": "12",
+    "topic": "factorisation",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2023 November (DBE National)\nQuestion 1.1.2 (5 marks):\nSolve for x:  3ˣ = 27  (no calculator — leave in exponent form)\n\nMemo (DBE-style working):\nRecognise same base: 3ˣ = 3³    (M)\nSo x = 3    (A)\nVerification: 3³ = 27 ✓    (CA)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2023, Q1.1.3",
+    "section": "Q1.1.2 · 5 marks",
+    "grade": "12",
+    "topic": "exponents",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2023 November (DBE National)\nQuestion 2.1 (4 marks):\nIn an arithmetic sequence, T₃ = 11 and T₇ = 27.\nFind the common difference d.\n\nMemo (DBE-style working):\nUse T_n = a + (n - 1)d    (M)\nT₇ - T₃ = 4d\n27 - 11 = 4d    (S)\n16 = 4d\nd = 4    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2023, Q2.1",
+    "section": "Q2.1 · 4 marks",
+    "grade": "12",
+    "topic": "sequences",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2023 November (DBE National)\nQuestion 4.1 (5 marks):\nThabo takes a loan of R100 000 at 12% p.a. compounded monthly, repaid in equal monthly instalments over 5 years. Calculate the monthly instalment (nearest rand).\n\nMemo (DBE-style working):\nP = x · [1 - (1 + i)^(-n)] / i    (M) — present value formula\ni = 0,12 / 12 = 0,01;  n = 60    (S)\n100000 = x · [1 - 1,01^(-60)] / 0,01    (S)\n100000 = x · 44,955\nx ≈ R2 224 per month    (A)(A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2023, Q4.1",
+    "section": "Q4.1 · 5 marks",
+    "grade": "12",
+    "topic": "financial",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2022 November (DBE National)\nQuestion 1.1.1 (3 marks):\nSolve for x:  2x² - x = 3\n\nMemo (DBE-style working):\nRearrange: 2x² - x - 3 = 0    (M)\nFactorise: (2x - 3)(x + 1) = 0    (M)\nSet each factor = 0:\n2x - 3 = 0  →  x = 3/2 = 1,5    (A)\nx + 1 = 0   →  x = -1          (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2022, Q1.1.1",
+    "section": "Q1.1.1 · 3 marks",
+    "grade": "12",
+    "topic": "factorisation",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2022 November (DBE National)\nQuestion 1.1.2 (4 marks):\nSolve for x:  x² + 2x - 2 = 0  (correct to TWO decimal places)\n\nMemo (DBE-style working):\nStandard form already: x² + 2x - 2 = 0\nQuadratic formula: x = [-2 ± √(4 + 8)] / 2    (M)(S)\nx = [-2 ± √12] / 2 = -1 ± √3    (A)\nx ≈ 0.73  or  x ≈ -2.73    (A)(A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2022, Q1.1.2",
+    "section": "Q1.1.2 · 4 marks",
+    "grade": "12",
+    "topic": "quadratic formula",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2022 November (DBE National)\nQuestion 3.2 (3 marks):\nDetermine the y-intercept of the graph of f(x) = -x² + 4x + 5.\n\nMemo (DBE-style working):\nThe y-intercept is f(0)    (M)\nf(0) = -(0)² + 4(0) + 5    (S)\n     = 5    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2022, Q3.2",
+    "section": "Q3.2 · 3 marks",
+    "grade": "12",
+    "topic": "functions",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2022 November (DBE National)\nQuestion 4.2 (4 marks):\nSarah saves R500 at the end of each month into a sinking fund earning 6% p.a. compounded monthly. Calculate the value after 2 years (nearest rand).\n\nMemo (DBE-style working):\nFuture value: F = x · [(1 + i)^n - 1] / i    (M)\ni = 0,06 / 12 = 0,005;  n = 24    (S)\nF = 500 · [1,005^24 - 1] / 0,005    (S)\nF = 500 · 25,4320\nF ≈ R12 716    (A)(A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2022, Q4.2",
+    "section": "Q4.2 · 4 marks",
+    "grade": "12",
+    "topic": "financial",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2021 November (DBE National)\nQuestion 1.1.1 (3 marks):\nSolve for x:  x² + 5x - 24 = 0\n\nMemo (DBE-style working):\nFactorise: (x - 3)(x + 8) = 0    (M)\nSet each factor = 0:\nx - 3 = 0  →  x = 3    (A)\nx + 8 = 0  →  x = -8   (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2021, Q1.1.1",
+    "section": "Q1.1.1 · 3 marks",
+    "grade": "12",
+    "topic": "factorisation",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2021 November (DBE National)\nQuestion 1.1.2 (4 marks):\nSolve for x:  3x² + 2x - 6 = 0  (correct to TWO decimal places)\n\nMemo (DBE-style working):\nStandard form already: 3x² + 2x - 6 = 0\nQuadratic formula: x = [-2 ± √(4 + 72)] / 6    (M)(S)\nx = [-2 ± √76] / 6    (A)\nx ≈ 1.10  or  x ≈ -1.77    (A)(A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2021, Q1.1.2",
+    "section": "Q1.1.2 · 4 marks",
+    "grade": "12",
+    "topic": "quadratic formula",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2021 November (DBE National)\nQuestion 2.1 (3 marks):\nFor the sequence 4, 7, 12, 19, 28, ...\nFind the constant second difference.\n\nMemo (DBE-style working):\nFirst differences:  7-4=3,  12-7=5,  19-12=7,  28-19=9\nSecond differences:  5-3=2,  7-5=2,  9-7=2    (M)(A)\nConstant second difference = 2    (A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2021, Q2.1",
+    "section": "Q2.1 · 3 marks",
+    "grade": "12",
+    "topic": "sequences",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "NSC past-paper question — 2021 November (DBE National)\nQuestion 5.3 (4 marks):\nGiven  f(x) = 2x³ - 3x².\nFind the x-coordinate of the point of inflection.\n\nMemo (DBE-style working):\nf'(x) = 6x² - 6x    (M)\nf''(x) = 12x - 6    (M)\nPoint of inflection where f''(x) = 0:\n12x - 6 = 0  →  x = 1/2 = 0,5    (A)(A)",
+    "source": "NSC Maths P1, Grade 12, DBE Nov 2021, Q5.3",
+    "section": "Q5.3 · 4 marks",
+    "grade": "12",
+    "topic": "calculus",
+    "doc_id": "past_papers"
+  },
+  {
+    "text": "# CAPS Mathematics Grades 10-12 · Content Scope Summary\n\nA paraphrased scope reference for the AI tutor's retrieval corpus.\nSourced from the DBE Curriculum and Assessment Policy Statement (CAPS)\nMathematics Grades 10-12 document. When the actual DBE PDF is dropped\ninto `data/sources/`, the ingestion script will supplement — not replace —\nthis summary with direct extracts.\n\n## Purpose of Mathematics in CAPS\n\nMathematics in the FET Phase (Grades 10-12) develops abstract thinking,\nproblem-solving, mathematical reasoning, and the ability to communicate\nmathematical arguments. It provides essential grounding for further study\nin engineering, science, commerce, and financial disciplines. The\nNational Senior Certificate (NSC) mathematics examination consists of\ntwo three-hour papers (Paper 1 and Paper 2) each worth 150 marks.\n\n## Paper 1 vs Paper 2 breakdown\n\nPaper 1 typically covers:\n- Algebra and Equations (30 marks in Grade 12)\n- Number Patterns, Sequences, and Series (25 marks in Grade 12)\n- Functions and Graphs (30 marks in Grade 12)\n- Financial Mathematics (15 marks in Grade 12)\n- Differential Calculus (35 marks in Grade 12)\n- Counting Principle and Probability (15 marks in Grade 12)\n\nPaper 2 typically covers:\n- Statistics (20 marks in Grade 12)\n- Analytical Geometry (40 marks in Grade 12)\n- Trigonometry (50 marks in Grade 12)\n- Euclidean Geometry and Measurement (40 marks in Grade 12)\n\n## Grade 10 topic scope (paraphrased)\n\n### Algebra\nLearners work with algebraic expressions including factorisation\n(common factor, difference of squares, trinomials of the form\nax² + bx + c). Simplification of rational expressions. Solving linear\nequations with brackets and fractions on both sides. Solving quadratic\nequations by factorisation. Solving simultaneous linear equations by\nsubstitution and by elimination. Applying laws of exponents including\nzero and negative exponents.\n\n### Functions and Graphs\nLinear functions y = ax + q. Quadratic functions in the form\ny = ax² + q and later y = a(x + p)² + q. Hyperbolic functions\ny = a/x + q. Exponential functions y = a·b^x + q where b > 0 and\nb ≠ 1. For each function type: intercepts with the axes, axes of\nsymmetry, turning points, asymptotes, effect of parameters a, p, q.\n\n### Number Patterns\nLinear number patterns with a constant first difference. Deriving\nthe general term T_n. Recognising and continuing patterns from a\nlist of terms.",
+    "source": "Caps Mathematics Scope Grades 10 12",
+    "section": "chunk 1",
+    "grade": null,
+    "topic": null,
+    "doc_id": "user:caps_mathematics_scope_grades_10_12.md"
+  },
+  {
+    "text": "### Analytical Geometry\nDistance between two points using the distance formula\nd = √((x₂ - x₁)² + (y₂ - y₁)²). Gradient of a line joining two\npoints m = (y₂ - y₁)/(x₂ - x₁). Midpoint of a line segment.\n\n### Trigonometry\nDefinitions of sin, cos, tan in a right-angled triangle: sin θ =\nopposite/hypotenuse, cos θ = adjacent/hypotenuse, tan θ = opposite\n/adjacent (SOHCAHTOA). Special angles 0°, 30°, 45°, 60°, 90°. Solving\nright-angled triangles. Simple problems involving heights, distances,\nand angles of elevation and depression.\n\n### Euclidean Geometry\nInvestigating properties of quadrilaterals and other polygons.\nParallel-line angle relationships. Introductory similarity of\ntriangles.\n\n### Financial Mathematics\nSimple interest: A = P(1 + rn). Compound interest: A = P(1 + r)^n.\nHire purchase agreements. Exchange rates and inflation.\n\n### Statistics\nMeasures of central tendency (mean, median, mode) for ungrouped\ndata. Range and five-number summary. Box-and-whisker plots.\n\n### Probability\nTerminology: outcome, event, probability. Union and intersection of\nevents. Mutually exclusive events. Complementary events. Venn\ndiagrams. P(A ∪ B) = P(A) + P(B) - P(A ∩ B).\n\n## Grade 11 topic scope (paraphrased)\n\n### Algebra\nSolving quadratic equations by:\n- factorisation\n- completing the square\n- the quadratic formula: x = (-b ± √(b² - 4ac)) / (2a)\nThe discriminant Δ = b² - 4ac determines the nature of roots:\nΔ > 0 real distinct roots, Δ = 0 real equal roots, Δ < 0 non-real\nroots. Solving quadratic inequalities by finding critical values and\nanalysing signs. Solving simultaneous equations where one is linear\nand one is quadratic. Working with surds including rationalisation\nof monomial denominators.\n\n### Functions and Graphs\nEffect of parameters on the graphs of quadratic, hyperbolic and\nexponential functions. Inverse of a linear function. Transformations\nincluding reflections about the axes and shifts.\n\n### Number Patterns\nQuadratic number patterns with a constant SECOND difference. Deriving\nT_n = an² + bn + c for a quadratic sequence.\n\n### Analytical Geometry\nEquation of a line in the form y = mx + c and y - y₁ = m(x - x₁).\nAngle of inclination θ where tan θ = m. Parallel lines have equal\ngradients; perpendicular lines satisfy m₁ · m₂ = -1.",
+    "source": "Caps Mathematics Scope Grades 10 12",
+    "section": "chunk 2",
+    "grade": null,
+    "topic": null,
+    "doc_id": "user:caps_mathematics_scope_grades_10_12.md"
+  },
+  {
+    "text": "### Trigonometry\nIdentities: the quotient identity tan θ = sin θ/cos θ; the square\nidentity sin²θ + cos²θ = 1. Compound angle formulae including\nsin(A + B) = sinA·cosB + cosA·sinB and cos(A + B) = cosA·cosB -\nsinA·sinB. Reduction formulae in each quadrant. Co-function\nidentities: sin(90° - θ) = cos θ. Solving trigonometric equations\nincluding general solutions. Sine, cosine, and area rules for\nnon-right-angled triangles.\n\n### Euclidean Geometry\nCircle theorems: the tangent to a circle is perpendicular to the\nradius at the point of contact. Inscribed angles subtended by the\nsame arc are equal. The angle at the centre is twice the angle at\nthe circumference for the same arc. Cyclic quadrilateral properties.\n\n### Financial Mathematics\nFuture and present value of annuities. F = x·[(1 + i)^n - 1]/i.\nP = x·[1 - (1 + i)^(-n)]/i. Effective versus nominal interest rates\nand the relationship between them.\n\n### Statistics\nVariance and standard deviation for grouped and ungrouped data.\nSymmetric versus skewed distributions. Scatter plots and the least-\nsquares regression line.\n\n### Probability\nIndependent versus dependent events. Tree diagrams. The fundamental\ncounting principle for sequential choices.\n\n## Grade 12 topic scope (paraphrased)\n\n### Algebra (Sequences and Series)\nArithmetic sequences: T_n = a + (n - 1)d. Sum S_n = n/2·[2a + (n - 1)d].\nGeometric sequences: T_n = a·r^(n - 1). Sum S_n = a(r^n - 1)/(r - 1)\nfor r ≠ 1. Sum to infinity for a convergent geometric series\n(|r| < 1): S_∞ = a/(1 - r). Sigma notation.\n\n### Functions\nFormal definition of a function. Inverse functions. Logarithmic\nfunction y = log_b(x) as the inverse of the exponential\ny = b^x. Log laws: log(xy) = log x + log y; log(x/y) = log x - log y;\nlog(x^n) = n·log x.\n\n### Differential Calculus\nLimits computed by direct substitution and by factor-then-simplify.\nDifferentiation from first principles: f'(x) = lim (h→0)\n[f(x + h) - f(x)]/h. Rules of differentiation: power rule, sum rule,\nchain rule, product rule, quotient rule. Sketching cubic functions\nusing the first and second derivatives to find turning points and\npoints of inflection. Real-world optimisation problems (maximise or\nminimise a quantity subject to constraints).",
+    "source": "Caps Mathematics Scope Grades 10 12",
+    "section": "chunk 3",
+    "grade": null,
+    "topic": null,
+    "doc_id": "user:caps_mathematics_scope_grades_10_12.md"
+  },
+  {
+    "text": "### Analytical Geometry\nEquation of a circle in centre-radius form (x - a)² + (y - b)² = r².\nFinding the equation of a tangent to a circle at a given point of\ntangency, using the fact that the tangent is perpendicular to the\nradius at that point.\n\n### Trigonometry\nDouble-angle formulae: sin 2A = 2·sinA·cosA; cos 2A = cos²A - sin²A =\n1 - 2sin²A = 2cos²A - 1. Applications in two and three dimensions\nusing the sine, cosine, and area rules. Angles of elevation and\ndepression in 3D geometric problems.\n\n### Euclidean Geometry\nThe proportionality theorem. Similar triangles (AA, SSS, SAS\nsimilarity). Ratio and proportion. The midpoint theorem.\n\n### Financial Mathematics\nFuture value and present value of ordinary annuities. Sinking-fund\npayments. Home loans and amortisation. Effect of partial payments.\n\n### Statistics\nOgive (cumulative frequency curve). Standard deviation for grouped\ndata. Symmetry and skewness. Interpretation of statistical outputs.\n\n### Probability\nFundamental counting principle. Factorial notation n!. Number of\npermutations of n distinct objects: n!. Number of arrangements when\nsome objects are identical: n!/(a!·b!·...) for repeated groups.\n\n## NSC assessment style — what markers look for\n\nEvery solution should show the METHOD used, the WORKING done, and the\nFINAL ANSWER. Mark codes commonly used in memos:\n\n- (M) method mark — awarded for choosing a correct approach\n- (A) accuracy mark — awarded for a correct value\n- (CA) consistent-answer mark — awarded when the final answer follows\n  correctly from prior work even if that work had an earlier slip\n- (S) substitution mark — awarded for correctly substituting values\n- (R) reason mark — Euclidean geometry: awarded for citing the theorem\n\nAnswers should be in exact form (surds, fractions, π, e) unless the\nquestion explicitly asks for a decimal, in which case round to 2\ndecimal places by default. Trigonometric ratios use the notation\nsin θ, cos θ, tan θ without parentheses (only compound arguments like\nsin(A + B) use them). Money is expressed in Rands (R100 or R100,00),\ndistances in kilometres or metres, temperature in degrees Celsius.",
+    "source": "Caps Mathematics Scope Grades 10 12",
+    "section": "chunk 4",
+    "grade": null,
+    "topic": null,
+    "doc_id": "user:caps_mathematics_scope_grades_10_12.md"
+  }
+]

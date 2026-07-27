@@ -196,8 +196,13 @@ _G11: dict[str, TopicEntry] = {
         paper1_marks_estimate=50,
         reference_past_papers=[
             "2026_jun_nw:p1:1.1.1", "2026_jun_nw:p1:1.1.2",
+            "2026_jun_nw:p1:1.2",
             "2025_nov_dbe:p1:1.1.1", "2025_nov_dbe:p1:1.1.2",
             "2025_nov_dbe:p1:1.1.3",
+            "2024_nov_dbe:p1:1.1.1", "2024_nov_dbe:p1:1.1.2",
+            "2023_nov_dbe:p1:1.1.1", "2023_nov_dbe:p1:1.1.2",
+            "2022_nov_dbe:p1:1.1.1", "2022_nov_dbe:p1:1.1.2",
+            "2021_nov_dbe:p1:1.1.1", "2021_nov_dbe:p1:1.1.2",
         ],
         common_misconceptions=[
             "using the quadratic formula without first rearranging to = 0",
@@ -311,9 +316,11 @@ _G12: dict[str, TopicEntry] = {
         hours_per_year=27,
         paper1_marks_estimate=25,
         reference_past_papers=[
-            "2024_nov_dbe:p1:1.1.1", "2024_nov_dbe:p1:1.1.2",
-            "2023_nov_dbe:p1:1.1.1", "2022_nov_dbe:p1:1.1.1",
-            "2021_nov_dbe:p1:1.1.1",
+            "2026_jun_nw:p1:2.1",     # arithmetic sequence, T_n
+            "2025_nov_dbe:p1:2.1",    # arithmetic series, S_n
+            "2024_nov_dbe:p1:2.2",    # geometric series, sum to infinity
+            "2023_nov_dbe:p1:2.1",    # find common difference from T_3, T_7
+            "2021_nov_dbe:p1:2.1",    # second differences (quadratic pattern)
         ],
         common_misconceptions=[
             "confusing common difference (arithmetic) with common ratio (geometric)",
@@ -339,6 +346,11 @@ _G12: dict[str, TopicEntry] = {
         ],
         hours_per_year=30,
         paper1_marks_estimate=35,
+        reference_past_papers=[
+            "2025_nov_dbe:p1:5.2",   # turning points of a cubic
+            "2024_nov_dbe:p1:5.1",   # first-principles differentiation
+            "2021_nov_dbe:p1:5.3",   # point of inflection
+        ],
         common_misconceptions=[
             "differentiating a constant to get itself (should be 0)",
             "using the chain rule when the power rule suffices (adds errors)",
@@ -412,6 +424,11 @@ _G12: dict[str, TopicEntry] = {
         ],
         hours_per_year=12,
         paper1_marks_estimate=15,
+        reference_past_papers=[
+            "2025_nov_dbe:p1:4.1",   # compound interest, monthly compounding
+            "2023_nov_dbe:p1:4.1",   # loan amortisation (monthly instalment)
+            "2022_nov_dbe:p1:4.2",   # sinking-fund future value
+        ],
     ),
     "probability": TopicEntry(
         sub_skills=[

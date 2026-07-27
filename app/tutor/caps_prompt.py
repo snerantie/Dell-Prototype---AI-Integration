@@ -240,19 +240,41 @@ _TOPIC_KEYWORDS: list[tuple[str, tuple[str, ...]]] = [
 
 
 def detect_topic(question: str) -> Optional[str]:
-    """Best-effort keyword classifier — returns the CAPS topic slug or None.
+    """Best-effort CAPS topic classifier.
 
-    NOT a substitute for a real classifier (that's Phase 2). Good enough to
-    inject a "this looks like a <topic> question" hint into the system
-    prompt so the LLM stays in the right CAPS lane.
+    Phase 1 used simple first-match keyword lookup here. Phase 2 upgraded
+    to score-based classification (see caps_kb.classify_topic) — this
+    function now delegates to that scorer and applies a confidence
+    threshold, so callers see a topic only when we're reasonably sure.
+
+    Falls back to the Phase-1 first-match keyword table if caps_kb is
+    unavailable for any reason (import cycles, tests). That keeps the
+    module usable in isolation.
     """
     q = (question or "").lower()
     if not q:
         return None
-    for topic, keywords in _TOPIC_KEYWORDS:
-        for kw in keywords:
-            if kw in q:
-                return topic
+    # ---- Preferred path: Phase-2 weighted scorer -----------------------
+    try:
+        from app.tutor.caps_kb import classify_topic
+    except ImportError:
+        # Phase-2 KB unavailable — degrade to legacy first-match keywords.
+        for topic, keywords in _TOPIC_KEYWORDS:
+            for kw in keywords:
+                if kw in q:
+                    return topic
+        return None
+
+    topic, score = classify_topic(question)
+    # Threshold: require score ≥ 3 to inject a topic hint. Lower
+    # thresholds produce false positives from substring matches
+    # (e.g. "meaning" contains "mean", scoring 2 for statistics).
+    # A score of 3+ takes either one strong keyword ("standard
+    # deviation" = 5) or two weaker ones — much more reliable.
+    # Below the threshold we return None so the LLM is free of a
+    # potentially-wrong topic anchor.
+    if topic and score >= 3:
+        return topic
     return None
 
 
@@ -358,6 +380,16 @@ def build_caps_system_prompt(
     )
     scope_note = out_of_scope_note(topic_hint, grade)
 
+    # Phase-2 topic KB context: sub-skills, key formulae, common
+    # misconceptions, past-paper references — injected only when the
+    # classifier is confident about the topic. Empty string when no
+    # entry exists so this is purely additive on top of Phase-1.
+    try:
+        from app.tutor.caps_kb import build_topic_context
+        topic_context = build_topic_context(topic_hint, grade)
+    except ImportError:
+        topic_context = ""
+
     # Method-specific closing instructions.
     if purpose == "answer_with_image":
         method_tail = (
@@ -401,6 +433,8 @@ def build_caps_system_prompt(
         grade_line,
         topic_line,
         scope_note,
+        "",
+        topic_context,   # Phase-2 topic KB context (empty when unknown)
         "",
         method_tail,
         "",

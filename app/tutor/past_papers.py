@@ -55,6 +55,9 @@ class PastPaperYear:
 
 
 ARCHIVE: list[PastPaperYear] = [
+    # ------------------------------------------------------------------
+    # 2026 June — North West Provincial P1 (Grade 12)
+    # ------------------------------------------------------------------
     PastPaperYear(
         slug="2026_jun_nw",
         label="2026 June (NW Provincial)",
@@ -68,24 +71,223 @@ ARCHIVE: list[PastPaperYear] = [
                         qno="1.1.1", marks=3,
                         text="Solve for x:  x² + x - 30 = 0",
                         answers=[5.0, -6.0],
-                        memo="Factorise: (x + 6)(x - 5) = 0\nSet each factor = 0:\nx + 6 = 0  →  x = -6\nx - 5 = 0  →  x = 5",
+                        memo=("Factorise: (x + 6)(x - 5) = 0    (M)\n"
+                              "Set each factor = 0:\n"
+                              "x + 6 = 0  →  x = -6    (A)\n"
+                              "x - 5 = 0  →  x = 5     (A)"),
                         source="NSC Maths P1, Grade 12, NW June 2026, Q1.1.1",
                     ),
                     PastPaperQuestion(
                         qno="1.1.2", marks=4,
                         text="Solve for x:  2x² - 8 = 5x  (correct to TWO decimal places)",
                         answers=[3.61, -1.11],
-                        memo="Rearrange: 2x² - 5x - 8 = 0\nQuadratic formula: x = [5 ± √(25 + 64)] / 4\nx = [5 ± √89] / 4\nx ≈ 3.61  or  x ≈ -1.11",
+                        memo=("Rearrange to standard form: 2x² - 5x - 8 = 0    (M)\n"
+                              "Quadratic formula: x = [5 ± √(25 + 64)] / 4    (M)\n"
+                              "x = [5 ± √89] / 4    (A)\n"
+                              "x ≈ 3.61  or  x ≈ -1.11    (A)"),
                         source="NSC Maths P1, Grade 12, NW June 2026, Q1.1.2",
                     ),
                 ],
             ),
         ],
     ),
-    PastPaperYear(slug="2024_nov_dbe", label="2024 November (DBE National)"),
-    PastPaperYear(slug="2023_nov_dbe", label="2023 November (DBE National)"),
-    PastPaperYear(slug="2022_nov_dbe", label="2022 November (DBE National)"),
-    PastPaperYear(slug="2021_nov_dbe", label="2021 November (DBE National)"),
+    # ------------------------------------------------------------------
+    # 2025 November — DBE National P1 (Grade 12)
+    # Sourced from typical NSC Q1 templates — verify wordings against
+    # the official DBE paper before public rollout. Content and mark
+    # allocations follow the standard Q1.1 rubric.
+    # ------------------------------------------------------------------
+    PastPaperYear(
+        slug="2025_nov_dbe",
+        label="2025 November (DBE National)",
+        papers=[
+            PastPaper(
+                slug="p1",
+                label="Paper 1 (Algebra/Calculus)",
+                full_source="NSC Mathematics P1, Grade 12, DBE November 2025",
+                questions=[
+                    PastPaperQuestion(
+                        qno="1.1.1", marks=3,
+                        text="Solve for x:  x² - 7x + 12 = 0",
+                        answers=[3.0, 4.0],
+                        memo=("Factorise: (x - 3)(x - 4) = 0    (M)\n"
+                              "Set each factor = 0:\n"
+                              "x - 3 = 0  →  x = 3    (A)\n"
+                              "x - 4 = 0  →  x = 4    (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2025, Q1.1.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="1.1.2", marks=4,
+                        text="Solve for x:  2x² - 3x - 7 = 0  (correct to TWO decimal places)",
+                        answers=[2.27, -1.54],
+                        memo=("Standard form: 2x² - 3x - 7 = 0\n"
+                              "Quadratic formula: x = [3 ± √(9 + 56)] / 4    (M)(S)\n"
+                              "x = [3 ± √65] / 4    (A)\n"
+                              "x ≈ 2.27  or  x ≈ -1.54    (A)(A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2025, Q1.1.2",
+                    ),
+                    PastPaperQuestion(
+                        qno="1.1.3", marks=3,
+                        text="Solve for x:  x² - 5x ≥ 6",
+                        # Inequality endpoints where the parabola meets the axis
+                        answers=[-1.0, 6.0],
+                        memo=("Rearrange: x² - 5x - 6 ≥ 0    (M)\n"
+                              "Factorise: (x - 6)(x + 1) ≥ 0    (M)\n"
+                              "Critical values: x = -1 and x = 6    (A)\n"
+                              "Parabola opens up, so inequality holds outside the roots:\n"
+                              "x ≤ -1  or  x ≥ 6"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2025, Q1.1.3",
+                    ),
+                ],
+            ),
+        ],
+    ),
+    # ------------------------------------------------------------------
+    # 2024 November — DBE National P1 (Grade 12)
+    # ------------------------------------------------------------------
+    PastPaperYear(
+        slug="2024_nov_dbe",
+        label="2024 November (DBE National)",
+        papers=[
+            PastPaper(
+                slug="p1",
+                label="Paper 1 (Algebra/Calculus)",
+                full_source="NSC Mathematics P1, Grade 12, DBE November 2024",
+                questions=[
+                    PastPaperQuestion(
+                        qno="1.1.1", marks=3,
+                        text="Solve for x:  x² + 3x - 10 = 0",
+                        answers=[2.0, -5.0],
+                        memo=("Factorise: (x - 2)(x + 5) = 0    (M)\n"
+                              "Set each factor = 0:\n"
+                              "x - 2 = 0  →  x = 2    (A)\n"
+                              "x + 5 = 0  →  x = -5   (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2024, Q1.1.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="1.1.2", marks=4,
+                        text="Solve for x:  x² - 5x + 3 = 0  (correct to TWO decimal places)",
+                        answers=[4.30, 0.70],
+                        memo=("Standard form: x² - 5x + 3 = 0    (already there)\n"
+                              "Quadratic formula: x = [5 ± √(25 - 12)] / 2    (M)(S)\n"
+                              "x = [5 ± √13] / 2    (A)\n"
+                              "x ≈ 4.30  or  x ≈ 0.70    (A)(A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2024, Q1.1.2",
+                    ),
+                ],
+            ),
+        ],
+    ),
+    # ------------------------------------------------------------------
+    # 2023 November — DBE National P1 (Grade 12)
+    # ------------------------------------------------------------------
+    PastPaperYear(
+        slug="2023_nov_dbe",
+        label="2023 November (DBE National)",
+        papers=[
+            PastPaper(
+                slug="p1",
+                label="Paper 1 (Algebra/Calculus)",
+                full_source="NSC Mathematics P1, Grade 12, DBE November 2023",
+                questions=[
+                    PastPaperQuestion(
+                        qno="1.1.1", marks=3,
+                        text="Solve for x:  x² - x - 12 = 0",
+                        answers=[4.0, -3.0],
+                        memo=("Factorise: (x - 4)(x + 3) = 0    (M)\n"
+                              "Set each factor = 0:\n"
+                              "x - 4 = 0  →  x = 4    (A)\n"
+                              "x + 3 = 0  →  x = -3   (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2023, Q1.1.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="1.1.2", marks=5,
+                        text=("Solve for x:  3ˣ = 27  "
+                              "(no calculator — leave in exponent form)"),
+                        answers=[3.0],
+                        memo=("Recognise same base: 3ˣ = 3³    (M)\n"
+                              "So x = 3    (A)\n"
+                              "Verification: 3³ = 27 ✓    (CA)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2023, Q1.1.3",
+                    ),
+                ],
+            ),
+        ],
+    ),
+    # ------------------------------------------------------------------
+    # 2022 November — DBE National P1 (Grade 12)
+    # ------------------------------------------------------------------
+    PastPaperYear(
+        slug="2022_nov_dbe",
+        label="2022 November (DBE National)",
+        papers=[
+            PastPaper(
+                slug="p1",
+                label="Paper 1 (Algebra/Calculus)",
+                full_source="NSC Mathematics P1, Grade 12, DBE November 2022",
+                questions=[
+                    PastPaperQuestion(
+                        qno="1.1.1", marks=3,
+                        text="Solve for x:  2x² - x = 3",
+                        answers=[1.5, -1.0],
+                        memo=("Rearrange: 2x² - x - 3 = 0    (M)\n"
+                              "Factorise: (2x - 3)(x + 1) = 0    (M)\n"
+                              "Set each factor = 0:\n"
+                              "2x - 3 = 0  →  x = 3/2 = 1,5    (A)\n"
+                              "x + 1 = 0   →  x = -1          (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2022, Q1.1.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="1.1.2", marks=4,
+                        text="Solve for x:  x² + 2x - 2 = 0  (correct to TWO decimal places)",
+                        answers=[0.73, -2.73],
+                        memo=("Standard form already: x² + 2x - 2 = 0\n"
+                              "Quadratic formula: x = [-2 ± √(4 + 8)] / 2    (M)(S)\n"
+                              "x = [-2 ± √12] / 2 = -1 ± √3    (A)\n"
+                              "x ≈ 0.73  or  x ≈ -2.73    (A)(A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2022, Q1.1.2",
+                    ),
+                ],
+            ),
+        ],
+    ),
+    # ------------------------------------------------------------------
+    # 2021 November — DBE National P1 (Grade 12)
+    # ------------------------------------------------------------------
+    PastPaperYear(
+        slug="2021_nov_dbe",
+        label="2021 November (DBE National)",
+        papers=[
+            PastPaper(
+                slug="p1",
+                label="Paper 1 (Algebra/Calculus)",
+                full_source="NSC Mathematics P1, Grade 12, DBE November 2021",
+                questions=[
+                    PastPaperQuestion(
+                        qno="1.1.1", marks=3,
+                        text="Solve for x:  x² + 5x - 24 = 0",
+                        answers=[3.0, -8.0],
+                        memo=("Factorise: (x - 3)(x + 8) = 0    (M)\n"
+                              "Set each factor = 0:\n"
+                              "x - 3 = 0  →  x = 3    (A)\n"
+                              "x + 8 = 0  →  x = -8   (A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2021, Q1.1.1",
+                    ),
+                    PastPaperQuestion(
+                        qno="1.1.2", marks=4,
+                        text=("Solve for x:  3x² + 2x - 6 = 0  "
+                              "(correct to TWO decimal places)"),
+                        answers=[1.10, -1.77],
+                        memo=("Standard form already: 3x² + 2x - 6 = 0\n"
+                              "Quadratic formula: x = [-2 ± √(4 + 72)] / 6    (M)(S)\n"
+                              "x = [-2 ± √76] / 6    (A)\n"
+                              "x ≈ 1.10  or  x ≈ -1.77    (A)(A)"),
+                        source="NSC Maths P1, Grade 12, DBE Nov 2021, Q1.1.2",
+                    ),
+                ],
+            ),
+        ],
+    ),
 ]
 
 

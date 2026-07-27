@@ -330,8 +330,16 @@ class TutorEngine:
             state.working_steps = lines
             return await self._diagnose_and_guide(state)
 
-        # A single equation.
-        if "=" in text:
+        # In "Ask me anything" (FREE_FORM) mode the learner has explicitly
+        # asked for an answer, not a diagnose-my-working session. Skip the
+        # equation-diagnose branch entirely so trig identities and
+        # given-then-determine word problems that CONTAIN an = sign as part
+        # of the question (e.g. "if cos12x·sin36x = p") reach answer_freely.
+        in_free_form = state.stage == Stage.FREE_FORM
+
+        # A single equation → treat as a problem to diagnose (Solve Problem
+        # mode). Only applies outside FREE_FORM.
+        if "=" in text and not in_free_form:
             if state.problem is None:
                 # First equation = the problem. Invite their working (Socratic).
                 state.problem = text
@@ -346,19 +354,25 @@ class TutorEngine:
             state.working_steps.append(text)
             return await self._diagnose_and_guide(state)
 
-        # NEW: Free-form / open-ended maths question (factorise, trig, geometry,
-        # concept explanations). This is what the LLM handles. In Dell mode
-        # (real LLM endpoint like Groq) the learner gets a real step-by-step
-        # answer. In mock mode they get a graceful "enable LLM for this" note.
-        # Triggered when we're explicitly in FREE_FORM mode OR the text looks
-        # like a maths question rather than random noise.
+        # Free-form / open-ended maths question (factorise, trig, geometry,
+        # concept explanations, word problems). This is what the LLM handles.
+        # In Dell mode (real LLM endpoint like Groq) the learner gets a real
+        # step-by-step answer. In mock mode they get a graceful "enable LLM
+        # for this" note. Triggered when we're explicitly in FREE_FORM mode
+        # OR the text has any of the question-shaped signals below.
         looks_like_question = (
-            state.stage == Stage.FREE_FORM
+            in_free_form
             or any(kw in text.lower() for kw in [
+                # Command verbs typical of maths exam questions
                 "factor", "solve", "simplify", "expand", "evaluate", "prove",
+                "calculate", "determine", "find", "show that", "given",
+                "hence", "otherwise",
+                # Topic keywords
                 "sin", "cos", "tan", "log", "triangle", "circle", "explain",
                 "what is", "what's", "how do", "why does", "derivative", "integrate",
                 "differentiate", "hypotenuse", "theorem", "trig",
+                # Word problem "if…" openers
+                "if ",
             ])
             or "²" in text or "^2" in text or "√" in text
         )

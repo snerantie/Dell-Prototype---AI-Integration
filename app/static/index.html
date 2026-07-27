@@ -275,10 +275,92 @@
       return fresh;
     })();
 
+    function sanitiseForChat(raw) {
+      // Client-side safety net: the CAPS system prompt tells the LLM to
+      // NEVER emit LaTeX or Markdown, but if it slips (some prompts still
+      // do), we clean it up here so learners always see plain-text maths.
+      // Fixes the "raw \[ … \boxed{…} \]" bubble that hurts the phone UX.
+      if (!raw) return raw;
+      let s = String(raw);
+
+      // ---- LaTeX symbols → Unicode --------------------------------------
+      // Greek letters
+      const greek = {
+        'alpha':'α','beta':'β','gamma':'γ','delta':'δ','epsilon':'ε',
+        'zeta':'ζ','eta':'η','theta':'θ','iota':'ι','kappa':'κ',
+        'lambda':'λ','mu':'μ','nu':'ν','xi':'ξ','omicron':'ο',
+        'pi':'π','rho':'ρ','sigma':'σ','tau':'τ','phi':'φ',
+        'chi':'χ','psi':'ψ','omega':'ω',
+        'Alpha':'Α','Beta':'Β','Gamma':'Γ','Delta':'Δ','Theta':'Θ',
+        'Lambda':'Λ','Pi':'Π','Sigma':'Σ','Omega':'Ω',
+      };
+      for (const [name, glyph] of Object.entries(greek)) {
+        s = s.replace(new RegExp('\\\\' + name + '\\b', 'g'), glyph);
+      }
+      // Operators + relations
+      s = s.replace(/\\cdot\b/g, '·')
+           .replace(/\\times\b/g, '×')
+           .replace(/\\div\b/g, '÷')
+           .replace(/\\pm\b/g, '±')
+           .replace(/\\mp\b/g, '∓')
+           .replace(/\\leq\b/g, '≤').replace(/\\le\b/g, '≤')
+           .replace(/\\geq\b/g, '≥').replace(/\\ge\b/g, '≥')
+           .replace(/\\neq\b/g, '≠').replace(/\\ne\b/g, '≠')
+           .replace(/\\approx\b/g, '≈')
+           .replace(/\\equiv\b/g, '≡')
+           .replace(/\\infty\b/g, '∞')
+           .replace(/\\to\b/g, '→')
+           .replace(/\\Rightarrow\b/g, '⇒').replace(/\\rightarrow\b/g, '→')
+           .replace(/\\therefore\b/g, '∴').replace(/\\because\b/g, '∵');
+      // Trig / log function names — drop the backslash
+      s = s.replace(/\\(sin|cos|tan|cot|sec|csc|log|ln|exp|arcsin|arccos|arctan|min|max|lim)\b/g, '$1');
+      // Constructs that wrap content
+      // \sqrt{a+b}  →  √(a+b)   ;   \sqrt{a}  →  √a
+      s = s.replace(/\\sqrt\{([^{}]+)\}/g, (_, x) => x.length === 1 ? '√' + x : '√(' + x + ')');
+      // \frac{a}{b}  →  a/b    (parenthesise if either has spaces/ops)
+      s = s.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, (_, a, b) => {
+        const needP = str => /[ +\-*/]/.test(str);
+        return (needP(a) ? '(' + a + ')' : a) + '/' + (needP(b) ? '(' + b + ')' : b);
+      });
+      // \boxed{ANSWER}  →  [ ANSWER ]
+      s = s.replace(/\\boxed\{([^{}]+)\}/g, '⟦ $1 ⟧');
+      // \text{stuff}  →  stuff
+      s = s.replace(/\\text\{([^{}]+)\}/g, '$1');
+      // Sizing macros — just drop them (no \b: LaTeX often smashes them
+      // against non-space content, e.g. \bigl(2\cdot 3x\bigr))
+      s = s.replace(/\\(bigl|bigr|Bigl|Bigr|left|right|displaystyle|Biggl|Biggr)/g, '');
+      // \qquad / \quad → spaces (no \b for same reason — \qquad\text{or} would
+      // otherwise leave \qquad stranded once \text{or} became "or")
+      s = s.replace(/\\qquad/g, '   ').replace(/\\quad/g, '  ');
+      // Delimiters: \[ ... \] and \( ... \)  →  keep the content, drop the wrappers
+      s = s.replace(/\\\[/g, '\n').replace(/\\\]/g, '\n');
+      s = s.replace(/\\\(/g, '').replace(/\\\)/g, '');
+      // Superscripts inside math: ^{2}  →  ²  where possible
+      const supMap = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','(':'⁽',')':'⁾','n':'ⁿ'};
+      s = s.replace(/\^\{([0-9+\-()n]{1,3})\}/g, (_, x) => {
+        let out = ''; for (const ch of x) out += (supMap[ch] || ch); return out;
+      });
+      s = s.replace(/\^([0-9])/g, (_, d) => supMap[d] || ('^' + d));
+
+      // ---- Markdown → plain text ----------------------------------------
+      s = s.replace(/^\s*#{1,6}\s+/gm, '');            // headings
+      s = s.replace(/\*\*([^*]+)\*\*/g, '$1');         // **bold**
+      s = s.replace(/__([^_]+)__/g, '$1');             // __bold__
+      s = s.replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, '$1');// *italic*
+      s = s.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '$1');  // _italic_
+      s = s.replace(/^\s*[-*_]{3,}\s*$/gm, '');        // horizontal rules
+      s = s.replace(/```[a-zA-Z]*\n?/g, '').replace(/```/g, '');  // code fences
+
+      // Collapse runs of 3+ blank lines to 2 — keeps paragraph breaks tidy
+      s = s.replace(/\n{3,}/g, '\n\n').trim();
+      return s;
+    }
+
     function bubble(text, cls) {
       const d = document.createElement('div');
       d.className = 'msg ' + cls;
-      d.textContent = text;
+      // Only sanitise BOT bubbles; user bubbles echo verbatim
+      d.textContent = (cls === 'bot' || cls === 'bot-group') ? sanitiseForChat(text) : text;
       chat.appendChild(d);
       chat.scrollTop = chat.scrollHeight;
       return d;
@@ -292,7 +374,9 @@
       group.className = 'bot-group';
       const bub = document.createElement('div');
       bub.className = 'msg bot';
-      bub.textContent = text;
+      // Bot bubbles go through the LaTeX/Markdown → plain-text sanitiser
+      // so a stray  \[ \boxed{...} \]  never lands unformatted on the phone.
+      bub.textContent = sanitiseForChat(text);
       group.appendChild(bub);
       if (Array.isArray(quickReplies) && quickReplies.length) {
         const row = document.createElement('div');

@@ -631,6 +631,30 @@ _STRINGS.update({
         "en": "🔙 Main menu",
         "zu": "🔙 Buyela ekhaya",
     },
+    "btn_main_menu": {
+        "en": "🏠 Main menu",
+        "zu": "🏠 Ikhaya",
+    },
+    "btn_new_problem": {
+        "en": "🧮 New problem",
+        "zu": "🧮 Enye inkinga",
+    },
+    "btn_try_another": {
+        "en": "🔄 Try another question",
+        "zu": "🔄 Zama omunye umbuzo",
+    },
+    "btn_show_memo": {
+        "en": "🙈 Show me the solution",
+        "zu": "🙈 Ngikhombise impendulo",
+    },
+    "btn_hint": {
+        "en": "💡 Give me a hint",
+        "zu": "💡 Nginike usizo",
+    },
+    "memo_reveal": {
+        "en": "Here's the memo for this question — study it carefully, then try a fresh one when you're ready.\n\n📋 MEMO:\n{memo}\n\n📄 {source}",
+        "zu": "Nayi impendulo yombuzo — yifunde ngokucophelela, bese uzama omunye lapho usukulungele.\n\n📋 IMPENDULO:\n{memo}\n\n📄 {source}",
+    },
     "prompt_pick_paper": {
         "en": "Great choice — you're preparing like a champion. Which past paper would you like to work on?",
         "zu": "Ukhetho oluhle — uzilungiselela njengeqhawe. Ufuna ukusebenza kuliphi iphepha eladlula?",

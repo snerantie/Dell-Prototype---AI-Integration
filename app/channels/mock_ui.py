@@ -63,6 +63,36 @@ class OnboardRequest(BaseModel):
     school: Optional[str] = None
 
 
+class ResetRequest(BaseModel):
+    """Payload for /api/reset — clears the server-side conversation state
+    for a given user_id so a stuck learner can escape a bad state (e.g. a
+    past-paper question they've abandoned) without waiting for the 1-hour
+    TTL to expire. The learner's identity persists; only the conversation
+    state is discarded.
+    """
+    user_id: str
+
+
+@router.post("/api/reset")
+async def reset(req: ResetRequest) -> dict:
+    """Wipe the mock-UI conversation state for this learner.
+
+    This is intentionally scoped to the mock-UI channel — other channels
+    (WhatsApp, USSD) keep their sessions untouched. Safe to call at any
+    time; unknown user_ids are a no-op.
+    """
+    from app.models.schemas import Channel
+    from app.tutor.engine import _SESSIONS
+    _SESSIONS.clear(Channel.MOCK_UI, req.user_id)
+    from app.analytics import store as analytics
+    await analytics.log_event(
+        session_id=req.user_id,
+        channel="mock_ui",
+        event_type="session_reset",
+    )
+    return {"ok": True}
+
+
 @router.post("/api/onboard")
 async def onboard(req: OnboardRequest) -> dict:
     """Persist the onboarding form and emit an 'onboarding_complete' event.

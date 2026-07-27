@@ -35,6 +35,31 @@ logger = logging.getLogger(__name__)
 _GREETINGS = {"hi", "hello", "start", "menu", "hey", "molo", "sawubona", "hallo"}
 _RESET_WORDS = {"menu", "reset", "start", "restart"}
 
+# How many messages to keep in the free-form conversation history. Each turn
+# contributes 2 entries (user + assistant), so 12 = the last 6 exchanges.
+# Empirically enough for follow-up context ("explain step 3", "is that the
+# full solution?") without ballooning per-request LLM cost or latency.
+_CHAT_HISTORY_MAX = 12
+
+
+def _append_history(state, role: str, content: str) -> None:
+    """Push a turn into the learner's chat history and cap the length.
+
+    Called AFTER every successful free-form LLM/deterministic reply so the
+    next follow-up question ('is that the full solution?') reaches the LLM
+    with the context it needs to resolve pronouns and 'that' references.
+    Silently no-ops on empty content so we never poison history with blanks.
+    """
+    if not content:
+        return
+    state.chat_history.append({"role": role, "content": content})
+    # Keep only the last _CHAT_HISTORY_MAX entries — mutate the list in
+    # place (slice assign) rather than rebinding the attribute so any
+    # external references (e.g. the provider's `history` parameter,
+    # which is often the same list) see the same trimmed content.
+    if len(state.chat_history) > _CHAT_HISTORY_MAX:
+        state.chat_history[:] = state.chat_history[-_CHAT_HISTORY_MAX:]
+
 
 def _is_command(text: str, words: set[str]) -> bool:
     return text.strip().lower() in words
@@ -172,7 +197,13 @@ class TutorEngine:
                 document_filename=message.document_filename or "document",
                 language=state.language,
                 grade=state.grade,
+                history=state.chat_history,
             )
+            # Store the question + answer (not the full document text) so
+            # follow-ups get context without ballooning the prompt.
+            _append_history(state, "user",
+                            f"[document uploaded: {message.document_filename}] {question}")
+            _append_history(state, "assistant", answer)
             back = [QuickReply(label=t("btn_back_menu", state.language),
                                payload="action:main_menu")]
             await analytics.log_event(
@@ -259,6 +290,10 @@ class TutorEngine:
         state.reset_problem()
         state.past_paper_id = None
         state.past_paper_attempts = 0
+        # Fresh greeting = fresh conversation. A new topic doesn't inherit
+        # context from the previous one, so the LLM won't get confused
+        # by pronouns from a completely different problem.
+        state.reset_chat_history()
         self.sessions.save(state)
         lang = state.language
         screens = [t("welcome_choices_intro", lang)]
@@ -294,7 +329,13 @@ class TutorEngine:
                     image_mime=message.image.mime_type or "image/jpeg",
                     language=state.language,
                     grade=state.grade,
+                    history=state.chat_history,
                 )
+                # Persist the exchange so a follow-up ('what about the
+                # angle?') has context. We store the CAPTION (not the
+                # base64 image) so history stays cheap.
+                _append_history(state, "user", question)
+                _append_history(state, "assistant", answer)
                 back = [QuickReply(label=t("btn_back_menu", state.language),
                                    payload="action:main_menu")]
                 await analytics.log_event(
@@ -400,16 +441,25 @@ class TutorEngine:
                     metadata={"question_len": len(text),
                               "answer_source": "caps_solvers"},
                 )
+                # Save the exchange so a follow-up ('what if x = 2?', 'is
+                # that fully simplified?') can reference this problem.
+                _append_history(state, "user", text)
+                _append_history(state, "assistant", deterministic)
+                self.sessions.save(state)
                 return self._localized(
                     state, [deterministic],
                     quick_replies=back, translate=False,
                 )
 
             # Fall through to the LLM for genuinely novel questions.
+            # Pass conversation history so follow-ups ('is that the full
+            # solution?', 'explain step 3 again', 'what about the other
+            # root?') reach the LLM with the context they need.
             answer = await self.reasoning.answer_freely(
                 question=text,
                 language=state.language,
                 grade=state.grade,
+                history=state.chat_history,
             )
             # Log the free-form Q for analytics.
             await analytics.log_event(
@@ -419,8 +469,14 @@ class TutorEngine:
                 language=state.language,
                 grade=state.grade,
                 metadata={"question_len": len(text),
-                          "answer_source": "llm"},
+                          "answer_source": "llm",
+                          "history_turns": len(state.chat_history) // 2},
             )
+            # Persist BOTH sides of the exchange so the next follow-up
+            # sees the full context, capped to _CHAT_HISTORY_MAX entries.
+            _append_history(state, "user", text)
+            _append_history(state, "assistant", answer)
+            self.sessions.save(state)
             return self._localized(state, [answer], quick_replies=back, translate=False)
 
         # Not maths we can parse: ask for the equation or a photo (no dead ends).
@@ -523,6 +579,9 @@ class TutorEngine:
             # Clear any half-loaded past-paper session before showing the picker.
             state.past_paper_id = None
             state.past_paper_attempts = 0
+            # Different mode → new context. Drop any lingering free-form
+            # chat history so the past-paper conversation starts clean.
+            state.reset_chat_history()
             self.sessions.save(state)
             screens = [t("prompt_pick_paper", lang)]
             replies: list[QuickReply] = []
@@ -551,6 +610,7 @@ class TutorEngine:
         if payload == "action:solve_problem":
             state.stage = Stage.AWAIT_PROBLEM
             state.reset_problem()
+            state.reset_chat_history()
             self.sessions.save(state)
             back = [QuickReply(label=t("btn_back_menu", lang), payload="action:main_menu")]
             return self._localized(state, [t("prompt_solve_hint", lang)],
@@ -559,6 +619,11 @@ class TutorEngine:
         if payload == "action:free_form":
             state.stage = Stage.FREE_FORM
             state.reset_problem()
+            # Fresh entry into Ask-me-anything mode wipes any prior chat
+            # history. If the learner just navigated here from Main menu
+            # this is already empty; the reset ensures a robust starting
+            # state regardless of the path taken.
+            state.reset_chat_history()
             self.sessions.save(state)
             back = [QuickReply(label=t("btn_back_menu", lang), payload="action:main_menu")]
             return self._localized(state, [t("prompt_free_form", lang)],

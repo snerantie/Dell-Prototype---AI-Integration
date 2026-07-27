@@ -70,12 +70,19 @@ class ReasoningProvider(ABC):
         question: str,
         language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
         """Answer an open-ended Maths question step-by-step (factorisation,
         trigonometry, geometry, concept explanations). Returns a single text
         block; the caller wraps it into a `TutorResponse`. Never returns the
         empty string — if the provider can't help, return a graceful message
-        explaining that."""
+        explaining that.
+
+        ``history`` is an optional list of prior conversation turns in
+        OpenAI chat-completions format ({"role": "user"|"assistant",
+        "content": <text>}). When provided, the LLM sees the whole
+        conversation so follow-up questions like 'is that the full solution?'
+        or 'explain step 3 again' resolve correctly."""
         ...
 
     @abstractmethod
@@ -86,11 +93,16 @@ class ReasoningProvider(ABC):
         image_mime: str = "image/jpeg",
         language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
         """Answer a Maths question with an accompanying image (e.g. a geometry
         diagram, a photo of handwritten working). Uses a vision-capable LLM.
         Returns a single text block. If no vision model is available, returns
-        a graceful fallback explaining that."""
+        a graceful fallback explaining that.
+
+        ``history`` behaves as in ``answer_freely``. When passing history,
+        callers should include TEXT turns only — do not shove image blobs
+        back into subsequent prompts."""
         ...
 
     @abstractmethod
@@ -101,11 +113,14 @@ class ReasoningProvider(ABC):
         document_filename: str = "document",
         language: str = "en",
         grade: Optional[str] = None,
+        history: Optional[list[dict]] = None,
     ) -> str:
         """Answer a question with an accompanying document (PDF or DOCX text
         already extracted). The tutor's job is to read the document, understand
         what the learner is asking about it, and respond step-by-step.
-        Returns a single text block."""
+        Returns a single text block.
+
+        ``history`` behaves as in ``answer_freely``."""
         ...
 
 

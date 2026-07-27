@@ -40,6 +40,15 @@ class ConversationState:
     history: list[str] = field(default_factory=list)
     past_paper_id: Optional[str] = None   # e.g. "2026_jun_nw:p1:1.1.1"
     past_paper_attempts: int = 0
+    # Multi-turn conversation history for the Ask-me-anything path, so
+    # follow-up questions ("is that the full solution?", "explain step 3
+    # again", "what about the other root?") reach the LLM WITH context.
+    # Structure matches the OpenAI chat-completions format directly —
+    # every entry is {"role": "user"|"assistant", "content": <text>}.
+    # Cleared on Main-menu / mode-switch transitions so a new topic
+    # starts fresh; capped to the most recent CHAT_HISTORY_MAX messages
+    # to keep prompt cost + latency predictable.
+    chat_history: list[dict] = field(default_factory=list)
     # Free-form ("Ask AI") pagination state for USSD. WhatsApp doesn't need
     # this because it can deliver the whole answer in one message, but USSD
     # replies are ~160 chars, so we cache the chunked LLM answer and walk an
@@ -54,6 +63,12 @@ class ConversationState:
         self.working_steps = []
         self.last_diagnosis = None
         self.hint_level = 0
+
+    def reset_chat_history(self) -> None:
+        """Clear multi-turn conversation history. Called on every top-level
+        menu navigation (Main menu / Practice / Solve / Ask me anything)
+        so a new topic doesn't inherit context from the previous one."""
+        self.chat_history = []
 
 
 

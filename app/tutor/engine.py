@@ -330,8 +330,16 @@ class TutorEngine:
             state.working_steps = lines
             return await self._diagnose_and_guide(state)
 
-        # A single equation.
-        if "=" in text:
+        # In "Ask me anything" (FREE_FORM) mode the learner has explicitly
+        # asked for an answer, not a diagnose-my-working session. Skip the
+        # equation-diagnose branch entirely so trig identities and
+        # given-then-determine word problems that CONTAIN an = sign as part
+        # of the question (e.g. "if cos12x·sin36x = p") reach answer_freely.
+        in_free_form = state.stage == Stage.FREE_FORM
+
+        # A single equation → treat as a problem to diagnose (Solve Problem
+        # mode). Only applies outside FREE_FORM.
+        if "=" in text and not in_free_form:
             if state.problem is None:
                 # First equation = the problem. Invite their working (Socratic).
                 state.problem = text
@@ -346,25 +354,58 @@ class TutorEngine:
             state.working_steps.append(text)
             return await self._diagnose_and_guide(state)
 
-        # NEW: Free-form / open-ended maths question (factorise, trig, geometry,
-        # concept explanations). This is what the LLM handles. In Dell mode
-        # (real LLM endpoint like Groq) the learner gets a real step-by-step
-        # answer. In mock mode they get a graceful "enable LLM for this" note.
-        # Triggered when we're explicitly in FREE_FORM mode OR the text looks
-        # like a maths question rather than random noise.
+        # Free-form / open-ended maths question (factorise, trig, geometry,
+        # concept explanations, word problems). This is what the LLM handles.
+        # In Dell mode (real LLM endpoint like Groq) the learner gets a real
+        # step-by-step answer. In mock mode they get a graceful "enable LLM
+        # for this" note. Triggered when we're explicitly in FREE_FORM mode
+        # OR the text has any of the question-shaped signals below.
         looks_like_question = (
-            state.stage == Stage.FREE_FORM
+            in_free_form
             or any(kw in text.lower() for kw in [
+                # Command verbs typical of maths exam questions
                 "factor", "solve", "simplify", "expand", "evaluate", "prove",
+                "calculate", "determine", "find", "show that", "given",
+                "hence", "otherwise",
+                # Topic keywords
                 "sin", "cos", "tan", "log", "triangle", "circle", "explain",
                 "what is", "what's", "how do", "why does", "derivative", "integrate",
                 "differentiate", "hypotenuse", "theorem", "trig",
+                # Word problem "if…" openers
+                "if ",
             ])
             or "²" in text or "^2" in text or "√" in text
         )
         if looks_like_question:
             back = [QuickReply(label=t("btn_back_menu", state.language),
                                payload="action:main_menu")]
+
+            # DETERMINISTIC-FIRST: try to solve the question in pure Python
+            # with proper NSC formatting before spending an LLM call. This
+            # eliminates hallucination for common CAPS question types
+            # (factorising, quadratic formula, Pythagoras) AND means the
+            # demo produces real answers even when Groq isn't configured.
+            # See docs/CAPS_ALIGNMENT.md — this is Layer-1 grounding for
+            # answer_freely, complementing the math_analyzer that grounds
+            # the diagnose flow.
+            from app.tutor.caps_solvers import try_solve
+            deterministic = try_solve(text, grade=state.grade)
+            if deterministic:
+                await analytics.log_event(
+                    session_id=state.user_id,
+                    channel=state.channel.value,
+                    event_type="deterministic_answered",
+                    language=state.language,
+                    grade=state.grade,
+                    metadata={"question_len": len(text),
+                              "answer_source": "caps_solvers"},
+                )
+                return self._localized(
+                    state, [deterministic],
+                    quick_replies=back, translate=False,
+                )
+
+            # Fall through to the LLM for genuinely novel questions.
             answer = await self.reasoning.answer_freely(
                 question=text,
                 language=state.language,
@@ -377,7 +418,8 @@ class TutorEngine:
                 event_type="free_form_answered",
                 language=state.language,
                 grade=state.grade,
-                metadata={"question_len": len(text)},
+                metadata={"question_len": len(text),
+                          "answer_source": "llm"},
             )
             return self._localized(state, [answer], quick_replies=back, translate=False)
 

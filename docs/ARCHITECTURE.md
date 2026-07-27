@@ -205,8 +205,9 @@ Learner sees step-by-step factorisation
 | Word extraction | python-docx |
 | Frontend | Vanilla HTML/CSS/JS (WhatsApp-authentic) |
 | Deployment | Render.com (pilot) / Dell AI Factory (prod) |
-| LLM (pilot) | Groq — Meta Llama 3.3 70B |
-| LLM (production) | Dell AI Factory NIM — Meta Llama 3.3 70B |
+| LLM (pilot) | Groq — `openai/gpt-oss-120b` (text), `meta-llama/llama-4-scout-17b-16e-instruct` (vision) |
+| LLM (production) | Dell AI Factory NIM — same models, in-country hosting |
+| CAPS alignment | 4-layer stack (`app/tutor/caps_prompt.py` for Layer 1); see [`CAPS_ALIGNMENT.md`](CAPS_ALIGNMENT.md) |
 
 ## Security & compliance
 
@@ -249,8 +250,12 @@ Dell-Prototype---AI-Integration/
 │   ├── i18n.py                    # Localisation table
 │   └── main.py                    # FastAPI app entry point
 ├── docs/
-│   ├── AI_MODELS.md               # ← You are here (models brief)
-│   └── ARCHITECTURE.md            # ← You are here (architecture)
+│   ├── AI_MODELS.md               # Models brief (LLM catalogue + why)
+│   ├── AI_STACK.md                # Full AI stack + provider abstraction
+│   ├── ARCHITECTURE.md            # ← This file
+│   ├── CAPS_ALIGNMENT.md          # 4-layer CAPS alignment strategy
+│   ├── JUDGE_QA.md                # Pitch cheat-sheet (anticipated judge Qs)
+│   └── WHATSAPP_INTEGRATION.md    # Meta Cloud API activation runbook
 ├── pitch/
 │   └── AI_Tutor_Pitch.pptx        # Executive pitch deck
 ├── requirements.txt

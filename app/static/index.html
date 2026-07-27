@@ -340,22 +340,65 @@
     }
 
     async function postChat(body) {
+      // Wraps /api/chat with two safety nets:
+      //   1) A 45-second client timeout via AbortController so we don't hang
+      //      forever on Render cold-starts or an unreachable LLM endpoint.
+      //   2) Always throws a typed error the caller can catch — never
+      //      returns undefined silently. Callers translate the throw into
+      //      a visible chat bubble so the user always knows what happened.
       const lang = document.getElementById('lang').value || null;
       const grade = document.getElementById('grade').value || null;
       const payload = Object.assign({ user_id: userId, language: lang, grade: grade }, body);
-      const res = await fetch('/api/chat', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-      });
-      return await res.json();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+        }
+        return await res.json();
+      } catch (err) {
+        // Normalise the two common failure shapes.
+        if (err.name === 'AbortError') {
+          throw new Error(
+            'The tutor is taking too long to reply. Render’s free tier may be '
+            + 'waking up (30–60s on first request). Try again in a moment, or '
+            + 'open /health/llm to see the LLM status.'
+          );
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    function errorBubble(err) {
+      // Render a distinctive error bubble instead of silently dying — so
+      // learners see "something went wrong" instead of nothing. Uses the
+      // same diagnostic bubble style as the diagnosis notes.
+      const el = document.createElement('div');
+      el.className = 'diag';
+      el.style.borderColor = '#e57373';
+      el.innerHTML = '<b style="color:#e57373;">⚠ Couldn’t reach the tutor</b><br>'
+        + String(err && err.message ? err.message : err).replace(/[<>]/g, '');
+      chat.appendChild(el);
+      chat.scrollTop = chat.scrollHeight;
     }
 
     async function sendText(text) {
       bubble(text, 'user');
       // Older button rows stay tappable — matches real WhatsApp Business.
-      const data = await postChat({ text: text });
-      botMessage(data.text, data.quick_replies);
-      diagBubble(data.diagnosis);
+      try {
+        const data = await postChat({ text: text });
+        botMessage(data.text, data.quick_replies);
+        diagBubble(data.diagnosis);
+      } catch (err) {
+        errorBubble(err);
+      }
     }
 
     async function handleQuickReply(qr, btnEl) {
@@ -379,9 +422,13 @@
       } else {
         body = { payload: payload };
       }
-      const data = await postChat(body);
-      botMessage(data.text, data.quick_replies);
-      diagBubble(data.diagnosis);
+      try {
+        const data = await postChat(body);
+        botMessage(data.text, data.quick_replies);
+        diagBubble(data.diagnosis);
+      } catch (err) {
+        errorBubble(err);
+      }
     }
 
     document.getElementById('composer').addEventListener('submit', e => {
@@ -544,9 +591,13 @@
         const seed = working ? (problem + '\n' + working) : problem;
         if (seed.trim()) { sendText(seed.trim()); return; }
       }
-      const data = await postChat({ text: 'hi' });
-      botMessage(data.text, data.quick_replies);
-      diagBubble(data.diagnosis);
+      try {
+        const data = await postChat({ text: 'hi' });
+        botMessage(data.text, data.quick_replies);
+        diagBubble(data.diagnosis);
+      } catch (err) {
+        errorBubble(err);
+      }
     }
 
     async function completeOnboarding(profile) {

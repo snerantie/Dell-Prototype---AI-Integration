@@ -1,35 +1,66 @@
-# EduConnect AI Tutor — AI/LLM Models Brief
+# AI / LLM Models Brief
 
-*For team lead and Dell technical review*
+*A focused reference on the specific models EduConnect uses and why. For the full stack + provider abstraction, see [`AI_STACK.md`](AI_STACK.md). For the curriculum-alignment strategy, see [`CAPS_ALIGNMENT.md`](CAPS_ALIGNMENT.md). For anticipated pitch questions, see [`JUDGE_QA.md`](JUDGE_QA.md).*
 
 ## Overview
 
-EduConnect AI Tutor uses **open-weight large language models (LLMs)** from the Meta Llama family, served through a swappable provider abstraction that lets us switch between demo/pilot infrastructure (Groq's free-tier hosted API) and production infrastructure (Dell AI Factory NIM in South Africa) without any code changes.
+EduConnect AI Tutor uses **open-weight large language models** served through a swappable provider abstraction that lets us switch between pilot infrastructure (Groq's free-tier hosted API) and production infrastructure (Dell AI Factory NIM in South Africa) with **one environment variable — no code changes**.
 
-## Primary Models
+## Primary Models — current generation
 
-### Text reasoning: Meta Llama 3.3 70B Versatile
-- **Provider (pilot):** Groq (free tier, ~30 requests/minute)
-- **Provider (production):** Dell AI Factory NIM (self-hosted in-country)
-- **Parameters:** 70 billion, instruction-tuned
-- **Handles:** step-by-step maths tutoring, factorisation, algebra, calculus explanations, Socratic dialogue, isiZulu + English responses
-- **Alternative:** `meta-llama/llama-4-scout-17b-16e-instruct` (multimodal successor, unifies text + vision)
+### Text reasoning: `openai/gpt-oss-120b`
 
-### Vision: Meta Llama 3.2 90B Vision (or Llama 4 Scout multimodal)
+- **Provider (pilot):** Groq (free tier, ~500 tokens/sec on LPU hardware)
+- **Provider (production):** Dell AI Factory NIM (self-hosted in South Africa)
+- **Parameters:** 120 billion, mixture-of-experts, instruction-tuned
+- **Licence:** Apache 2.0 (open-weight, released by OpenAI as part of their Open Source Initiative)
+- **Handles:** step-by-step maths tutoring, factorisation, algebra, calculus, Socratic dialogue, isiZulu / English answers
+- **CAPS enrichment:** wrapped by [`app/tutor/caps_prompt.py`](../app/tutor/caps_prompt.py) which prefixes every call with NSC-style conventions
+
+**Migration note (July 2026):** Groq is retiring the previous-generation `llama-3.3-70b-versatile` on the free/developer tier on **16 August 2026**. `openai/gpt-oss-120b` is Groq's official recommended replacement and is what EduConnect uses.
+
+### Vision: `meta-llama/llama-4-scout-17b-16e-instruct`
+
 - **Provider (pilot):** Groq (free tier)
 - **Provider (production):** Dell AI Factory NIM
+- **Parameters:** 17B active (109B total) mixture-of-experts, multimodal
+- **Licence:** Meta Llama Community Licence
 - **Handles:** geometry diagrams, handwritten working photos, textbook page snapshots, real-world learner uploads
-- **Same OpenAI-compatible chat completions API** as the text model — no separate integration needed
+- **Same OpenAI-compatible chat-completions API** as the text model — one Groq key powers both
 
-## Why open-weight Llama over proprietary APIs (GPT-4, Claude, Gemini)
+### Embeddings (Phase 3 — not yet live)
 
-1. **Sovereignty & POPIA compliance** — Llama is Meta's open-weight family. We can self-host on Dell AI Factory infrastructure in South Africa. Learner data never leaves the country.
+Planned for retrieval-augmented generation over the DBE CAPS PDF + NSC past papers. Candidates:
 
-2. **No vendor lock-in** — the API contract (OpenAI-compatible) is a de facto standard; we can swap Groq for Dell AI Factory NIM by changing one environment variable.
+- `BAAI/bge-small-en-v1.5` — fast, 384-dim, CPU-friendly. Runs locally on Render's free tier.
+- Groq-hosted embeddings (when API becomes available)
+- Dell AI Factory NIM embedding model in production
 
-3. **Cost model** — free during pilot via Groq. Dell AI Factory sponsorship covers production hosting. No per-token OpenAI/Anthropic bills that scale with learner adoption.
+## Why open-weight, not proprietary
 
-4. **Auditability** — we can inspect the model weights, fine-tune on South African curriculum, and remove any behaviours our educator advisory board flags.
+| Criterion | Open-weight (our choice) | Proprietary (GPT-4 / Claude / Gemini) |
+|---|---|---|
+| **Sovereignty & POPIA** | ✅ Runs on Dell AI Factory in SA | ❌ Cross-border data flow |
+| **Vendor lock-in** | ✅ Swap providers via env var | ❌ Rewrite integration |
+| **Cost model** | ✅ Predictable (own compute) | ❌ Per-token, scales with usage |
+| **Fine-tuneable** | ✅ LoRA available for Layer 4 | ❌ Vendor-controlled |
+| **Auditable** | ✅ Weights + methodology public | ❌ Black box |
+| **Kill-switch risk** | ✅ Model runs even if provider dies | ❌ Single point of failure |
+
+Details in [`AI_STACK.md`](AI_STACK.md).
+
+## The CAPS wrapping layer
+
+The raw LLM is only half the story — it's **wrapped** by our CAPS-alignment stack so answers match NSC exam conventions rather than reading like generic Wolfram output. Four layers:
+
+| Layer | What | Status |
+|---|---|---|
+| 1 | System-prompt engineering (NSC mark codes, notation, DBE phrasing, grade scope) | ✅ LIVE |
+| 2 | Curriculum knowledge base + real topic classifier | Next sprint |
+| 3 | RAG over DBE CAPS PDF + NSC past papers | Sponsored pilot |
+| 4 | LoRA fine-tune on Dell AI Factory | Post-pilot |
+
+Full breakdown in [`CAPS_ALIGNMENT.md`](CAPS_ALIGNMENT.md).
 
 ## Non-LLM (deterministic) layer
 
@@ -37,47 +68,55 @@ Not everything routes to the LLM. A hybrid architecture prevents hallucination o
 
 | Task | Handler | Why |
 |---|---|---|
-| Linear equations | Pure Python solver (`math_analyzer.py`) | Verifiable, zero hallucination risk |
+| Linear equations | Pure Python solver ([`math_analyzer.py`](../app/tutor/math_analyzer.py)) | Verifiable, zero hallucination risk |
 | Simple arithmetic (`5 + 7`) | Deterministic evaluator | Instant, no API cost |
-| Past-paper grading | Canonical answer matching against DBE memos | Auditable exam feedback |
-| Open-ended (factorise, prove, geometry) | LLM (Groq / Dell NIM) | Genuine reasoning required |
-| Photo of geometry diagram | Vision LLM | Requires image understanding |
-| PDF / Word document | Server-side text extraction → LLM | Full document Q&A |
+| Past-paper grading | Canonical DBE memo matching ([`past_papers.py`](../app/tutor/past_papers.py)) | Auditable exam feedback |
+| Working-step diagnosis | Hybrid — deterministic checker computes; LLM narrates | LLM never *computes* the answer |
+| Open-ended (factorise, prove, geometry) | LLM (with CAPS system prompt) | Genuine reasoning required |
+| Photo of diagram / handwriting | Vision LLM | Requires image understanding |
+| PDF / DOCX document | Server-side text extraction → LLM | Full-document Q&A |
 
-This layered approach is important:
+Layered rationale:
+
 - **Prevents LLM hallucinating wrong maths** for known-answer problems
-- **Cost-effective** — avoids LLM calls when a Python solver suffices
-- **Auditable** — every deterministic answer is traceable in code
-- **Fast** — deterministic paths return in milliseconds vs 1-3 seconds for LLM
+- **Cost-effective** — no LLM call when a Python solver suffices
+- **Auditable** — every deterministic answer traceable in code
+- **Fast** — deterministic paths return in milliseconds; LLM paths in ~1 second
 
 ## Provider abstraction
 
-Two implementations of `ReasoningProvider` in `app/providers/reasoning.py`:
+Two implementations of [`ReasoningProvider`](../app/providers/reasoning.py):
 
-- `MockReasoningProvider` — deterministic offline fallback. Used when running without internet access. Returns honest "AI not enabled" messages instead of fabricating answers.
-- `DellReasoningProvider` — OpenAI-compatible chat client. Works with Groq TODAY, Dell AI Factory NIM tomorrow, or any similar endpoint (Together AI, Anyscale, self-hosted vLLM).
+- `MockReasoningProvider` — deterministic offline fallback. Used when running without internet access, and by anyone previewing the app without a Groq / Dell key. Returns honest "AI not enabled" messages instead of fabricating answers, and now (Phase 1) references the detected CAPS topic so the messaging communicates the product vision.
+- `DellReasoningProvider` — OpenAI-compatible chat client. Works with Groq today, Dell AI Factory NIM tomorrow, or any similar endpoint (Together AI, Anyscale, self-hosted vLLM).
 
-The engine (`app/tutor/engine.py`) depends only on the abstract `ReasoningProvider` interface — never on a specific vendor. To swap Groq → Dell AI Factory, we change 4 environment variables on Render:
+The engine ([`app/tutor/engine.py`](../app/tutor/engine.py)) depends only on the abstract `ReasoningProvider` interface — never on a specific vendor. To swap Groq → Dell AI Factory, four environment variables change on Render:
 
-- `LLM_PROVIDER=dell`
-- `DELL_LLM_BASE_URL=https://<dell-nim-endpoint>/v1`
-- `DELL_LLM_API_KEY=<dell-api-key>`
-- `DELL_LLM_MODEL=meta/llama-3.3-70b-instruct-hf`
+```
+LLM_PROVIDER=dell
+DELL_LLM_BASE_URL=https://<dell-nim-endpoint>/v1
+DELL_LLM_API_KEY=<dell-api-key>
+DELL_LLM_MODEL=openai/gpt-oss-120b
+```
 
 No code deploy needed.
 
 ## What we do NOT use
 
-- ❌ OpenAI GPT-4 / GPT-4o (proprietary, expensive per-token, US-based)
-- ❌ Anthropic Claude (proprietary, no self-hosting)
-- ❌ Google Gemini (proprietary, no in-SA hosting)
-- ❌ Meta AI's WhatsApp chatbot (proprietary, POPIA concerns)
+- ❌ **OpenAI GPT-4 / GPT-4o** — proprietary, expensive per-token, US-based, POPIA concerns
+- ❌ **Anthropic Claude** — proprietary, no self-hosting
+- ❌ **Google Gemini** — proprietary, no in-SA hosting
+- ❌ **Meta AI's WhatsApp chatbot** — proprietary, POPIA concerns, no CAPS control
+- ❌ **Custom-trained model from scratch** — 100× the cost, no measurable benefit over LoRA on `gpt-oss-120b`
 
-Everything is open-weight Llama, deployable on Dell hardware.
+## References
 
-## Model catalog references
-
-- Groq's current available models: https://console.groq.com/docs/models
-- Meta Llama official: https://llama.meta.com/
+- Groq's supported models: https://console.groq.com/docs/models
+- Groq deprecations timeline: https://console.groq.com/docs/deprecations
+- OpenAI GPT-OSS release: https://openai.com/index/gpt-oss/
+- Meta Llama 4 announcement: https://ai.meta.com/blog/llama-4-multimodal-intelligence/
 - Dell AI Factory: https://www.dell.com/en-us/dt/solutions/artificial-intelligence/index.htm
 - NVIDIA NIM (deployment framework): https://www.nvidia.com/en-us/ai/nim/
+- DBE CAPS Mathematics FET curriculum: https://www.education.gov.za/Curriculum/CurriculumAssessmentPolicyStatements(CAPS)/CAPSFETPhase.aspx
+
+Content in this file has been rephrased for compliance with licensing restrictions.

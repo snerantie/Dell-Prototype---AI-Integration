@@ -448,9 +448,9 @@ def slide_architecture(prs):
               "4 · AI Providers",
               size=11, color=GREEN_SOFT, bold=True)
     provider_pills = [
-        "🧠 Reasoning LLM  ·  Dell NIM (Llama / Qwen)",
-        "👁️ Vision VLM  ·  Dell NIM (Qwen2-VL) — handwriting",
-        "🌐 Translation  ·  Dell LLM (11 SA languages)",
+        "🧠 Reasoning LLM  ·  GPT-OSS 120B (Dell NIM)",
+        "👁️ Vision VLM  ·  Llama 4 Scout (Dell NIM)",
+        "🌐 Translation  ·  Same LLM, 11 SA languages",
         "📚 Verified maths + memos  ·  deterministic code",
     ]
     pp_y = band_top + 0.55
@@ -653,14 +653,14 @@ def slide_ai_models(prs):
               "Text Reasoning",
               size=16, color=GREEN_SOFT, bold=True)
     _add_pill(s, left_x, col_top + 0.55, col_w, 0.6,
-              "🧠 Meta Llama 3.3 70B",
+              "🧠 openai/gpt-oss-120b",
               fill=GREEN, fg=DARK_TXT, size=16)
     _add_bullets(s, left_x, col_top + 1.35, col_w, 4.0, [
-        "70 billion parameters, instruction-tuned",
-        "Open-weight (self-hostable on Dell hardware)",
+        "120B params, mixture-of-experts, open-weight",
+        "Apache 2.0 · self-hostable on Dell hardware",
         "Handles: factorisation, trig, calculus, Socratic dialogue",
-        "isiZulu + English fluency",
-        "Pilot: Groq API (free tier)",
+        "Wrapped by CAPS system prompts (NSC mark codes)",
+        "Pilot: Groq API (~500 tok/s, free tier)",
         "Production: Dell AI Factory NIM (in-country)",
     ], size=14, color=TEXT, spacing=8)
 
@@ -669,13 +669,13 @@ def slide_ai_models(prs):
               "Vision / Multimodal",
               size=16, color=GREEN_SOFT, bold=True)
     _add_pill(s, right_x, col_top + 0.55, col_w, 0.6,
-              "👁️ Llama 4 Scout / Llama 3.2 Vision",
+              "👁️ Meta Llama 4 Scout 17B",
               fill=ORANGE, fg=DARK_TXT, size=16)
     _add_bullets(s, right_x, col_top + 1.35, col_w, 4.0, [
-        "Multimodal — text + image input",
+        "Multimodal — text + image in one endpoint",
         "Reads geometry diagrams, handwritten working",
-        "Textbook page understanding",
-        "Same OpenAI-compatible API",
+        "Textbook page snapshots, whiteboard photos",
+        "Same OpenAI-compatible API as reasoning LLM",
         "Pilot: Groq API (free)",
         "Production: Dell AI Factory NIM",
     ], size=14, color=TEXT, spacing=8)
@@ -697,9 +697,12 @@ def slide_ai_models(prs):
               size=12, color=GREEN_SOFT, align=PP_ALIGN.CENTER, bold=True)
 
     _add_speaker_notes(s,
-        "Meta Llama is the family; Groq is our pilot host; Dell AI Factory "
-        "NIM is our production host. Same API contract on both sides — "
-        "swap via one env var.")
+        "GPT-OSS 120B is OpenAI's open-weight family — same architectural "
+        "bet as the Llama choice: open-weight, Apache 2.0, self-hostable "
+        "on Dell. Groq is our pilot host (free tier). Dell AI Factory NIM "
+        "is our production host. Same API contract on both sides — swap "
+        "via one env var. The RAW model isn't CAPS-aligned by itself — "
+        "the next slide shows how we wrap it.")
     return s
 
 
@@ -731,6 +734,133 @@ def _add_layer(slide, left, top, width, height, *, fill, border=None, border_pt=
         shape.line.fill.background()
     shape.text_frame.text = ""
     return shape
+
+
+# ============================================================================
+# Slide 6c — CAPS Alignment (4-layer strategy)
+# ============================================================================
+# Direct answer to the pitch-day question judges will ask most:
+#   "But how is your AI actually CAPS-aligned?"
+# Four rounded rectangles stacked bottom-to-top (foundational layer first),
+# each one labelled with its phase, one-line description, and status pill
+# (LIVE / NEXT / PILOT / POST-PILOT). Right column carries a short before/
+# after example so a non-technical judge sees the concrete difference.
+# ============================================================================
+def slide_caps_alignment(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.35, 12.1, 0.5, "CAPS Alignment",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.75, 12.1, 0.6,
+              "How the AI stays faithful to the DBE curriculum",
+              size=24, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.5, 4)
+
+    # ---- LEFT COLUMN — the 4-layer stack --------------------------------
+    stack_left = 0.6
+    stack_w = 7.2
+    layer_h = 0.95
+    gap = 0.15
+    y = 1.9
+
+    # Layer 4 (top of the visual stack — long-term)
+    _add_layer(s, stack_left, y, stack_w, layer_h,
+               fill=RGBColor(0x1A, 0x2A, 0x33), border=MUTED, border_pt=1)
+    _add_text(s, stack_left + 0.2, y + 0.05, stack_w - 0.4, 0.4,
+              "Layer 4 · Fine-tune on Dell AI Factory",
+              size=13, bold=True, color=WHITE)
+    _add_text(s, stack_left + 0.2, y + 0.42, stack_w - 2.5, 0.5,
+              "LoRA on gpt-oss-120b, trained on educator-reviewed pilot data",
+              size=11, color=MUTED)
+    _add_pill(s, stack_left + stack_w - 1.9, y + 0.30, 1.7, 0.4,
+              "POST-PILOT", fill=PANEL, fg=MUTED, size=9, bold=True)
+    y += layer_h + gap
+
+    # Layer 3
+    _add_layer(s, stack_left, y, stack_w, layer_h,
+               fill=RGBColor(0x1D, 0x30, 0x3C), border=MUTED, border_pt=1)
+    _add_text(s, stack_left + 0.2, y + 0.05, stack_w - 0.4, 0.4,
+              "Layer 3 · RAG over DBE CAPS PDF + NSC past papers",
+              size=13, bold=True, color=WHITE)
+    _add_text(s, stack_left + 0.2, y + 0.42, stack_w - 2.5, 0.5,
+              "Retrieval-augmented generation · in-country vector DB · cite section numbers",
+              size=11, color=MUTED)
+    _add_pill(s, stack_left + stack_w - 1.9, y + 0.30, 1.7, 0.4,
+              "SPONSORED PILOT", fill=PANEL, fg=ORANGE_SOFT, size=9, bold=True)
+    y += layer_h + gap
+
+    # Layer 2
+    _add_layer(s, stack_left, y, stack_w, layer_h,
+               fill=RGBColor(0x21, 0x38, 0x45), border=MUTED, border_pt=1)
+    _add_text(s, stack_left + 0.2, y + 0.05, stack_w - 0.4, 0.4,
+              "Layer 2 · Curriculum knowledge base + topic classifier",
+              size=13, bold=True, color=WHITE)
+    _add_text(s, stack_left + 0.2, y + 0.42, stack_w - 2.5, 0.5,
+              "Grade × topic scope + sub-skills injected into every prompt",
+              size=11, color=MUTED)
+    _add_pill(s, stack_left + stack_w - 1.9, y + 0.30, 1.7, 0.4,
+              "NEXT SPRINT", fill=PANEL, fg=ORANGE_SOFT, size=9, bold=True)
+    y += layer_h + gap
+
+    # Layer 1 (foundation — LIVE today)
+    _add_layer(s, stack_left, y, stack_w, layer_h,
+               fill=GREEN, border=GREEN_SOFT, border_pt=2)
+    _add_text(s, stack_left + 0.2, y + 0.05, stack_w - 0.4, 0.4,
+              "★ Layer 1 · CAPS system-prompt engineering",
+              size=13, bold=True, color=DARK_TXT)
+    _add_text(s, stack_left + 0.2, y + 0.42, stack_w - 2.5, 0.5,
+              "NSC (M)/(A)/(CA) mark codes · exact-form notation · DBE phrasing · grade scope",
+              size=11, color=DARK_TXT)
+    _add_pill(s, stack_left + stack_w - 1.9, y + 0.30, 1.7, 0.4,
+              "★ LIVE ★", fill=DARK_TXT, fg=GREEN_SOFT, size=10, bold=True)
+
+    # ---- RIGHT COLUMN — before/after example ----------------------------
+    right_x = 8.15
+    right_w = 4.55
+
+    _add_text(s, right_x, 1.9, right_w, 0.4,
+              "Before Layer 1 (raw LLM)",
+              size=12, bold=True, color=MUTED)
+    _add_layer(s, right_x, 2.35, right_w, 1.65,
+               fill=PANEL, border=MUTED, border_pt=1)
+    _add_text(s, right_x + 0.15, 2.45, right_w - 0.3, 1.55,
+              "Solve 2x² − 5x − 3 = 0\n\n"
+              "Using the quadratic formula,\n"
+              "x = (5 ± √49) / 4\n"
+              "So x = 3 or x = −0.5",
+              size=10, color=TEXT)
+
+    _add_text(s, right_x, 4.15, right_w, 0.4,
+              "After Layer 1 (CAPS-wrapped)",
+              size=12, bold=True, color=GREEN_SOFT)
+    _add_layer(s, right_x, 4.60, right_w, 2.15,
+               fill=PANEL, border=GREEN, border_pt=2)
+    _add_text(s, right_x + 0.15, 4.70, right_w - 0.3, 2.05,
+              "Solve for x:  2x² − 5x − 3 = 0\n"
+              "b² − 4ac = 25 + 24 = 49    (M)\n"
+              "x = (5 ± √49) / (2·2)        (M)\n"
+              "x = 3  or  x = −½            (A)(A)\n\n"
+              "(CAPS Grade 11 — Quadratic equations)",
+              size=10, color=GREEN_SOFT, bold=False)
+
+    # ---- Bottom banner --------------------------------------------------
+    _add_text(s, 0.6, 6.85, 12.1, 0.4,
+              "Same model. Same question. CAPS-wrapped answers are what NSC "
+              "markers actually score — that's the moat.",
+              size=12, color=WHITE, align=PP_ALIGN.CENTER, bold=True)
+
+    _add_speaker_notes(s,
+        "This is the slide judges remember. Four layers, additive not "
+        "exclusive. Layer 1 (green, foundation) is LIVE today — every LLM "
+        "call is prefixed with ~4.4 KB of CAPS conventions. Layer 2 is 3-5 "
+        "hours of work. Layer 3 (RAG over DBE CAPS PDF) is what Dell "
+        "sponsorship unlocks. Layer 4 (LoRA fine-tune on Dell hardware) is "
+        "the long-term moat. The right column shows the concrete before/"
+        "after so non-technical judges can see the difference — a raw LLM "
+        "gives an American-decimal answer; the CAPS-wrapped version has "
+        "NSC mark codes, exact form (x = -½ not -0.5), and cites the CAPS "
+        "topic. That's un-replicable by a Groq or ChatGPT wrapper.")
+    return s
 
 
 def slide_data_flow(prs):
@@ -1206,6 +1336,7 @@ def main():
     slide_architecture(prs)
     slide_demo_flow(prs)
     slide_ai_models(prs)
+    slide_caps_alignment(prs)  # NEW — dedicated CAPS strategy slide
     slide_data_flow(prs)
     slide_differentiators(prs)
     slide_uplift(prs)

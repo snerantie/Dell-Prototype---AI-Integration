@@ -341,18 +341,17 @@
       document.querySelectorAll('.quick-reply').forEach(b => { b.disabled = true; });
     }
 
-    async function postChat(body) {
-      // Wraps /api/chat with two safety nets:
-      //   1) A 45-second client timeout via AbortController so we don't hang
-      //      forever on Render cold-starts or an unreachable LLM endpoint.
-      //   2) Always throws a typed error the caller can catch — never
-      //      returns undefined silently. Callers translate the throw into
-      //      a visible chat bubble so the user always knows what happened.
+    async function postChatOnce(body, timeoutMs) {
+      // Single attempt at /api/chat. Isolated so we can retry after
+      // network drops (Render free-tier connection-shedding during idle
+      // transitions) without duplicating fetch config. Timeout is on
+      // the CLIENT side via AbortController; server-side timeouts are
+      // separate.
       const lang = document.getElementById('lang').value || null;
       const grade = document.getElementById('grade').value || null;
       const payload = Object.assign({ user_id: userId, language: lang, grade: grade }, body);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const res = await fetch('/api/chat', {
           method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -363,19 +362,64 @@
           throw new Error('HTTP ' + res.status + ' ' + res.statusText);
         }
         return await res.json();
-      } catch (err) {
-        // Normalise the two common failure shapes.
-        if (err.name === 'AbortError') {
-          throw new Error(
-            'The tutor is taking too long to reply. Render’s free tier may be '
-            + 'waking up (30–60s on first request). Try again in a moment, or '
-            + 'open /health/llm to see the LLM status.'
-          );
-        }
-        throw err;
       } finally {
         clearTimeout(timeoutId);
       }
+    }
+
+    async function postChat(body) {
+      // Robust /api/chat wrapper with two layers of resilience:
+      //   1) 90-second client timeout per attempt (Render free-tier cold
+      //      starts can take 30–60s; 90s gives a comfortable margin).
+      //   2) One automatic retry on network drop / abort. This handles
+      //      Render's free-tier connection-shedding during idle
+      //      transitions — the common cause of "Load failed" on the
+      //      second question in a conversation. Between attempts we
+      //      wait 1.5s to give the service time to fully wake.
+      // If BOTH attempts fail the caller catches and renders an
+      // errorBubble pointing at /health/llm.
+      const TIMEOUT_MS = 90000;
+      try {
+        return await postChatOnce(body, TIMEOUT_MS);
+      } catch (err) {
+        const isNetworkError = (
+          err.name === 'AbortError'
+          || err.name === 'TypeError'         // 'Failed to fetch' / 'Load failed'
+          || /load failed|network|failed to fetch/i.test(err.message || '')
+        );
+        if (!isNetworkError) throw err;      // don't retry HTTP 4xx/5xx
+        // Wait and retry once — Render is almost certainly awake by now
+        // because our /keep-alive ping runs alongside; even in the worst
+        // case the sleeping-service transition finishes in <2s.
+        await new Promise(r => setTimeout(r, 1500));
+        try {
+          return await postChatOnce(body, TIMEOUT_MS);
+        } catch (err2) {
+          if (err2.name === 'AbortError') {
+            throw new Error(
+              'The tutor is taking too long to reply. Render’s free tier '
+              + 'may still be waking up. Open /health/llm to check the LLM '
+              + 'status, then try again.'
+            );
+          }
+          throw err2;
+        }
+      }
+    }
+
+    // Keep-alive pinger: hit /health every 10 minutes while the tab is
+    // open so Render's free-tier idle timer (15 min) never fires. Runs
+    // silently — any error is ignored because the pinger is best-effort.
+    // Only started once the page has rendered so it doesn't compete with
+    // the initial greeting fetch.
+    function startKeepAlive() {
+      const KEEPALIVE_MS = 10 * 60 * 1000;  // 10 minutes
+      setInterval(() => {
+        // Uses no-cors + keepalive so the browser will still ship the
+        // request even if the tab is backgrounded on iOS Safari.
+        fetch('/health', { method: 'GET', keepalive: true })
+          .catch(() => { /* ignore — best-effort warm-up */ });
+      }, KEEPALIVE_MS);
     }
 
     function errorBubble(err) {
@@ -678,6 +722,10 @@
     });
 
     window.addEventListener('load', () => {
+      // Fire the keep-alive pinger regardless of onboarding state so
+      // Render stays warm throughout the whole session — even if the
+      // learner stays on the onboarding modal for a few minutes.
+      startKeepAlive();
       let onboarded = false;
       try { onboarded = !!localStorage.getItem('educonnect_onboarded'); } catch (e) {}
       if (onboarded) {

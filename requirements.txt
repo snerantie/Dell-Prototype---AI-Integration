@@ -22,5 +22,11 @@ aiosqlite==0.20.0
 pypdf==5.1.0
 python-docx==1.1.2
 
+# Image normalisation for the vision LLM path. Real phone photos need
+# EXIF rotation, alpha flattening, and long-edge resizing before
+# Qwen 3.6 27B / other vision models will consistently accept them.
+# Pillow ships manylinux wheels so no native build is required on Render.
+Pillow==11.1.0
+
 # --- Dev / test ---
 pytest==8.3.4

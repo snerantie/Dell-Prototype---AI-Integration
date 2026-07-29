@@ -96,7 +96,7 @@ async def vlm_health() -> dict:
             "friendly 'vision AI not enabled' message. To turn on "
             "image support: set VLM_PROVIDER=dell plus DELL_VLM_* env "
             "vars pointing at a multimodal endpoint (e.g. Groq's "
-            "meta-llama/llama-4-scout-17b-16e-instruct)."
+            "qwen/qwen3.6-27b — a 27B vision-language model)."
         )
         return result
     if not api_key_looks_set:
@@ -167,8 +167,11 @@ async def vlm_health() -> dict:
                 elif resp.status_code == 404:
                     result["message"] = (
                         f"404 Not Found — either the base URL is wrong "
-                        f"or model {model!r} does not exist. Groq's vision "
-                        "model is meta-llama/llama-4-scout-17b-16e-instruct."
+                        f"or model {model!r} does not exist / has been "
+                        "deprecated. Groq's current vision-capable model is "
+                        "qwen/qwen3.6-27b. (Note: Groq deprecated "
+                        "meta-llama/llama-4-scout-17b-16e-instruct on the "
+                        "free/developer tier mid-July 2026.)"
                     )
                 elif resp.status_code == 400:
                     result["message"] = (

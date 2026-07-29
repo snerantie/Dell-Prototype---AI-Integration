@@ -87,7 +87,7 @@ This is called *grounding* and it eliminates a whole class of failure — "AI to
 ## **"Which LLM are you using and why?"**
 
 **30-second answer:**
-`openai/gpt-oss-120b` for text reasoning, `meta-llama/llama-4-scout-17b-16e-instruct` for vision. Both are open-weight, both hosted on Groq during the pilot (free tier, ~500 tokens/sec) and both deployable on Dell AI Factory NIM in production with zero code change. We deliberately avoid GPT-4 / Claude / Gemini because they're proprietary, can't be self-hosted in South Africa, and would compromise POPIA compliance.
+`openai/gpt-oss-120b` for text reasoning, `qwen/qwen3.6-27b` for vision. Both open-weight, both hosted on Groq during pilot (free tier, ~500 tokens/sec) and both deployable on Dell AI Factory NIM in production with zero code change. We deliberately avoid GPT-4 / Claude / Gemini because they're proprietary, can't be self-hosted in South Africa, and would compromise POPIA compliance. Groq deprecated the earlier Llama 4 Scout vision model on the free/developer tier in mid-July 2026; we migrated to Qwen 3.6 27B — same provider abstraction, same API contract, one env-var change.
 
 **2-minute deep dive:**
 Groq deprecated `llama-3.3-70b-versatile` on 16 August 2026 for the free tier; `openai/gpt-oss-120b` is the current generation and Groq's recommended replacement. It's 120B parameters, mixture-of-experts, strong at mathematical reasoning, released by OpenAI under an open-source licence — so we can inspect the weights, run it on our own hardware, and eventually LoRA fine-tune it in Layer 4.
@@ -223,9 +223,9 @@ Launch-validated: English and isiZulu. Framework-ready for all 11 official SA la
 ## **"How do you handle geometry / diagrams? Learners don't type geometry."**
 
 **30-second answer:**
-The tutor supports photo uploads. A learner points their phone at a geometry problem in their textbook, taps the camera icon, and Meta Llama 4 Scout (vision LLM) reads the diagram + gives a step-by-step answer with CAPS notation. Works with handwritten working too — you can photograph your own scratch paper.
+The tutor supports photo uploads. A learner points their phone at a geometry problem in their textbook, taps the camera icon, and Qwen 3.6 27B (multimodal LLM) reads the diagram + gives a step-by-step answer with CAPS notation. Works with handwritten working too — you can photograph your own scratch paper.
 
-**Evidence:** Demo the mock UI, tap the camera icon, upload any geometry photo. In production this uses `meta-llama/llama-4-scout-17b-16e-instruct` on Groq.
+**Evidence:** Demo the mock UI, tap the camera icon, upload any geometry photo. In production this uses `qwen/qwen3.6-27b` on Groq. (Note: Groq's Llama 4 Scout vision model was retired on the free tier mid-July 2026; Qwen 3.6 27B is the current recommended vision model.)
 
 ---
 

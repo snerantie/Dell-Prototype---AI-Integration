@@ -134,8 +134,9 @@ class DellReasoningProvider(ReasoningProvider):
 
     Text path uses `dell_llm_*` env vars.
     Vision path uses `dell_vlm_*` env vars — expected to point at a
-    multimodal model like `meta-llama/llama-4-scout-17b-16e-instruct`
-    on the same or different endpoint.
+    multimodal model such as `qwen/qwen3.6-27b` (Groq's current vision
+    model on the free/developer tier as of July 2026 — Groq deprecated
+    `meta-llama/llama-4-scout-17b-16e-instruct` there mid-July 2026).
     """
 
     name = "dell"

@@ -7,7 +7,7 @@
 | Layer | What | Pilot (today) | Production (Dell) |
 |---|---|---|---|
 | **Reasoning LLM** | Text step-by-step tutoring | Groq → `openai/gpt-oss-120b` (free tier) | Dell AI Factory NIM → `openai/gpt-oss-120b` (self-hosted) |
-| **Vision LLM** | Photos of maths (geometry, handwriting) | Groq → `meta-llama/llama-4-scout-17b-16e-instruct` | Dell AI Factory NIM → same model |
+| **Vision LLM** | Photos of maths (geometry, handwriting) | Groq → `qwen/qwen3.6-27b` (multimodal) | Dell AI Factory NIM → same model |
 | **Deterministic maths** | Linear equations, arithmetic, past-paper grading | Pure Python (`math_analyzer.py`, `past_papers.py`) | Same — never touches an LLM |
 | **CAPS alignment (Layer 1)** | System prompts + curriculum scope + topic detection | `app/tutor/caps_prompt.py` | Same, plus fine-tune |
 | **CAPS knowledge base (Layer 2)** | Structured per-topic sub-skills, formulae, misconceptions | `app/tutor/caps_kb.py` | Same |
@@ -91,13 +91,15 @@
 
 ### Vision LLM (photos of maths problems)
 
-**Pilot:** `meta-llama/llama-4-scout-17b-16e-instruct` on Groq
+**Pilot:** `qwen/qwen3.6-27b` on Groq
 
-- Meta's multimodal Llama 4 Scout — unifies text + vision through a single OpenAI-compatible endpoint
+- Alibaba's multimodal Qwen 3.6 — 27B dense vision-language model with an integrated image + video encoder; unified text + vision through a single OpenAI-compatible endpoint
 - Handles: geometry diagrams, handwritten working, textbook page snapshots, whiteboard photos
 - Uses the same base URL / API key as the reasoning LLM — one Groq key powers both
 
-**Production:** same Meta Llama 4 Scout on Dell AI Factory NIM
+**Migration note (mid-July 2026):** Groq deprecated `meta-llama/llama-4-scout-17b-16e-instruct` on the free/developer tier around 17 July 2026. `qwen/qwen3.6-27b` is Groq's current recommended vision-capable replacement.
+
+**Production:** same Qwen 3.6 27B (or the successor Groq recommends at time of production migration) on Dell AI Factory NIM. The provider abstraction means the migration is one env-var change.
 
 ### Embeddings (for Phase 3 RAG)
 
@@ -255,7 +257,7 @@ Render.com (Frankfurt)
         ▼
     Groq API (US-based LPU cloud)
         - openai/gpt-oss-120b (text)
-        - meta-llama/llama-4-scout (vision)
+        - qwen/qwen3.6-27b (vision)
 ```
 
 ### Sponsored production — Dell AI Factory

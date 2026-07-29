@@ -55,6 +55,148 @@ async def config() -> dict:
     }
 
 
+@app.get("/health/vlm", tags=["meta"])
+async def vlm_health() -> dict:
+    """Diagnostic: verify the vision (multimodal) endpoint is reachable
+    + configured.
+
+    Mirrors /health/llm but tests the VLM path used by learner photo
+    uploads. Since Groq's `openai/gpt-oss-120b` (our text model) cannot
+    process images, image support requires a SEPARATE model + set of
+    env vars — this endpoint tells you at a glance whether they're set
+    correctly and whether Groq responds.
+
+    Never leaks the API key: only the last 4 characters exposed.
+    """
+    import time
+    import httpx
+
+    from app.config import ProviderMode
+    provider = settings.vlm_provider.value
+    api_key = settings.dell_vlm_api_key or ""
+    api_key_suffix = api_key[-4:] if len(api_key) >= 4 else ""
+    api_key_looks_set = bool(api_key) and api_key != "changeme"
+    base_url = settings.dell_vlm_base_url
+    model = settings.dell_vlm_model
+    localhost_default = "localhost" in base_url or "127.0.0.1" in base_url
+
+    result: dict = {
+        "provider": provider,
+        "base_url": base_url,
+        "model": model,
+        "api_key_looks_set": api_key_looks_set,
+        "api_key_last4": api_key_suffix if api_key_looks_set else None,
+    }
+
+    # Not configured?  Give an actionable message + short-circuit.
+    if provider != "dell":
+        result["status"] = "mock_provider_active"
+        result["message"] = (
+            "VLM_PROVIDER is 'mock' — photo uploads will return a "
+            "friendly 'vision AI not enabled' message. To turn on "
+            "image support: set VLM_PROVIDER=dell plus DELL_VLM_* env "
+            "vars pointing at a multimodal endpoint (e.g. Groq's "
+            "meta-llama/llama-4-scout-17b-16e-instruct)."
+        )
+        return result
+    if not api_key_looks_set:
+        result["status"] = "misconfigured"
+        result["message"] = (
+            "DELL_VLM_API_KEY is empty or still the default placeholder. "
+            "Set it on Render (usually the same value as DELL_LLM_API_KEY "
+            "if you're on Groq)."
+        )
+        return result
+    if localhost_default:
+        result["status"] = "misconfigured"
+        result["message"] = (
+            f"DELL_VLM_BASE_URL is still the localhost default "
+            f"({base_url!r}) — that will never work on Render. Set it "
+            "to your VLM endpoint (e.g. https://api.groq.com/openai/v1)."
+        )
+        return result
+
+    # OK, all four VLM env vars look plausible. Try a tiny vision ping.
+    # We send a 1x1 transparent PNG so the endpoint has to accept the
+    # image_url content-part shape.
+    tiny_png_base64 = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
+        "AAIAAAoAAv/lxKUAAAAASUVORK5CYII="
+    )
+    payload = {
+        "model": model,
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Reply with the single word OK."},
+                {"type": "image_url", "image_url": {
+                    "url": f"data:image/png;base64,{tiny_png_base64}"
+                }},
+            ],
+        }],
+        "max_tokens": 4,
+        "temperature": 0,
+    }
+    headers = {"Authorization": f"Bearer {api_key}"}
+    t0 = time.time()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                f"{base_url.rstrip('/')}/chat/completions",
+                json=payload, headers=headers,
+            )
+            elapsed_ms = int((time.time() - t0) * 1000)
+            result["latency_ms"] = elapsed_ms
+            if resp.status_code == 200:
+                data = resp.json()
+                reply = (data.get("choices", [{}])[0]
+                         .get("message", {}).get("content", "").strip())
+                result["status"] = "ok"
+                result["reply_sample"] = reply[:80]
+                result["message"] = (
+                    "VLM endpoint reachable and accepting multimodal "
+                    "requests. Learner photo uploads should work."
+                )
+            else:
+                err_body = resp.text[:400]
+                result["status"] = "http_error"
+                result["http_status"] = resp.status_code
+                result["error_body"] = err_body
+                if resp.status_code == 401:
+                    result["message"] = "401 Unauthorized — VLM API key rejected."
+                elif resp.status_code == 404:
+                    result["message"] = (
+                        f"404 Not Found — either the base URL is wrong "
+                        f"or model {model!r} does not exist. Groq's vision "
+                        "model is meta-llama/llama-4-scout-17b-16e-instruct."
+                    )
+                elif resp.status_code == 400:
+                    result["message"] = (
+                        f"400 Bad Request — the endpoint may not accept "
+                        f"multimodal requests, or model {model!r} isn't "
+                        "vision-capable. Confirm the model supports "
+                        "'image_url' content parts."
+                    )
+                else:
+                    result["message"] = f"HTTP {resp.status_code} from the VLM endpoint."
+    except httpx.ConnectError as exc:
+        result["status"] = "connection_error"
+        result["message"] = (
+            f"Could not connect to {base_url!r} — is the URL correct? "
+            "Use https://api.groq.com/openai/v1 for Groq."
+        )
+        result["error_detail"] = str(exc)[:200]
+    except httpx.TimeoutException:
+        result["status"] = "timeout"
+        result["message"] = "VLM endpoint timed out after 15 seconds."
+    except Exception as exc:  # pragma: no cover
+        result["status"] = "error"
+        result["message"] = f"Unexpected error: {exc.__class__.__name__}"
+        result["error_detail"] = str(exc)[:200]
+
+    return result
+
+
 @app.get("/health/rag", tags=["meta"])
 async def rag_health() -> dict:
     """Diagnostic: shows whether the Phase-3 CAPS retrieval index is

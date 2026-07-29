@@ -116,37 +116,104 @@ async def vlm_health() -> dict:
         )
         return result
 
-    # OK, all four VLM env vars look plausible. Try a tiny vision ping.
-    # We send a 1x1 transparent PNG so the endpoint has to accept the
-    # image_url content-part shape.
-    tiny_png_base64 = (
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
-        "AAIAAAoAAv/lxKUAAAAASUVORK5CYII="
-    )
-    payload = {
+    # Env vars all look plausible. Run TWO probes so we can tell
+    # auth / model / URL failures apart from image-parsing failures:
+    #   Stage A — text-only chat completion. If this passes we know
+    #             the base URL, auth token and model name are all
+    #             good; any Stage B failure is then definitely
+    #             image-side.
+    #   Stage B — multimodal request with a properly-sized 256×256
+    #             JPEG (a 1x1 PNG works on Llama-4-Scout but Qwen
+    #             3.6 27B rejects it with "invalid image data").
+    headers = {"Authorization": f"Bearer {api_key}"}
+    base = base_url.rstrip('/')
+
+    # ---- Stage A: text-only ping --------------------------------
+    text_payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": "Reply with the single word OK."}],
+        "max_tokens": 4,
+        "temperature": 0,
+    }
+    t0 = time.time()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                f"{base}/chat/completions", json=text_payload, headers=headers,
+            )
+            result["text_latency_ms"] = int((time.time() - t0) * 1000)
+            if resp.status_code == 200:
+                result["text_probe"] = "ok"
+            else:
+                # Text-only failed — no point running the image probe;
+                # it will fail for the same reason.
+                err_body = resp.text[:400]
+                result["status"] = "http_error"
+                result["stage"] = "text_probe"
+                result["http_status"] = resp.status_code
+                result["error_body"] = err_body
+                if resp.status_code == 401:
+                    result["message"] = "401 Unauthorized — VLM API key rejected."
+                elif resp.status_code == 404:
+                    result["message"] = (
+                        f"404 Not Found — either the base URL is wrong "
+                        f"or model {model!r} does not exist / has been "
+                        "deprecated. Groq's current vision model is "
+                        "qwen/qwen3.6-27b."
+                    )
+                elif resp.status_code == 429:
+                    result["message"] = "429 Rate-limited — free tier quota exhausted."
+                else:
+                    result["message"] = f"HTTP {resp.status_code} from the VLM endpoint (text-only probe)."
+                return result
+    except httpx.ConnectError as exc:
+        result["status"] = "connection_error"
+        result["stage"] = "text_probe"
+        result["message"] = (
+            f"Could not connect to {base_url!r} — is the URL correct? "
+            "Use https://api.groq.com/openai/v1 for Groq."
+        )
+        result["error_detail"] = str(exc)[:200]
+        return result
+    except httpx.TimeoutException:
+        result["status"] = "timeout"
+        result["stage"] = "text_probe"
+        result["message"] = "VLM endpoint timed out after 15 seconds (text-only probe)."
+        return result
+    except Exception as exc:  # pragma: no cover
+        result["status"] = "error"
+        result["stage"] = "text_probe"
+        result["message"] = f"Unexpected error: {exc.__class__.__name__}"
+        result["error_detail"] = str(exc)[:200]
+        return result
+
+    # ---- Stage B: multimodal ping --------------------------------
+    # Diagnostic image is a 256×256 JPEG (or a 32×32 hardcoded
+    # fallback when Pillow isn't installed) — comfortably above
+    # Qwen 3.6 27B's minimum-dimension threshold.
+    from app.tutor.image_utils import make_diagnostic_image_b64
+    diag_b64 = make_diagnostic_image_b64()
+    image_payload = {
         "model": model,
         "messages": [{
             "role": "user",
             "content": [
                 {"type": "text", "text": "Reply with the single word OK."},
                 {"type": "image_url", "image_url": {
-                    "url": f"data:image/png;base64,{tiny_png_base64}"
+                    "url": f"data:image/jpeg;base64,{diag_b64}"
                 }},
             ],
         }],
         "max_tokens": 4,
         "temperature": 0,
     }
-    headers = {"Authorization": f"Bearer {api_key}"}
-    t0 = time.time()
+    t1 = time.time()
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=20.0) as client:
             resp = await client.post(
-                f"{base_url.rstrip('/')}/chat/completions",
-                json=payload, headers=headers,
+                f"{base}/chat/completions", json=image_payload, headers=headers,
             )
-            elapsed_ms = int((time.time() - t0) * 1000)
-            result["latency_ms"] = elapsed_ms
+            result["image_latency_ms"] = int((time.time() - t1) * 1000)
             if resp.status_code == 200:
                 data = resp.json()
                 reply = (data.get("choices", [{}])[0]
@@ -160,41 +227,34 @@ async def vlm_health() -> dict:
             else:
                 err_body = resp.text[:400]
                 result["status"] = "http_error"
+                result["stage"] = "image_probe"
                 result["http_status"] = resp.status_code
                 result["error_body"] = err_body
-                if resp.status_code == 401:
-                    result["message"] = "401 Unauthorized — VLM API key rejected."
-                elif resp.status_code == 404:
+                if resp.status_code == 400 and "image" in err_body.lower():
                     result["message"] = (
-                        f"404 Not Found — either the base URL is wrong "
-                        f"or model {model!r} does not exist / has been "
-                        "deprecated. Groq's current vision-capable model is "
-                        "qwen/qwen3.6-27b. (Note: Groq deprecated "
-                        "meta-llama/llama-4-scout-17b-16e-instruct on the "
-                        "free/developer tier mid-July 2026.)"
+                        f"400 Bad Request on the image probe — model "
+                        f"{model!r} rejected the diagnostic image. "
+                        "Text chat works, so auth + URL + model are OK. "
+                        "This likely means the model's image validator is "
+                        "stricter than before. Real learner photos should "
+                        "still work if they're at least 200×200 pixels."
                     )
                 elif resp.status_code == 400:
                     result["message"] = (
-                        f"400 Bad Request — the endpoint may not accept "
-                        f"multimodal requests, or model {model!r} isn't "
-                        "vision-capable. Confirm the model supports "
-                        "'image_url' content parts."
+                        f"400 Bad Request on the image probe — text works "
+                        f"but multimodal doesn't. Model {model!r} may not "
+                        "be vision-capable. Confirm on console.groq.com."
                     )
                 else:
-                    result["message"] = f"HTTP {resp.status_code} from the VLM endpoint."
-    except httpx.ConnectError as exc:
-        result["status"] = "connection_error"
-        result["message"] = (
-            f"Could not connect to {base_url!r} — is the URL correct? "
-            "Use https://api.groq.com/openai/v1 for Groq."
-        )
-        result["error_detail"] = str(exc)[:200]
+                    result["message"] = f"HTTP {resp.status_code} on the image probe (text-only was OK)."
     except httpx.TimeoutException:
         result["status"] = "timeout"
-        result["message"] = "VLM endpoint timed out after 15 seconds."
+        result["stage"] = "image_probe"
+        result["message"] = "Image probe timed out after 20 seconds (text probe was OK)."
     except Exception as exc:  # pragma: no cover
         result["status"] = "error"
-        result["message"] = f"Unexpected error: {exc.__class__.__name__}"
+        result["stage"] = "image_probe"
+        result["message"] = f"Unexpected error on image probe: {exc.__class__.__name__}"
         result["error_detail"] = str(exc)[:200]
 
     return result

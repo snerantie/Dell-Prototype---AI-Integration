@@ -345,9 +345,23 @@ class DellReasoningProvider(ReasoningProvider):
             max_words=400,
             retrieval_query=question,
         )
-        # ---- 3) Build the multimodal user message ------------------
+        # ---- 3) Normalise the image before shipping ----------------
+        # Real phone photos come with three vision-model gotchas:
+        # sideways EXIF orientation, alpha channels, and multi-megabyte
+        # weights. `normalize_image_for_vlm` rotates, flattens, caps
+        # the long edge at 1568 px, and re-encodes as JPEG q=85.
+        # Silently passes through on any failure so exotic formats
+        # (HEIC without pillow-heif, etc.) still get an upload attempt.
+        from app.tutor.image_utils import normalize_image_for_vlm
+        image_base64, image_mime, img_stats = normalize_image_for_vlm(
+            image_base64, image_mime
+        )
+        if img_stats:
+            logger.info("answer_with_image normalise stats: %s", img_stats)
+
+        # ---- 4) Build the multimodal user message ------------------
         # OpenAI vision-format content parts. Same shape whether we're
-        # talking to Groq's Llama-4-Scout or Dell AI Factory NIM.
+        # talking to Groq's Qwen 3.6 27B or Dell AI Factory NIM.
         data_url = f"data:{image_mime};base64,{image_base64}"
         user_content = [
             {"type": "text", "text": question or "Please help me solve this problem."},
@@ -364,10 +378,19 @@ class DellReasoningProvider(ReasoningProvider):
                     messages.append({"role": role, "content": content})
         messages.append({"role": "user", "content": user_content})
 
-        # ---- 4) POST to the VLM endpoint ---------------------------
+        # ---- 5) POST to the VLM endpoint ---------------------------
+        # We split the error handling into three tiers so the
+        # Render logs tell us EXACTLY what went wrong (previously
+        # every failure was reported as a bare exception repr,
+        # discarding the provider's helpful error body):
+        #   • HTTPStatusError → log status + response body, tailor
+        #     the learner-facing message to size / rate-limit /
+        #     content-policy hints derived from the body.
+        #   • network / timeout → simple "try again" message.
+        #   • everything else → generic degrade.
         try:
             payload = {
-                "model": self._vlm_model,       # ← vision model, e.g. Llama-4-Scout
+                "model": self._vlm_model,       # e.g. qwen/qwen3.6-27b
                 "messages": messages,
                 "temperature": 0.3,
             }
@@ -380,14 +403,85 @@ class DellReasoningProvider(ReasoningProvider):
                 resp.raise_for_status()
                 data = resp.json()
                 return data["choices"][0]["message"]["content"].strip()
-        except Exception as exc:
-            logger.warning("Dell VLM answer_with_image failed: %s", exc)
+        except httpx.HTTPStatusError as exc:
+            # This is the important one. Groq's 4xx bodies are JSON
+            # like {"error": {"message": "...", "type": "..."}} — 
+            # capture the full body (truncated) so we can diagnose
+            # future breakages from Render logs alone.
+            body = ""
+            try:
+                body = exc.response.text[:600]
+            except Exception:
+                pass
+            status = exc.response.status_code if exc.response is not None else "?"
+            logger.warning(
+                "Dell VLM answer_with_image HTTP %s | model=%s | body=%s",
+                status, self._vlm_model, body,
+            )
+            # Return a specific learner-facing hint based on status code.
+            hint = self._image_error_hint(status, body)
+            return hint
+        except (httpx.ConnectError, httpx.TimeoutException) as exc:
+            logger.warning("Dell VLM answer_with_image transport error: %s", exc)
             return (
-                "I couldn't process the image right now — the vision AI is "
-                "reachable but returned an error. Try describing the problem "
-                "in words (e.g. 'right triangle, sides 3 and 4, find "
+                "I couldn't reach the vision AI right now — the connection "
+                "timed out. Please try again in a moment, or describe the "
+                "problem in words and I'll help step-by-step."
+            )
+        except Exception as exc:
+            logger.warning(
+                "Dell VLM answer_with_image unexpected error: %s: %s",
+                exc.__class__.__name__, exc,
+            )
+            return (
+                "I couldn't process the image right now. Try describing the "
+                "problem in words (e.g. 'right triangle, sides 3 and 4, find "
                 "hypotenuse') and I'll help step-by-step."
             )
+
+    @staticmethod
+    def _image_error_hint(status, body: str) -> str:
+        """Map a VLM HTTP error into a specific learner-friendly message.
+
+        We inspect the response body for signal words: 'invalid image',
+        'too large', 'content policy', 'rate limit', so the learner
+        knows what to try next instead of always seeing the same
+        generic error. Every branch keeps the tone supportive."""
+        body_lower = (body or "").lower()
+        if status == 429 or "rate limit" in body_lower or "quota" in body_lower:
+            return (
+                "The vision AI is busy right now (free-tier quota). "
+                "Try again in about a minute — or type the problem in "
+                "words and I'll help step-by-step."
+            )
+        if "invalid image" in body_lower or "invalid_image" in body_lower:
+            return (
+                "The vision AI couldn't read that image. Try one of these:\n"
+                "• Take a fresh photo in good lighting, with the whole "
+                "question visible.\n"
+                "• Make sure it's a JPG or PNG (screenshots work).\n"
+                "• If it's very large, try cropping to just the question.\n"
+                "Or type the problem in words and I'll help step-by-step."
+            )
+        if "too large" in body_lower or "size" in body_lower and "limit" in body_lower:
+            return (
+                "That image is too big to process. Try taking a fresh "
+                "photo, or crop to just the question you need help with."
+            )
+        if "content policy" in body_lower or "safety" in body_lower:
+            # Vision models sometimes flag faces / people. Learner
+            # doesn't need to know why — just what to do.
+            return (
+                "I couldn't process that image. If it contains people or "
+                "personal information, try cropping to just the maths "
+                "question. Or type the problem in words and I'll help."
+            )
+        return (
+            "I couldn't process the image right now. Try a fresh photo "
+            "with just the question visible, or describe the problem in "
+            "words (e.g. 'right triangle, sides 3 and 4, find hypotenuse') "
+            "and I'll help step-by-step."
+        )
 
     async def answer_with_document(
         self, question: str, document_text: str,

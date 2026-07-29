@@ -19,7 +19,9 @@ EduConnect AI Tutor uses **open-weight large language models** served through a 
 
 **Migration note (July 2026):** Groq is retiring the previous-generation `llama-3.3-70b-versatile` on the free/developer tier on **16 August 2026**. `openai/gpt-oss-120b` is Groq's official recommended replacement and is what EduConnect uses.
 
-### Vision: `meta-llama/llama-4-scout-17b-16e-instruct`
+### Vision: `qwen/qwen3.6-27b`
+
+**Migration note (mid-July 2026):** Groq deprecated `meta-llama/llama-4-scout-17b-16e-instruct` on the free/developer tier around 17 July 2026. `qwen/qwen3.6-27b` (Alibaba's Qwen 3.6 27B, a dense vision-language model with an integrated image encoder) is Groq's current recommended vision-capable model.
 
 - **Provider (pilot):** Groq (free tier)
 - **Provider (production):** Dell AI Factory NIM

@@ -115,12 +115,20 @@ score work. Follow these conventions strictly:
 WhatsApp-styled web simulator). They must render as plain text.
 
    NEVER USE any of these:
-     - LaTeX math: no  \\[ ... \\]  \\( ... \\)  \\boxed  \\frac  \\sqrt{...}  \
-\\theta  \\pi  \\cdot  \\qquad  \\text{...}  \\bigl  \\bigr  etc.
+     - Reasoning / thinking blocks: no  <think>...</think>  <reasoning>...</reasoning>  \
+<analysis>...</analysis> or any XML-ish planning wrapper. Your OUTPUT is what the \
+learner reads — reasoning is INTERNAL, not for the reply.
+     - LaTeX math delimiters: no  $...$  no  $$...$$  no  \\[ ... \\]  no  \\( ... \\)
+     - LaTeX macros: no  \\boxed  \\frac  \\sqrt{...}  \\theta  \\pi  \\cdot  \
+\\qquad  \\text{...}  \\bigl  \\bigr  etc.
      - Markdown headings: no  #  ##  ###  ####
      - Markdown bold / italic: no  **bold**  *italic*  __bold__  _italic_
      - Horizontal rules: no  ---  or  ***
      - Code fences: no  ```
+     - Meta-commentary: do NOT echo these formatting rules back at the learner. \
+Do NOT plan the answer aloud ("The user has asked ...", "I need to follow..."). \
+Do NOT analyse the question in prose before answering. Go DIRECTLY to the \
+step-by-step solution.
 
    INSTEAD USE plain-text formatting that renders identically everywhere:
      - Unicode maths symbols directly:  x²  x³  √2  π  θ  α  β  °  ·  ×  ÷  \

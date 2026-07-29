@@ -279,11 +279,32 @@
 
     function sanitiseForChat(raw) {
       // Client-side safety net: the CAPS system prompt tells the LLM to
-      // NEVER emit LaTeX or Markdown, but if it slips (some prompts still
-      // do), we clean it up here so learners always see plain-text maths.
-      // Fixes the "raw \[ … \boxed{…} \]" bubble that hurts the phone UX.
+      // NEVER emit LaTeX / Markdown / reasoning traces, but if any slip
+      // through — different models leak different patterns — we clean
+      // them up here so learners always see plain-text maths.
       if (!raw) return raw;
       let s = String(raw);
+
+      // ---- Model reasoning / thinking traces -----------------------------
+      // Qwen 3.6, DeepSeek-R1 and other reasoning models emit their
+      // private planning inside <think>…</think> (or <reasoning>…) blocks
+      // before the actual answer. These are internal — never for the
+      // learner. Strip the whole block, even when it spans many lines.
+      s = s.replace(/<think\b[^>]*>[\s\S]*?<\/think\s*>/gi, '');
+      s = s.replace(/<reasoning\b[^>]*>[\s\S]*?<\/reasoning\s*>/gi, '');
+      s = s.replace(/<analysis\b[^>]*>[\s\S]*?<\/analysis\s*>/gi, '');
+      // If a stray opening <think> has no matching close tag (truncated
+      // output), remove everything from the tag onwards — it's all noise.
+      s = s.replace(/<think\b[^>]*>[\s\S]*$/i, '');
+
+      // ---- Dollar-sign LaTeX ($...$ and $$...$$) -----------------------
+      // Qwen uses $x^2 + 3$ style delimiters. We unwrap them, keeping
+      // the content but dropping the dollars. Handled BEFORE the
+      // backslash-macro conversions so \frac{a}{b} inside $$ still gets
+      // processed correctly. Display-math ($$…$$) becomes newline-
+      // wrapped; inline math ($…$) stays inline.
+      s = s.replace(/\$\$([\s\S]+?)\$\$/g, '\n$1\n');
+      s = s.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g, '$1');
 
       // ---- LaTeX symbols → Unicode --------------------------------------
       // Greek letters
@@ -313,7 +334,12 @@
            .replace(/\\infty\b/g, '∞')
            .replace(/\\to\b/g, '→')
            .replace(/\\Rightarrow\b/g, '⇒').replace(/\\rightarrow\b/g, '→')
-           .replace(/\\therefore\b/g, '∴').replace(/\\because\b/g, '∵');
+           .replace(/\\therefore\b/g, '∴').replace(/\\because\b/g, '∵')
+           // Big-operators and ellipses — common in series/summation output
+           .replace(/\\sum\b/g, '∑').replace(/\\prod\b/g, '∏')
+           .replace(/\\int\b/g, '∫')
+           .replace(/\\ldots\b/g, '…').replace(/\\dots\b/g, '…')
+           .replace(/\\cdots\b/g, '⋯').replace(/\\vdots\b/g, '⋮');
       // Trig / log function names — drop the backslash
       s = s.replace(/\\(sin|cos|tan|cot|sec|csc|log|ln|exp|arcsin|arccos|arctan|min|max|lim)\b/g, '$1');
       // Constructs that wrap content
@@ -334,6 +360,18 @@
       // \qquad / \quad → spaces (no \b for same reason — \qquad\text{or} would
       // otherwise leave \qquad stranded once \text{or} became "or")
       s = s.replace(/\\qquad/g, '   ').replace(/\\quad/g, '  ');
+      // LaTeX thin/medium/negative spaces  →  a single space (they render
+      // as tiny gaps in TeX; on a phone chat, a plain space is fine).
+      // Also  \\  (LaTeX line break)  →  a real newline.
+      // ORDER MATTERS:  \\\\  must be handled BEFORE  \\ ‹space›  so a
+      // double-backslash doesn't get half-eaten by the "backslash-space"
+      // rule below.
+      s = s.replace(/\\\\/g, '\n')
+           .replace(/\\,/g, ' ')
+           .replace(/\\;/g, ' ')
+           .replace(/\\:/g, ' ')
+           .replace(/\\!/g, '')
+           .replace(/\\ /g, ' ');
       // Delimiters: \[ ... \] and \( ... \)  →  keep the content, drop the wrappers
       s = s.replace(/\\\[/g, '\n').replace(/\\\]/g, '\n');
       s = s.replace(/\\\(/g, '').replace(/\\\)/g, '');
@@ -352,6 +390,12 @@
       s = s.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '$1');  // _italic_
       s = s.replace(/^\s*[-*_]{3,}\s*$/gm, '');        // horizontal rules
       s = s.replace(/```[a-zA-Z]*\n?/g, '').replace(/```/g, '');  // code fences
+
+      // ---- Catch-all: any remaining \<word> LaTeX macro loses the
+      // backslash (e.g. \Alpha → Alpha). Better readable than leaving a
+      // literal backslash on the phone. Placed AFTER all specific
+      // handlers so those wins take priority.
+      s = s.replace(/\\([a-zA-Z]+)/g, '$1');
 
       // Collapse runs of 3+ blank lines to 2 — keeps paragraph breaks tidy
       s = s.replace(/\n{3,}/g, '\n\n').trim();

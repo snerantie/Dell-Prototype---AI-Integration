@@ -205,7 +205,7 @@ Learner sees step-by-step factorisation
 | Word extraction | python-docx |
 | Frontend | Vanilla HTML/CSS/JS (WhatsApp-authentic) |
 | Deployment | Render.com (pilot) / Dell AI Factory (prod) |
-| LLM (pilot) | Groq — `openai/gpt-oss-120b` (text), `meta-llama/llama-4-scout-17b-16e-instruct` (vision) |
+| LLM (pilot) | Groq — `openai/gpt-oss-120b` (text), `qwen/qwen3.6-27b` (vision, since Groq deprecated Llama 4 Scout on the free tier mid-July 2026) |
 | LLM (production) | Dell AI Factory NIM — same models, in-country hosting |
 | CAPS alignment | 4-layer stack (`app/tutor/caps_prompt.py` for Layer 1); see [`CAPS_ALIGNMENT.md`](CAPS_ALIGNMENT.md) |
 

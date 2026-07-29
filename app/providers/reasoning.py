@@ -123,15 +123,37 @@ def _grounding_text(d: Diagnosis) -> str:
 
 
 class DellReasoningProvider(ReasoningProvider):
-    """Talks to a Dell AI Factory LLM via the OpenAI-compatible chat API."""
+    """Talks to a Dell AI Factory LLM via the OpenAI-compatible chat API.
+
+    Handles text (via `_chat`) AND multimodal image Q&A (via
+    `answer_with_image`). The two use DIFFERENT model configs because
+    a text-only model like `openai/gpt-oss-120b` cannot process images
+    — attempting to send `image_url` content parts to a text-only model
+    would return a 400 from Groq and the learner would see the "couldn't
+    process the image" fallback.
+
+    Text path uses `dell_llm_*` env vars.
+    Vision path uses `dell_vlm_*` env vars — expected to point at a
+    multimodal model like `meta-llama/llama-4-scout-17b-16e-instruct`
+    on the same or different endpoint.
+    """
 
     name = "dell"
 
     def __init__(self, settings: Settings):
+        # --- Text (LLM) endpoint --------------------------------------
         self._base_url = settings.dell_llm_base_url.rstrip("/")
         self._api_key = settings.dell_llm_api_key
         self._model = settings.dell_llm_model
         self._timeout = settings.http_timeout
+        # --- Vision (VLM) endpoint — may be same or different -------
+        # These fields drive `answer_with_image`. On Groq, the user
+        # typically sets DELL_VLM_MODEL to a multimodal model and keeps
+        # base_url + api_key the same as the LLM settings.
+        self._vlm_base_url = settings.dell_vlm_base_url.rstrip("/")
+        self._vlm_api_key = settings.dell_vlm_api_key
+        self._vlm_model = settings.dell_vlm_model
+        self._vlm_provider = settings.vlm_provider
 
     async def _chat(
         self,
@@ -254,6 +276,26 @@ class DellReasoningProvider(ReasoningProvider):
                 f"'{question.strip()[:120]}'"
             )
 
+    def _vlm_looks_configured(self) -> bool:
+        """True when the vision endpoint has been explicitly configured
+        (not left on the localhost defaults).
+
+        This guards the multimodal path: we WON'T attempt an image POST
+        when the VLM settings are still placeholders — instead the
+        caller gets a friendly 'photos not enabled yet' message. This
+        prevents the confusing 'couldn't process the image' fallback
+        the learner saw when the LLM env vars were set but the VLM
+        env vars weren't.
+        """
+        from app.config import ProviderMode
+        if self._vlm_provider != ProviderMode.DELL:
+            return False
+        if self._vlm_api_key in ("", "changeme"):
+            return False
+        if "localhost" in self._vlm_base_url or "127.0.0.1" in self._vlm_base_url:
+            return False
+        return True
+
     async def answer_with_image(
         self,
         question: str,
@@ -264,16 +306,34 @@ class DellReasoningProvider(ReasoningProvider):
         history: Optional[list[dict]] = None,
     ) -> str:
         """Multimodal Q&A. Sends a data-URL image + text prompt to the
-        OpenAI-compatible vision endpoint (e.g. Groq's
-        llama-3.2-11b-vision-preview). Falls back to a graceful message on
-        any transport / parse error so the learner never dead-ends.
+        OpenAI-compatible vision endpoint. Uses the SEPARATE VLM config
+        (`dell_vlm_*` env vars) rather than the text LLM config — a
+        text-only model like `openai/gpt-oss-120b` cannot process
+        images and would return a 400 error.
 
-        ``history`` is a list of prior text-only turns; we sandwich them
-        BETWEEN the system prompt and the new image+text user message so
-        the model resolves follow-ups without re-uploading old images."""
-        # Topic detection is best-effort here — the caption may hint at the
-        # CAPS topic (e.g. "help me with this Pythagoras question") even
-        # before the model has seen the image.
+        Falls back to an actionable message when the VLM endpoint is
+        not configured, and to a graceful degradation message on any
+        transport / parse error so the learner never dead-ends.
+
+        ``history`` is a list of prior text-only turns; we sandwich
+        them BETWEEN the system prompt and the new image+text user
+        message so the model resolves follow-ups without re-uploading
+        old images."""
+        # ---- 1) Fail fast if the VLM isn't configured ---------------
+        if not self._vlm_looks_configured():
+            logger.info(
+                "answer_with_image skipped: VLM_PROVIDER=%s, model=%r, base_url=%r",
+                self._vlm_provider, self._vlm_model, self._vlm_base_url,
+            )
+            return (
+                "I can't read images right now — the vision AI hasn't been "
+                "switched on for this deployment yet. Please describe the "
+                "problem in words instead (e.g. 'solve x² - 5x + 6 = 0' or "
+                "'right triangle with sides 3 and 4') and I'll walk you "
+                "through it step-by-step with proper NSC mark codes."
+            )
+
+        # ---- 2) Build the CAPS-aligned system prompt ---------------
         from app.tutor.caps_prompt import build_caps_system_prompt, detect_topic
         topic = detect_topic(question)
         system = build_caps_system_prompt(
@@ -284,14 +344,14 @@ class DellReasoningProvider(ReasoningProvider):
             max_words=400,
             retrieval_query=question,
         )
-        # Build the multimodal user message (OpenAI vision-format content parts).
+        # ---- 3) Build the multimodal user message ------------------
+        # OpenAI vision-format content parts. Same shape whether we're
+        # talking to Groq's Llama-4-Scout or Dell AI Factory NIM.
         data_url = f"data:{image_mime};base64,{image_base64}"
         user_content = [
             {"type": "text", "text": question or "Please help me solve this problem."},
             {"type": "image_url", "image_url": {"url": data_url}},
         ]
-        # Assemble messages: system, then prior text-only turns, then the
-        # multimodal user message.
         messages: list[dict] = [{"role": "system", "content": system}]
         if history:
             for turn in history:
@@ -302,26 +362,30 @@ class DellReasoningProvider(ReasoningProvider):
                 if role in ("user", "assistant") and isinstance(content, str) and content:
                     messages.append({"role": role, "content": content})
         messages.append({"role": "user", "content": user_content})
+
+        # ---- 4) POST to the VLM endpoint ---------------------------
         try:
             payload = {
-                "model": self._model,
+                "model": self._vlm_model,       # ← vision model, e.g. Llama-4-Scout
                 "messages": messages,
                 "temperature": 0.3,
             }
-            headers = {"Authorization": f"Bearer {self._api_key}"}
+            headers = {"Authorization": f"Bearer {self._vlm_api_key}"}
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 resp = await client.post(
-                    f"{self._base_url}/chat/completions", json=payload, headers=headers
+                    f"{self._vlm_base_url}/chat/completions",  # ← vision endpoint
+                    json=payload, headers=headers,
                 )
                 resp.raise_for_status()
                 data = resp.json()
                 return data["choices"][0]["message"]["content"].strip()
         except Exception as exc:
-            logger.warning("Dell LLM answer_with_image failed: %s", exc)
+            logger.warning("Dell VLM answer_with_image failed: %s", exc)
             return (
-                "I couldn't process the image right now. Try describing the problem "
-                "in words (e.g. 'right triangle, sides 3 and 4, find hypotenuse') "
-                "and I'll help step-by-step."
+                "I couldn't process the image right now — the vision AI is "
+                "reachable but returned an error. Try describing the problem "
+                "in words (e.g. 'right triangle, sides 3 and 4, find "
+                "hypotenuse') and I'll help step-by-step."
             )
 
     async def answer_with_document(

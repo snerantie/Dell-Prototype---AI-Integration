@@ -38,11 +38,23 @@ from typing import Optional, Tuple
 logger = logging.getLogger(__name__)
 
 
-# Long-edge cap in pixels. 1568 is the sweet-spot observed across
-# major vision LLMs: big enough to preserve handwriting legibility
-# for CAPS-level maths, small enough to keep the request payload
-# under ~400 KB after JPEG q=85 encoding.
-_MAX_EDGE_PX = 1568
+# Long-edge cap in pixels. Chosen to balance two constraints:
+#   1. Handwriting / exam-paper text must stay legible to Qwen 3.6
+#      27B (roughly: symbols need to render at 12+ pixels tall).
+#   2. Total vision-token count must fit inside Groq's free-tier
+#      TPM cap (8000 tokens/min for qwen/qwen3.6-27b on `on_demand`).
+#
+# Qwen's vision tokeniser produces ~1 token per 28x28 pixel patch.
+# At 1568 px long edge (previous value), a portrait phone photo
+# tokenises to ~3500 tokens — leaving only ~4500 for prompt + history
+# + user text, which the RAG-included system prompt regularly blew
+# past (see: 413 "Request too large" TPM incident).
+#
+# 1280 px reduces that budget to ~2400 tokens — enough headroom to
+# add back a slim RAG context in future if we ever move off free tier.
+# Legibility check: at 1280 px, a full A4 exam page renders each
+# printed digit at ~18 px tall, still cleanly OCR-able.
+_MAX_EDGE_PX = 1280
 
 # Never bother re-encoding an image smaller than this cliff — the
 # CPU cost isn't worth it and we can't materially shrink it. A

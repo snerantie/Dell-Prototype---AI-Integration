@@ -428,6 +428,7 @@ def build_caps_system_prompt(
     topic_hint: Optional[str] = None,
     max_words: int = 400,
     retrieval_query: Optional[str] = None,
+    retrieval_top_k: int = 3,
 ) -> str:
     """Assemble a CAPS-strict system prompt for the given purpose.
 
@@ -438,6 +439,11 @@ def build_caps_system_prompt(
       language:  2-letter code (en/af/zu/xh/...); drives the reply language.
       topic_hint: optional slug from detect_topic() to steer the model.
       max_words: response length cap communicated to the model.
+      retrieval_top_k: how many RAG chunks to fetch. Set to 0 to skip
+                 retrieval entirely — useful when the request already
+                 carries the context (image / document uploads) and
+                 extra text would blow the model's token budget on
+                 tight tiers like Groq free (8000 TPM).
     """
     lang = language_name(language)
     scope = caps_scope_for(grade)
@@ -479,8 +485,12 @@ def build_caps_system_prompt(
         # `retrieval_query` is the caller-supplied search query. Falls
         # back to the empty string in the (unusual) case a caller has
         # not passed one — the retriever handles empty queries safely.
-        if retrieval_query:
-            hits = retrieve(retrieval_query, top_k=3, grade=grade)
+        # `retrieval_top_k == 0` explicitly disables retrieval — the
+        # image / document callers use this because the uploaded
+        # content already carries the context (RAG chunks would just
+        # dilute the token budget on tight-TPM providers).
+        if retrieval_query and retrieval_top_k > 0:
+            hits = retrieve(retrieval_query, top_k=retrieval_top_k, grade=grade)
             retrieved_context = format_retrieved_context(hits)
     except ImportError:
         pass  # RAG module not available — Phase-1+2 still work

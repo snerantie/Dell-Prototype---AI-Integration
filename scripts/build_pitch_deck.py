@@ -213,7 +213,7 @@ def slide_cover(prs):
 
     # ------- Bottom-right sponsor line -----------------------------------
     _add_text(s, 0.6, 6.75, 12.1, 0.35,
-              "Powered by Dell AI Factory  ·  Zero-rated on Vodacom  ·  CAPS-aligned",
+              "Powered by Dell AI Factory  ·  Zero-rate-ready on Vodacom  ·  CAPS-aligned",
               size=12, color=GREEN_SOFT, align=PP_ALIGN.RIGHT)
 
     # ------- Placeholder note (muted, centered) --------------------------
@@ -228,7 +228,9 @@ def slide_cover(prs):
         "smartphone or feature phone, any of the 11 official languages. "
         "The two device mockups are placeholders; final version replaces "
         "them with real photos of SA learners using the app. Powered by "
-        "Dell AI Factory. Zero-rated on Vodacom. CAPS-aligned.")
+        "Dell AI Factory. Zero-rated on Vodacom (design supports "
+        "zero-rating; formal partnership is the ask, not something we're "
+        "claiming as delivered). CAPS-aligned.")
     return s
 
 
@@ -252,13 +254,14 @@ def slide_title(prs):
               "even on a feature phone, even with no data.",
               size=20, color=TEXT)
     _add_text(s, 0.6, 5.3, 12.1, 0.5,
-              "Powered by Dell AI Factory  ·  Zero-rated on Vodacom",
+              "Powered by Dell AI Factory  ·  Zero-rate-ready on Vodacom",
               size=14, color=MUTED)
     _add_speaker_notes(s,
         "Open with the equity story. EduConnect AI Tutor is a CAPS-aligned "
         "multilingual tutor that meets every learner — smartphone or feature "
         "phone — where they are. Powered by Dell AI Factory. Zero-rated on "
-        "Vodacom.")
+        "Vodacom (design supports zero-rating; formal partnership is the "
+        "ask, not something we're claiming as delivered).")
     return s
 
 
@@ -315,7 +318,7 @@ def slide_solution(prs):
         "Diagnoses misconceptions, not just answers",
         "NSC mark-scheme aware (toggle)",
         "Past Papers archive built in",
-        "Zero-rated via Vodacom WhatsApp bundles",
+        "Vodacom WhatsApp bundle R5/mo · zero-rate-ready via Purpose",
     ], size=15, color=TEXT)
 
     _add_pill(s, 7.0, 2.8, 1.4, 0.5, "USSD",   fill=ORANGE, fg=DARK_TXT, size=14)
@@ -325,7 +328,7 @@ def slide_solution(prs):
         "Same Pythagoras / Area / Algebra / Past Papers",
         "Mark-scheme feedback in 160-char screens",
         "Optional handoff to WhatsApp on request",
-        "Zero-rated by definition (aggregator path)",
+        "Effectively zero-rated via aggregator education tier",
         "Reaches learners no other AI can",
     ], size=15, color=TEXT)
     _add_speaker_notes(s,
@@ -1200,7 +1203,7 @@ def slide_responsibility(prs):
     cols = [
         ("Equality", GREEN, [
             "Two channels — never device-locked",
-            "Zero at point of use (zero-rated)",
+            "Near-zero learner cost · zero-rate-ready on Vodacom",
             "4 validated + 7 first-pass + SA Sign Language = 12",
             "Identical brain on both channels",
             "No premium tier — design constraint",
@@ -1322,6 +1325,566 @@ def slide_ask(prs):
 
 
 # ============================================================================
+# Slide 14 — Cybersecurity & data protection (NEW)
+# ============================================================================
+def slide_cybersecurity(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.4, 12.1, 0.5, "Cybersecurity & data protection",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.85, 12.1, 0.7,
+              "POPIA-aligned. SA-hostable. Learner-safe by design.",
+              size=26, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.75, 4)
+
+    # Two-column pills
+    _add_pill(s, 0.6, 2.1, 1.9, 0.45, "Built today",
+              fill=GREEN, fg=DARK_TXT, size=12)
+    _add_pill(s, 7.0, 2.1, 3.2, 0.45, "Ships in Phase 1 with Vodacom",
+              fill=ORANGE, fg=DARK_TXT, size=12)
+
+    # LEFT column — green ticks
+    _add_bullets(s, 0.6, 2.75, 5.8, 4.0, [
+        "HTTPS everywhere (TLS 1.3 via Render)",
+        "Minimal PII: phone + grade + language only",
+        "No password / no account → no credential to steal",
+        "Platform-level content filter (violence/CSAM auto-blocked)",
+        "Rate-limiter + in-flight lock (spam-resistant)",
+        "Structured errors — never leaks keys / DB paths / stack traces",
+        "Analytics logs the FACT of interaction, never raw learner text",
+    ], size=13, color=TEXT, bullet="✓ ", spacing=6)
+
+    # RIGHT column — orange arrows
+    _add_bullets(s, 7.0, 2.75, 5.8, 4.0, [
+        "POPIA consent flow (U18 parental gate)",
+        "Encryption at rest (PostgreSQL, column-level)",
+        "SA data residency (Vodacom Cloud or Dell AI Factory SA)",
+        "7-year immutable audit trail (POPIA retention)",
+        "Crisis-keyword detector + safeguarding-lead escalation",
+        "Non-maths image classifier — refuses off-topic uploads politely",
+        "Named DPO alignment + Data Processing Agreement",
+    ], size=13, color=TEXT, bullet="→ ", spacing=6)
+
+    # Bottom banner
+    banner_y = 6.85
+    banner = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.6), Inches(banner_y), Inches(12.1), Inches(0.45),
+    )
+    banner.fill.solid()
+    banner.fill.fore_color.rgb = PANEL
+    banner.line.color.rgb = GREEN
+    banner.line.width = Pt(1)
+    banner.text_frame.text = ""
+    _add_text(s, 0.6, banner_y + 0.06, 12.1, 0.35,
+              "All right-side items are 1–2 day engineering tasks. "
+              "Deliberately deferred to align with Vodacom's DPO framework "
+              "and hosting choice.",
+              size=11, color=GREEN_SOFT, align=PP_ALIGN.CENTER, bold=True)
+
+    _add_speaker_notes(s,
+        "Be honest about the split. Left column = shipped today, real code "
+        "in the repo. Right column = designed but not yet implemented — "
+        "each item is 1–2 days of engineering and deliberately deferred "
+        "until Vodacom's DPO tells us their preferred hosting, retention "
+        "policy, and DPA template. Do NOT claim 'POPIA-aligned' as "
+        "delivered — the ARCHITECTURE is POPIA-aligned; the compliance "
+        "sign-off comes in Phase 1. The image classifier is Phase 1 work; "
+        "today we accept any image and pass it to the vision model with a "
+        "curriculum-bounded prompt.")
+    return s
+
+
+# ============================================================================
+# Slide 16 — Economics (NEW)
+# ============================================================================
+def slide_economics(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.4, 12.1, 0.5, "Economics",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.85, 12.1, 0.7,
+              "R15–R25 today. R2 target — with Dell + Vodacom in place.",
+              size=24, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.75, 4)
+
+    # ---- Killer-number band (PANEL bg, GREEN border, 3 columns) --------
+    band_y = 2.05
+    band_h = 1.35
+    band = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.6), Inches(band_y), Inches(12.1), Inches(band_h),
+    )
+    band.fill.solid()
+    band.fill.fore_color.rgb = PANEL
+    band.line.color.rgb = GREEN
+    band.line.width = Pt(1.5)
+    band.text_frame.text = ""
+
+    col_w = 12.1 / 3
+    # Left column — TODAY (honest, unsubsidised)
+    _add_text(s, 0.6, band_y + 0.15, col_w, 0.35,
+              "TODAY · UNSUBSIDISED PILOT",
+              size=11, color=MUTED, bold=True, align=PP_ALIGN.CENTER)
+    _add_text(s, 0.6, band_y + 0.5, col_w, 0.75,
+              "~R15–R25 / yr",
+              size=32, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
+    # Mid column — TARGET (the ask)
+    _add_text(s, 0.6 + col_w, band_y + 0.15, col_w, 0.35,
+              "TARGET · DELL + VODACOM",
+              size=11, color=MUTED, bold=True, align=PP_ALIGN.CENTER)
+    _add_text(s, 0.6 + col_w, band_y + 0.5, col_w, 0.75,
+              "~R2 / yr",
+              size=44, color=GREEN_SOFT, bold=True, align=PP_ALIGN.CENTER)
+    # Right column — Private tutor comparator
+    _add_text(s, 0.6 + 2 * col_w, band_y + 0.15, col_w, 0.35,
+              "PRIVATE TUTOR EQUIV.",
+              size=11, color=MUTED, bold=True, align=PP_ALIGN.CENTER)
+    _add_text(s, 0.6 + 2 * col_w, band_y + 0.5, col_w, 0.75,
+              "R16,000 / yr",
+              size=32, color=ORANGE_SOFT, bold=True, align=PP_ALIGN.CENTER)
+
+    # ---- Left column below — cost breakdown -------------------
+    col_top = 3.6
+    _add_text(s, 0.6, col_top, 5.8, 0.4,
+              "Today's cost breakdown (unsubsidised)",
+              size=14, color=GREEN_SOFT, bold=True)
+    _add_bullets(s, 0.6, col_top + 0.45, 5.8, 2.8, [
+        "LLM tokens (Gemini Flash-Lite): ~R3–R10 / learner / yr",
+        "USSD aggregator (per session): ~R5–R10 / learner / yr",
+        "WhatsApp Cloud API: ~R2–R4 / learner / yr",
+        "Hosting + Postgres + Redis: ~R2–R4 / learner / yr",
+        "Analytics + monitoring + SMS OTP: ~R1–R2 / learner / yr",
+        "Path to R2: Dell NIM hardware + Vodacom absorbs USSD/data",
+    ], size=11, color=TEXT, spacing=4)
+
+    # ---- Right column — ROI comparison pill-pairs ---------------------
+    _add_text(s, 7.0, col_top, 5.8, 0.4,
+              "ROI vs. what SA learners have today",
+              size=14, color=GREEN_SOFT, bold=True)
+    roi_rows = [
+        ("Private tutor",         "R16,000 / yr",     ORANGE),
+        ("Extra textbook",        "R400 (one-off)",   ORANGE),
+        ("Nothing (status quo)",  "R0 · fails 50%",   ORANGE),
+        ("EduConnect (today)",    "~R20 / yr",        GREEN),
+        ("EduConnect (target)",   "R2 / yr",          GREEN),
+    ]
+    ry = col_top + 0.45
+    row_h = 0.44
+    label_w = 3.1
+    cost_w = 2.6
+    for label, cost, cost_fill in roi_rows:
+        _add_pill(s, 7.0, ry, label_w, row_h - 0.06, label,
+                  fill=PANEL, fg=TEXT, size=11, bold=True)
+        _add_pill(s, 7.0 + label_w + 0.1, ry, cost_w, row_h - 0.06, cost,
+                  fill=cost_fill, fg=DARK_TXT, size=11, bold=True)
+        ry += row_h + 0.05
+
+    # ---- Assumptions footnote (small, muted) -------------------------
+    _add_text(s, 0.6, 6.55, 12.1, 0.28,
+              "Assumes: ~100 sessions/learner/year (unvalidated) · "
+              "Dell hardware sponsorship + Vodacom absorbing USSD/data "
+              "to reach the R2 target",
+              size=9, color=MUTED, align=PP_ALIGN.CENTER)
+
+    # ---- Bottom banner ------------------------------------------------
+    banner_y = 6.85
+    banner = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.6), Inches(banner_y), Inches(12.1), Inches(0.45),
+    )
+    banner.fill.solid()
+    banner.fill.fore_color.rgb = PANEL
+    banner.line.color.rgb = ORANGE
+    banner.line.width = Pt(1.5)
+    banner.text_frame.text = ""
+    _add_text(s, 0.6, banner_y + 0.06, 12.1, 0.35,
+              "Even at 10× today's cost (~R200/yr), we're still 80× cheaper "
+              "than a tutor. 1 extra matric pass = ~R150k lifetime earnings "
+              "uplift — break-even at ~1 pass per 75k learners.",
+              size=11, color=ORANGE_SOFT, align=PP_ALIGN.CENTER, bold=True)
+
+    _add_speaker_notes(s,
+        "Two numbers on this slide, both honest. R15–R25 is TODAY: real "
+        "Gemini Flash-Lite pricing, real aggregator USSD rates (~R0.05–R0.10 "
+        "per session), real Meta WhatsApp Cloud rates, real Render/Postgres "
+        "hosting. R2 is the TARGET — it lands only when Dell donates NIM "
+        "hardware (drops LLM cost to hardware amortisation only) AND "
+        "Vodacom absorbs USSD + data charges through the Purpose "
+        "partnership. Neither is signed. The ~100 sessions/learner/year "
+        "figure is our modelling assumption — we don't have pilot data yet, "
+        "so it could be 20 or 300. If a CFO in the room challenges the R2, "
+        "the honest answer is: 'That's our target with signed partnerships. "
+        "Unsubsidised today, we're at R15–R25 — and even at 10× that, "
+        "we're still ~80× cheaper than a private tutor. The economics work "
+        "at any point in that range.' Don't oversell R2 — the R2-vs-R25 "
+        "framing is what makes this credible in Q&A.")
+    return s
+
+
+# ============================================================================
+# Slide 17 — AI model stack (NEW)
+# ============================================================================
+def slide_model_stack(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.4, 12.1, 0.5, "AI model stack",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.85, 12.1, 0.6,
+              "One brain. Four provider options. Zero rewrites.",
+              size=26, bold=True, color=WHITE)
+    _add_text(s, 0.6, 1.5, 12.1, 0.35,
+              "Real-time options (all OpenAI-compatible — no code changes "
+              "to switch)",
+              size=12, color=MUTED)
+    _add_rule(s, 0.6, 1.95, 4)
+
+    # ---- 5-row comparison table ---------------------------------------
+    table_left = 0.6
+    table_w = 12.1
+    header_h = 0.45
+    row_h = 0.72
+    table_top = 2.25
+
+    # Column widths (sum to table_w = 12.1)
+    col_provider = 4.8
+    col_cost = 2.2
+    col_tpm = 1.9
+    col_best = table_w - col_provider - col_cost - col_tpm  # 3.2
+
+    # Header row
+    header = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(table_left), Inches(table_top),
+        Inches(table_w), Inches(header_h),
+    )
+    header.fill.solid()
+    header.fill.fore_color.rgb = PANEL
+    header.line.color.rgb = MUTED
+    header.line.width = Pt(0.5)
+    header.text_frame.text = ""
+    hx = table_left
+    for h_text, h_w in [
+        ("Provider · model", col_provider),
+        ("Cost / 1M in", col_cost),
+        ("TPM cap", col_tpm),
+        ("Best for", col_best),
+    ]:
+        _add_text(s, hx + 0.15, table_top + 0.08, h_w - 0.3, header_h - 0.1,
+                  h_text, size=11, color=GREEN_SOFT, bold=True)
+        hx += h_w
+
+    # Rows: (provider, cost, tpm, best_for, row_bg, row_border, row_fg)
+    rows = [
+        ("Gemini 3.5 Flash-Lite · Google",   "R2 (~$0.10)",  "250,000",
+         "PILOT · what we run today",
+         GREEN,  GREEN_SOFT, DARK_TXT),
+        ("GPT-4o-mini · OpenAI",             "R3 (~$0.15)",  "200,000",
+         "Reliable production fallback",
+         PANEL,  MUTED,      TEXT),
+        ("Claude Haiku 3.5 · Anthropic",     "R5 (~$0.25)",  "50,000",
+         "Strong maths reasoning",
+         PANEL,  MUTED,      TEXT),
+        ("Qwen 3.6 27B · Groq",              "Free · dev tier",  "8,000",
+         "Fastest inference, tight quota",
+         PANEL,  MUTED,      TEXT),
+        ("Llama 4 / Qwen · Dell AI Factory NIM",  "Hardware only",  "self-hosted",
+         "PRODUCTION · POPIA-sovereign",
+         ORANGE, ORANGE_SOFT, DARK_TXT),
+    ]
+    ry = table_top + header_h + 0.08
+    for provider, cost, tpm, best_for, bg_c, border_c, fg_c in rows:
+        row_shape = s.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(table_left), Inches(ry),
+            Inches(table_w), Inches(row_h),
+        )
+        row_shape.fill.solid()
+        row_shape.fill.fore_color.rgb = bg_c
+        row_shape.line.color.rgb = border_c
+        row_shape.line.width = Pt(1)
+        row_shape.text_frame.text = ""
+        rx = table_left
+        for cell_text, cell_w, is_bold in [
+            (provider, col_provider, True),
+            (cost,     col_cost,     False),
+            (tpm,      col_tpm,      False),
+            (best_for, col_best,     True),
+        ]:
+            _add_text(s, rx + 0.15, ry + 0.18, cell_w - 0.3, row_h - 0.2,
+                      cell_text, size=11, color=fg_c, bold=is_bold)
+            rx += cell_w
+        ry += row_h + 0.08
+
+    # ---- Bottom banner ------------------------------------------------
+    banner_y = 6.75
+    banner = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.6), Inches(banner_y), Inches(12.1), Inches(0.55),
+    )
+    banner.fill.solid()
+    banner.fill.fore_color.rgb = PANEL
+    banner.line.color.rgb = GREEN
+    banner.line.width = Pt(1.5)
+    banner.text_frame.text = ""
+    _add_text(s, 0.75, banner_y + 0.06, 2.2, 0.25,
+              "MIGRATION PATH",
+              size=10, color=GREEN_SOFT, bold=True)
+    _add_text(s, 0.75, banner_y + 0.28, 11.9, 0.28,
+              "Pilot → Production is a 6-env-var swap. Same OpenAI-compatible "
+              "API on every provider. Zero code changes. Zero downtime. Same day.",
+              size=11, color=TEXT, bold=True)
+
+    _add_speaker_notes(s,
+        "This is the swap-ability slide. Every provider we list exposes an "
+        "OpenAI-compatible /chat/completions endpoint, so switching is "
+        "literally 6 env vars: base URL, key, model name for reasoning, "
+        "vision, translation, and embedding. Today we run Gemini 3.5 "
+        "Flash-Lite in the pilot — it's the cheapest and hits SA latency. "
+        "Production endpoint is Dell AI Factory NIM: hardware cost only, "
+        "POPIA-sovereign, no per-token bill. GPT-4o-mini and Claude Haiku "
+        "are named fallbacks so procurement doesn't panic about "
+        "vendor-lock. Roadmap, not shipped: the Dell NIM row is what we're "
+        "asking Dell for.")
+    return s
+
+
+# ============================================================================
+# Slide 18 — Integration strategy (NEW)
+# ============================================================================
+def slide_integration(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.4, 12.1, 0.5, "Integration strategy",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.85, 12.1, 0.6,
+              "We don't compete with e-School. We complete it.",
+              size=26, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.65, 4)
+
+    # ---- Sub-header ---------------------------------------------------
+    _add_text(s, 0.6, 1.9, 12.1, 0.35,
+              "The gap in SA e-learning today",
+              size=13, color=GREEN_SOFT, bold=True)
+
+    # ---- Landscape row: 5 tiles ---------------------------------------
+    tile_top = 2.3
+    tile_h = 1.1
+    n_tiles = 5
+    margin = 0.6
+    gap = 0.15
+    total_w = 13.33 - 2 * margin
+    tile_w = (total_w - (n_tiles - 1) * gap) / n_tiles
+
+    landscape = [
+        ("Vodacom e-School",  "200k users · content"),
+        ("DBE Kolibri",       "gov't content · quiet"),
+        ("Siyavula Practice", "quizzes · commercial"),
+        ("Snapplify",         "textbooks · paid"),
+        ("WCED ePortal",      "provincial · content"),
+    ]
+    for i, (name, sub) in enumerate(landscape):
+        tx = margin + i * (tile_w + gap)
+        tile = s.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(tx), Inches(tile_top), Inches(tile_w), Inches(tile_h),
+        )
+        tile.fill.solid()
+        tile.fill.fore_color.rgb = PANEL
+        tile.line.color.rgb = MUTED
+        tile.line.width = Pt(1)
+        tile.text_frame.text = ""
+        _add_text(s, tx + 0.1, tile_top + 0.15, tile_w - 0.2, 0.4,
+                  name, size=12, color=WHITE, bold=True,
+                  align=PP_ALIGN.CENTER)
+        _add_text(s, tx + 0.1, tile_top + 0.6, tile_w - 0.2, 0.4,
+                  sub, size=10, color=MUTED,
+                  align=PP_ALIGN.CENTER)
+
+    # Callout below tiles
+    _add_text(s, 0.6, tile_top + tile_h + 0.15, 12.1, 0.35,
+              "None of them has a live 1-on-1 tutor. "
+              "That's the layer we plug in.",
+              size=13, color=ORANGE_SOFT, bold=True, align=PP_ALIGN.CENTER)
+
+    # ---- 3-phase timeline --------------------------------------------
+    tl_top = 4.4
+    tl_h = 1.85
+    tl_margin = 0.6
+    tl_gap = 0.25
+    tl_total_w = 13.33 - 2 * tl_margin
+    tl_w = (tl_total_w - 2 * tl_gap) / 3
+
+    phases = [
+        ("Phase 1", "Months 1-2",  "Content ingestion",
+         "Index e-School CAPS content into RAG · every answer cites the "
+         "e-School lesson it draws from",
+         GREEN),
+        ("Phase 2", "Months 2-4",  "API + widget",
+         "'Ask the tutor' button embedded in e-School · SSO from learner "
+         "profile · same zero-rated network",
+         ORANGE),
+        ("Phase 3", "Months 4-6",  "Analytics cross-flow",
+         "Where do learners get stuck? Feed EduConnect's misconception "
+         "data back into e-School content roadmap",
+         GREEN_SOFT),
+    ]
+    for i, (phase_name, timing, headline, body, border_c) in enumerate(phases):
+        px = tl_margin + i * (tl_w + tl_gap)
+        panel = s.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(px), Inches(tl_top), Inches(tl_w), Inches(tl_h),
+        )
+        panel.fill.solid()
+        panel.fill.fore_color.rgb = PANEL
+        panel.line.color.rgb = border_c
+        panel.line.width = Pt(1.5)
+        panel.text_frame.text = ""
+        _add_text(s, px + 0.15, tl_top + 0.1, tl_w - 0.3, 0.3,
+                  f"{phase_name} · {timing}",
+                  size=10, color=border_c, bold=True)
+        _add_text(s, px + 0.15, tl_top + 0.45, tl_w - 0.3, 0.4,
+                  headline, size=15, color=WHITE, bold=True)
+        _add_text(s, px + 0.15, tl_top + 0.95, tl_w - 0.3, tl_h - 1.05,
+                  body, size=10, color=TEXT)
+
+    # ---- Bottom banner -----------------------------------------------
+    banner_y = 6.85
+    banner = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.6), Inches(banner_y), Inches(12.1), Inches(0.45),
+    )
+    banner.fill.solid()
+    banner.fill.fore_color.rgb = PANEL
+    banner.line.color.rgb = ORANGE
+    banner.line.width = Pt(1.5)
+    banner.text_frame.text = ""
+    _add_text(s, 0.6, banner_y + 0.06, 12.1, 0.35,
+              "6 engineer-months to merge · ~R1.6M budget. "
+              "Building the tutor inside Vodacom from scratch: 12–18 months "
+              "· ~R15–25M. 10× cheaper to plug us in.",
+              size=11, color=ORANGE_SOFT, align=PP_ALIGN.CENTER, bold=True)
+
+    _add_speaker_notes(s,
+        "Frame this as 'we complete e-School, we don't compete with it.' "
+        "The 5 landscape tiles cover the current SA e-learning offer — "
+        "content-heavy, no live 1-on-1. That's our lane. The 3-phase "
+        "timeline is a proposal for Vodacom — Phase 1 is 60 days of "
+        "content ingestion (RAG on e-School lessons), Phase 2 is a widget "
+        "embed with SSO, Phase 3 is the analytics loop. Be explicit: this "
+        "is a proposed integration path, not a signed workstream. The "
+        "10×-cheaper number is a rough ROI estimate — anchor it, don't "
+        "over-defend it.")
+    return s
+
+
+# ============================================================================
+# Slide 19 — Why Vodacom wins (NEW)
+# ============================================================================
+def slide_vodacom_wins(prs):
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    _set_bg(s, BG)
+    _add_text(s, 0.6, 0.4, 12.1, 0.5, "Why Vodacom wins",
+              size=14, color=GREEN, bold=True)
+    _add_text(s, 0.6, 0.85, 12.1, 0.6,
+              "Purpose scores. Commercial wins. Both, in one bet.",
+              size=26, bold=True, color=WHITE)
+    _add_rule(s, 0.6, 1.65, 4)
+
+    # ---- 2×3 grid of value cards -------------------------------------
+    grid_top = 1.95
+    grid_left = 0.6
+    grid_right = 12.7
+    n_cols = 3
+    n_rows = 2
+    col_gap = 0.2
+    row_gap = 0.2
+    grid_w = grid_right - grid_left
+    card_w = (grid_w - (n_cols - 1) * col_gap) / n_cols
+    card_h = 2.25
+
+    cards = [
+        ("PURPOSE KPI",       GREEN,  "50M-by-2030 target",
+         "Media-friendly, measurable slice of Vodafone Group's Purpose "
+         "commitment. Every learner served = a countable data point in the "
+         "annual report."),
+        ("YOUTH CAC",         ORANGE, "25× cheaper",
+         "R200k/yr LLM cost vs R5–8M/yr in ad spend to reach the same 100k "
+         "SA teens. The network that helps you pass matric is the network "
+         "you stay with for a decade."),
+        ("BUNDLE REVENUE",    GREEN,  "R1.5M/mo direct",
+         "100k learners × 30% conversion × R5/mo WhatsApp bundle. Zero "
+         "marketing spend — the tutor itself drives the buy."),
+        ("USSD REV-SHARE",    ORANGE, "Micro-revenue at scale",
+         "Millions of USSD sessions per month, all through Vodacom core. "
+         "Aggregator revenue share on education tier adds up faster than "
+         "you'd expect."),
+        ("REGULATORY",        GREEN,  "ICASA / DoC credit",
+         "Rural + low-income service obligations are tightening every "
+         "year. A live public-good tutor is worth millions in reduced "
+         "license-condition friction."),
+        ("DATA INSIGHTS",     ORANGE, "VBS upsell fuel",
+         "Anonymised learner-interaction patterns are gold for Vodacom "
+         "Business Solutions when pitching education contracts to DBE, "
+         "WCED, GDE."),
+    ]
+    for i, (tag, tag_color, headline, body) in enumerate(cards):
+        row = i // n_cols
+        col = i % n_cols
+        cx = grid_left + col * (card_w + col_gap)
+        cy = grid_top + row * (card_h + row_gap)
+        card = s.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(cx), Inches(cy), Inches(card_w), Inches(card_h),
+        )
+        card.fill.solid()
+        card.fill.fore_color.rgb = PANEL
+        card.line.color.rgb = tag_color
+        card.line.width = Pt(1.5)
+        card.text_frame.text = ""
+        # Tag pill top-left
+        _add_pill(s, cx + 0.15, cy + 0.15, 1.7, 0.35, tag,
+                  fill=tag_color, fg=DARK_TXT, size=10)
+        # Big headline
+        _add_text(s, cx + 0.15, cy + 0.6, card_w - 0.3, 0.5,
+                  headline, size=18, color=WHITE, bold=True)
+        # Body
+        _add_text(s, cx + 0.15, cy + 1.15, card_w - 0.3, card_h - 1.25,
+                  body, size=10, color=TEXT)
+
+    # ---- Bottom banner -----------------------------------------------
+    banner_y = 6.85
+    banner = s.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.6), Inches(banner_y), Inches(12.1), Inches(0.45),
+    )
+    banner.fill.solid()
+    banner.fill.fore_color.rgb = PANEL
+    banner.line.color.rgb = GREEN
+    banner.line.width = Pt(1.5)
+    banner.text_frame.text = ""
+    _add_text(s, 0.6, banner_y + 0.06, 12.1, 0.35,
+              "R1.5M/mo bundle uplift · 25× cheaper youth CAC · a "
+              "media-worthy Purpose story — for less than the cost of a "
+              "Sunday-supplement print ad.",
+              size=11, color=GREEN_SOFT, align=PP_ALIGN.CENTER, bold=True)
+
+    _add_speaker_notes(s,
+        "This is the mic-drop slide for the Vodacom room. Six reasons, "
+        "three of them commercial (bundle revenue, USSD rev-share, VBS "
+        "data insights), three of them positional (Purpose KPI, youth CAC, "
+        "regulatory). REHEARSE the bottom banner out loud — 'R1.5M/mo "
+        "bundle uplift, 25× cheaper CAC, media-worthy Purpose story, for "
+        "less than a Sunday-supplement ad' — that's the line that lands. "
+        "Be careful: all the numbers here are projections not signed "
+        "commitments. R1.5M/mo assumes 30% conversion (industry avg for "
+        "bundled telco add-ons; we don't have real data yet). The 25× CAC "
+        "figure compares against Vodacom's public youth-marketing spend "
+        "reports.")
+    return s
+
+
+# ============================================================================
 # Build
 # ============================================================================
 def main():
@@ -1342,7 +1905,12 @@ def main():
     slide_uplift(prs)
     slide_segment(prs)
     slide_responsibility(prs)
+    slide_cybersecurity(prs)     # NEW
     slide_roadmap(prs)
+    slide_economics(prs)         # NEW
+    slide_model_stack(prs)       # NEW
+    slide_integration(prs)       # NEW
+    slide_vodacom_wins(prs)      # NEW
     slide_ask(prs)
 
     out = Path(__file__).resolve().parent.parent / "pitch" / "AI_Tutor_Pitch.pptx"

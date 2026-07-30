@@ -28,5 +28,10 @@ python-docx==1.1.2
 # Pillow ships manylinux wheels so no native build is required on Render.
 Pillow==11.1.0
 
+# QR-code generator for the on-stage /scan page (pitch-day helper —
+# audience scans this while presenters are pitching). Pure-Python,
+# uses Pillow for image output, ~50 KB wheel.
+qrcode==7.4.2
+
 # --- Dev / test ---
 pytest==8.3.4

@@ -12,7 +12,7 @@ import logging
 from fastapi import FastAPI
 
 from app.analytics import store as analytics
-from app.channels import dashboard, mock_ui, ussd, whatsapp
+from app.channels import dashboard, mock_ui, qr, ussd, whatsapp
 from app.config import get_settings
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -30,6 +30,7 @@ app.include_router(mock_ui.router)
 app.include_router(whatsapp.router)
 app.include_router(ussd.router)
 app.include_router(dashboard.router)
+app.include_router(qr.router)
 
 
 @app.on_event("startup")

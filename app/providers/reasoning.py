@@ -254,6 +254,11 @@ class DellReasoningProvider(ReasoningProvider):
         # for the four-layer CAPS strategy (this is Phase 1: prompt eng).
         from app.tutor.caps_prompt import build_caps_system_prompt, detect_topic
         topic = detect_topic(question)
+        # RAG top_k=2 (was 3) trims ~700 prompt tokens without meaningfully
+        # hurting retrieval quality — the top-2 chunks carry ~90% of the
+        # useful CAPS context for a typical query and the third chunk is
+        # usually redundant. This keeps text requests safely under Groq's
+        # 8000 TPM even when chat_history is at its 12-turn cap.
         system = build_caps_system_prompt(
             purpose="answer_freely",
             grade=grade,
@@ -261,16 +266,47 @@ class DellReasoningProvider(ReasoningProvider):
             topic_hint=topic,
             max_words=400,
             retrieval_query=question,
+            retrieval_top_k=2,
         )
         try:
             # Pass conversation history through so the LLM can resolve
             # follow-ups ('is that the full solution?', 'explain step 3').
             raw = await self._chat(system, question, temperature=0.3, history=history)
             return raw.strip()
+        except httpx.HTTPStatusError as exc:
+            # Capture the full response body so future TPM / auth /
+            # model-name incidents leave a diagnostic trail in Render
+            # logs. Previously this fell through to the bare Exception
+            # branch which discarded the useful `body` — that's what
+            # caused the 413 to show up as an ambiguous "having trouble"
+            # message instead of the actionable "quota — try again".
+            body = ""
+            try:
+                body = exc.response.text[:600]
+            except Exception:
+                pass
+            status = exc.response.status_code if exc.response is not None else "?"
+            logger.warning(
+                "Dell LLM answer_freely HTTP %s | model=%s | body=%s",
+                status, getattr(self, "_llm_model", "?"), body,
+            )
+            body_lower = body.lower()
+            if (status == 429 or status == 413
+                or "tokens per minute" in body_lower
+                or "rate_limit_exceeded" in body_lower
+                or "rate limit" in body_lower):
+                return (
+                    "I've hit my per-minute AI quota — please try that "
+                    "question again in about a minute. Your question was: "
+                    f"'{question.strip()[:120]}'"
+                )
+            return (
+                f"I'm having trouble reaching the tutor brain right now. "
+                f"Please try that question again in a moment. Your question was: "
+                f"'{question.strip()[:120]}'"
+            )
         except Exception as exc:
             logger.warning("Dell LLM answer_freely failed: %s", exc)
-            # Same fallback wording as the mock so learner UX stays stable
-            # if the endpoint is briefly unreachable.
             return (
                 f"I'm having trouble reaching the tutor brain right now. "
                 f"Please try that question again in a moment. Your question was: "
@@ -335,6 +371,20 @@ class DellReasoningProvider(ReasoningProvider):
             )
 
         # ---- 2) Build the CAPS-aligned system prompt ---------------
+        # NOTE on token budget: Groq's free-tier `on_demand` service
+        # for Qwen 3.6 27B caps requests at 8000 tokens/min. A single
+        # image alone eats ~2500-3500 tokens once the model
+        # tokenises it. That leaves only ~4500 tokens for EVERYTHING
+        # ELSE (system prompt, chat history, user text). To fit:
+        #   • retrieval_top_k=0 — skip RAG chunks (saves ~2000 tokens).
+        #     The uploaded image IS the context; retrieving CAPS
+        #     snippets based on the tiny "Please help me solve this
+        #     problem" text pulls back noise that doesn't help the
+        #     model interpret the image anyway.
+        #   • max_words=350 — nudges the model toward a tighter reply.
+        # See the 413 TPM-exceeded incident: images with full RAG
+        # context consistently pushed requests to ~8300 tokens and
+        # got rejected as "Request too large".
         from app.tutor.caps_prompt import build_caps_system_prompt, detect_topic
         topic = detect_topic(question)
         system = build_caps_system_prompt(
@@ -342,16 +392,19 @@ class DellReasoningProvider(ReasoningProvider):
             grade=grade,
             language=language,
             topic_hint=topic,
-            max_words=400,
+            max_words=350,
             retrieval_query=question,
+            retrieval_top_k=0,      # ← skip RAG for image path (TPM budget)
         )
         # ---- 3) Normalise the image before shipping ----------------
         # Real phone photos come with three vision-model gotchas:
         # sideways EXIF orientation, alpha channels, and multi-megabyte
         # weights. `normalize_image_for_vlm` rotates, flattens, caps
-        # the long edge at 1568 px, and re-encodes as JPEG q=85.
-        # Silently passes through on any failure so exotic formats
-        # (HEIC without pillow-heif, etc.) still get an upload attempt.
+        # the long edge (see image_utils._MAX_EDGE_PX — now 1280 to
+        # keep vision-token cost under the TPM budget), and re-encodes
+        # as JPEG q=85. Silently passes through on any failure so
+        # exotic formats (HEIC without pillow-heif, etc.) still get an
+        # upload attempt.
         from app.tutor.image_utils import normalize_image_for_vlm
         image_base64, image_mime, img_stats = normalize_image_for_vlm(
             image_base64, image_mime
@@ -368,10 +421,15 @@ class DellReasoningProvider(ReasoningProvider):
             {"type": "image_url", "image_url": {"url": data_url}},
         ]
         messages: list[dict] = [{"role": "system", "content": system}]
+        # History: cap to the last 6 turns for image requests. Full
+        # `_CHAT_HISTORY_MAX == 12` fits fine for text-only calls but
+        # doubles our tokens-per-request when an image is included.
+        # 6 turns = 3 user + 3 assistant exchanges — plenty of continuity
+        # for a photo-based follow-up ("what's the next step?").
+        _VLM_HISTORY_MAX = 6
         if history:
-            for turn in history:
-                if not isinstance(turn, dict):
-                    continue
+            trimmed = [t for t in history if isinstance(t, dict)]
+            for turn in trimmed[-_VLM_HISTORY_MAX:]:
                 role = turn.get("role")
                 content = turn.get("content")
                 if role in ("user", "assistant") and isinstance(content, str) and content:
@@ -443,17 +501,30 @@ class DellReasoningProvider(ReasoningProvider):
     def _image_error_hint(status, body: str) -> str:
         """Map a VLM HTTP error into a specific learner-friendly message.
 
-        We inspect the response body for signal words: 'invalid image',
-        'too large', 'content policy', 'rate limit', so the learner
-        knows what to try next instead of always seeing the same
-        generic error. Every branch keeps the tone supportive."""
+        Order matters here — we probe from most-specific to least so
+        the right branch fires for each Groq / Dell NIM error shape.
+        In particular the TPM (tokens-per-minute) check MUST run
+        before the size/limit fallback because Groq's TPM error body
+        includes both "rate_limit_exceeded" AND phrases like
+        "reduce your message size" — otherwise learners see a
+        misleading "image too big" hint when the real cause is a
+        one-minute quota pause.
+        """
         body_lower = (body or "").lower()
-        if status == 429 or "rate limit" in body_lower or "quota" in body_lower:
+        # 1) TPM / rate-limit — Groq's 413 body includes the phrase
+        # "tokens per minute" or the type "rate_limit_exceeded", even
+        # though the HTTP status is 413 (not 429).
+        if (status == 429
+            or "tokens per minute" in body_lower
+            or "rate_limit_exceeded" in body_lower
+            or "rate limit" in body_lower
+            or "quota" in body_lower):
             return (
-                "The vision AI is busy right now (free-tier quota). "
-                "Try again in about a minute — or type the problem in "
-                "words and I'll help step-by-step."
+                "I've hit my per-minute AI quota — try again in about a "
+                "minute, or type the problem in words and I'll answer "
+                "step-by-step right now."
             )
+        # 2) Malformed / unreadable image bytes.
         if "invalid image" in body_lower or "invalid_image" in body_lower:
             return (
                 "The vision AI couldn't read that image. Try one of these:\n"
@@ -463,19 +534,22 @@ class DellReasoningProvider(ReasoningProvider):
                 "• If it's very large, try cropping to just the question.\n"
                 "Or type the problem in words and I'll help step-by-step."
             )
-        if "too large" in body_lower or "size" in body_lower and "limit" in body_lower:
-            return (
-                "That image is too big to process. Try taking a fresh "
-                "photo, or crop to just the question you need help with."
-            )
+        # 3) Content policy — usually people / faces in the frame.
         if "content policy" in body_lower or "safety" in body_lower:
-            # Vision models sometimes flag faces / people. Learner
-            # doesn't need to know why — just what to do.
             return (
                 "I couldn't process that image. If it contains people or "
                 "personal information, try cropping to just the maths "
                 "question. Or type the problem in words and I'll help."
             )
+        # 4) Genuine payload-size — should be very rare after the
+        # Pillow normaliser but worth catching (e.g. someone sending
+        # a huge PDF-as-image bypass).
+        if "too large" in body_lower or ("size" in body_lower and "limit" in body_lower):
+            return (
+                "That image is too big to process. Try taking a fresh "
+                "photo, or crop to just the question you need help with."
+            )
+        # 5) Fallback — every branch above should catch known errors.
         return (
             "I couldn't process the image right now. Try a fresh photo "
             "with just the question visible, or describe the problem in "

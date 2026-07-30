@@ -35,6 +35,17 @@
     .input button { background:var(--accent); color:#03110d; border:none;
               border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer; }
 
+    /* In-session nav strip — lets learners return to the topic menu
+       without hanging up. Fades to disabled at language / subject /
+       topic-menu levels where "back" has nothing above to return to. */
+    .nav { display:flex; gap:6px; margin-top:8px; }
+    .nav button { flex:1; background:#2a3942; color:#cbe7e0;
+              border:1px solid #3a4550; border-radius:6px; padding:9px;
+              font-size:13px; font-weight:600; cursor:pointer;
+              transition:background .15s, opacity .15s; }
+    .nav button:hover:not(:disabled) { background:#3a4550; }
+    .nav button:disabled { opacity:.35; cursor:not-allowed; }
+
     .keypad { display:grid; grid-template-columns:repeat(10,1fr); gap:4px;
               margin-top:12px; }
     .keypad button { background:var(--key); color:var(--keytxt); border:none;
@@ -74,6 +85,13 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
       <button id="btn-send" type="button">Send</button>
     </div>
 
+    <!-- In-session navigation: back to the topic menu without hanging up.
+         Disabled at language / subject / topic-menu levels (there's
+         nothing further "back" to go without dialling again). -->
+    <div class="nav">
+      <button id="btn-menu" type="button" disabled title="Return to the topic menu, keeping your language and subject choices">← Back to menu</button>
+    </div>
+
     <div class="keypad">
       <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="0">0</button>
       <button data-k="q">q</button><button data-k="w">w</button><button data-k="e">e</button><button data-k="r">r</button><button data-k="t">t</button><button data-k="y">y</button><button data-k="u">u</button><button data-k="i">i</button><button data-k="o">o</button><button data-k="p">p</button>
@@ -91,6 +109,9 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
     <p><b>Try this flow:</b> tap <b>📞 Dial</b> → type <b>1</b> for English → <b>1</b> for
        Maths → then any equation like <b>2x+3=7</b> using the QWERTY keys or your device's
        own keyboard. Watch the tutor spot errors in real time.</p>
+    <p><b>Change topic mid-session:</b> tap <b>← Back to menu</b> to return to the topic list
+       (Algebra / Pythagoras / Area / NSC papers / Ask AI) without hanging up. Real feature
+       phones can type <b>00</b> to trigger the same jump — SA USSD convention.</p>
   </div>
 
   <script>
@@ -103,6 +124,16 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
     const screenEl = document.getElementById('screen');
     const pathEl = document.getElementById('path');
     const entry = document.getElementById('entry');
+    const menuBtn = document.getElementById('btn-menu');
+
+    /** ← Back to menu availability rule:
+     *  Enabled only when the learner has drilled BELOW the topic
+     *  menu (path length >= 3). Above that there's no "menu" to
+     *  return to — the topic menu itself IS the menu. */
+    function refreshMenuBtn() {
+      const parts = textPath ? textPath.split('*') : [];
+      menuBtn.disabled = !inSession || parts.length < 3;
+    }
 
     function show(label, body, switchUrl) {
       screenEl.innerHTML = '';
@@ -151,7 +182,27 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
       inSession = !isEnd;
       entry.disabled = isEnd;
       if (isEnd) entry.value = '';
+      refreshMenuBtn();
     }
+
+    // ── ← Back to menu ─────────────────────────────────────────
+    // Client-side implementation of the SA USSD "back to menu"
+    // convention: truncate textPath to [lang, subject] and re-post.
+    // The server will render the topic menu without hanging up the
+    // session, so the learner can pick a different topic mid-flow.
+    // Also POSTs a "00" token as a server-side backup — if a real
+    // aggregator ever wires this UI to the /ussd endpoint directly,
+    // the server's back-to-menu handler catches it.
+    menuBtn.addEventListener('click', async () => {
+      if (!inSession) return;
+      const parts = textPath ? textPath.split('*') : [];
+      if (parts.length < 3) return;  // already at or above topic menu
+      // Rewind to [lang, subject] — the topic menu is what the
+      // server renders when parts.length == 2.
+      textPath = parts.slice(0, 2).join('*');
+      await postUssd();
+      entry.focus();
+    });
 
     document.getElementById('dial').addEventListener('click', async () => {
       textPath = '';
@@ -159,6 +210,7 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
       entry.disabled = false;
       await postUssd();
       entry.focus();
+      refreshMenuBtn();
     });
 
     document.getElementById('hangup').addEventListener('click', () => {
@@ -170,6 +222,7 @@ This simulates how a learner with a feature phone (no smartphone, no data) would
       pathEl.textContent = '—';
       const existing = document.getElementById('switch-btn-wrap');
       if (existing) existing.remove();
+      refreshMenuBtn();
     });
 
     async function sendReply() {

@@ -40,7 +40,15 @@ _LANG_BY_IDX = {"1": "en", "2": "zu"}
 _ANSWER_RE = re.compile(r"^\s*x\s*=\s*-?\d+(\.\d+)?\s*$", re.IGNORECASE)
 _USSD_MAX = 160
 # Tokens at any level that explicitly request escalation to WhatsApp.
-_MORE_TOKENS = {"more", "MORE", "More", "00"}
+# NOTE: `00` deliberately excluded — it now means "back to topic menu"
+# (matching Vodacom/MTN/Cell C USSD conventions in SA). Only the word
+# MORE triggers the WhatsApp handoff to avoid the two navigation
+# actions competing for the same key.
+_MORE_TOKENS = {"more", "MORE", "More"}
+# Universal navigation token: "00" jumps back to the topic menu from
+# anywhere below it, keeping language + subject picked. Works both
+# from the sim's ← Back to menu button and from raw USSD input.
+_BACK_TO_MENU_TOKEN = "00"
 
 
 def _clip(text: str) -> str:
@@ -506,6 +514,24 @@ async def ussd(
     text: str = Form(default=""),
 ) -> PlainTextResponse:
     parts = text.split("*") if text.strip() else []
+
+    # Global back-to-menu shortcut: if the LATEST learner input is
+    # "00", jump straight to the topic menu while preserving their
+    # language + subject picks. This is SA USSD convention (Vodacom
+    # *135#, MTN *111#, Cell C *147# all use 00 for "main menu") and
+    # matches the ← Back to menu button in the sim.
+    #
+    # Path level -> what "00" does:
+    #   depth 0-2 (lang/subject/topic menu)  -> drop the 00, stay put
+    #   depth >= 3 (drilled into a flow)     -> truncate to [lang, subject]
+    #
+    # We loop so a learner spamming "00" a few times still lands
+    # coherently — never crashes, never over-truncates.
+    while parts and parts[-1].strip() == _BACK_TO_MENU_TOKEN:
+        if len(parts) > 2:
+            parts = parts[:2]      # ← topic menu (subject preserved)
+        else:
+            parts = parts[:-1]     # ← drop trailing 00, keep whatever's left
 
     # Level 0: language menu.
     if len(parts) == 0:

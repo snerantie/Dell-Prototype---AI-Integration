@@ -89,6 +89,30 @@
              flex-shrink:0; }
     #upload-doc-btn:hover { background:#2a3942; }
 
+    /* Composer busy state: dims everything and blocks re-submits.
+       Applies while an /api/chat request is in flight so learners
+       can't spam the same photo three times and burn through the
+       LLM's per-minute quota. */
+    #composer.busy { opacity:.55; pointer-events:none; }
+    #composer button:disabled, #composer input:disabled { cursor:not-allowed; }
+
+    /* "AI is thinking..." bubble — three pulsing dots that render on
+       the bot side while we're waiting on /api/chat. Uses the same
+       .bot palette so it slots visually into the conversation. */
+    .thinking { align-self:flex-start; background:var(--in);
+             padding:12px 14px; border-radius:10px;
+             display:inline-flex; align-items:center; gap:5px;
+             max-width:78px; }
+    .thinking .dot { width:7px; height:7px; border-radius:50%;
+             background:var(--muted);
+             animation: thinking-pulse 1.4s ease-in-out infinite; }
+    .thinking .dot:nth-child(2) { animation-delay:.2s; }
+    .thinking .dot:nth-child(3) { animation-delay:.4s; }
+    @keyframes thinking-pulse {
+      0%, 60%, 100% { opacity:.25; transform:scale(.85); }
+      30%           { opacity:1;   transform:scale(1.1); }
+    }
+
     /* Header "Restart" link — clears onboarding so the exec demo can re-show it. */
     header .restart-link {
       color:var(--muted); text-decoration:none; font-size:11px;
@@ -467,6 +491,68 @@
       document.querySelectorAll('.quick-reply').forEach(b => { b.disabled = true; });
     }
 
+    // ------------------------------------------------------------------
+    // Busy-state coordinator
+    // ------------------------------------------------------------------
+    // Locks the composer + shows a "thinking..." bubble whenever an
+    // /api/chat request is in flight. Fixes the class of failure where a
+    // learner nervously re-uploads the same photo, firing 2-3 parallel
+    // Groq calls that blow past the free-tier token-per-minute quota
+    // (see: PR #13 TPM incident). By making the wait visible AND
+    // preventing further submits, we cut the number of requests per
+    // learner-per-minute back to at most one.
+    //
+    // Design choices:
+    //   • Wrap postChat (the retry-aware wrapper) rather than
+    //     postChatOnce, so retries stay under a single busy window.
+    //   • Track a counter, not a boolean, so overlapping calls (never
+    //     currently possible, but safe against future refactors) don't
+    //     stomp on each other's release.
+    //   • setBusy toggles both button.disabled AND the composer.busy
+    //     class — the .busy class also greys out the whole strip via
+    //     `pointer-events:none`, catching keyboard-driven form submits.
+    // ------------------------------------------------------------------
+    const composerEl = document.getElementById('composer');
+    const btnSend    = document.getElementById('send');
+    const btnPhoto   = document.getElementById('upload-photo-btn');
+    const btnDoc     = document.getElementById('upload-doc-btn');
+    const inputText  = document.getElementById('text');
+    let _busyCount = 0;
+    let _thinkingEl = null;
+
+    function showThinking() {
+      // Idempotent: repeated shows return the same bubble.
+      if (_thinkingEl) return _thinkingEl;
+      const el = document.createElement('div');
+      el.className = 'thinking';
+      el.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+      el.setAttribute('aria-label', 'AI is thinking');
+      el.setAttribute('role', 'status');
+      chat.appendChild(el);
+      chat.scrollTop = chat.scrollHeight;
+      _thinkingEl = el;
+      return el;
+    }
+
+    function hideThinking() {
+      if (_thinkingEl && _thinkingEl.parentNode) {
+        _thinkingEl.parentNode.removeChild(_thinkingEl);
+      }
+      _thinkingEl = null;
+    }
+
+    function setBusy(busy) {
+      _busyCount += busy ? 1 : -1;
+      if (_busyCount < 0) _busyCount = 0;   // defensive: never dip negative
+      const active = _busyCount > 0;
+      composerEl.classList.toggle('busy', active);
+      btnSend.disabled  = active;
+      btnPhoto.disabled = active;
+      btnDoc.disabled   = active;
+      inputText.disabled = active;
+      if (active) showThinking(); else hideThinking();
+    }
+
     async function postChatOnce(body, timeoutMs) {
       // Single attempt at /api/chat. Isolated so we can retry after
       // network drops (Render free-tier connection-shedding during idle
@@ -494,7 +580,7 @@
     }
 
     async function postChat(body) {
-      // Robust /api/chat wrapper with two layers of resilience:
+      // Robust /api/chat wrapper with three layers of resilience:
       //   1) 90-second client timeout per attempt (Render free-tier cold
       //      starts can take 30–60s; 90s gives a comfortable margin).
       //   2) One automatic retry on network drop / abort. This handles
@@ -502,34 +588,49 @@
       //      transitions — the common cause of "Load failed" on the
       //      second question in a conversation. Between attempts we
       //      wait 1.5s to give the service time to fully wake.
+      //   3) Busy-state lock (via setBusy(true) / try+finally). Prevents
+      //      the learner from double-submitting while a request is in
+      //      flight and shows a visible "AI is thinking..." bubble so
+      //      they know the request is in progress. Guaranteed to
+      //      release on both success AND error paths thanks to the
+      //      try/finally around the whole body.
       // If BOTH attempts fail the caller catches and renders an
       // errorBubble pointing at /health/llm.
       const TIMEOUT_MS = 90000;
+      setBusy(true);
       try {
-        return await postChatOnce(body, TIMEOUT_MS);
-      } catch (err) {
-        const isNetworkError = (
-          err.name === 'AbortError'
-          || err.name === 'TypeError'         // 'Failed to fetch' / 'Load failed'
-          || /load failed|network|failed to fetch/i.test(err.message || '')
-        );
-        if (!isNetworkError) throw err;      // don't retry HTTP 4xx/5xx
-        // Wait and retry once — Render is almost certainly awake by now
-        // because our /keep-alive ping runs alongside; even in the worst
-        // case the sleeping-service transition finishes in <2s.
-        await new Promise(r => setTimeout(r, 1500));
         try {
           return await postChatOnce(body, TIMEOUT_MS);
-        } catch (err2) {
-          if (err2.name === 'AbortError') {
-            throw new Error(
-              'The tutor is taking too long to reply. Render’s free tier '
-              + 'may still be waking up. Open /health/llm to check the LLM '
-              + 'status, then try again.'
-            );
+        } catch (err) {
+          const isNetworkError = (
+            err.name === 'AbortError'
+            || err.name === 'TypeError'         // 'Failed to fetch' / 'Load failed'
+            || /load failed|network|failed to fetch/i.test(err.message || '')
+          );
+          if (!isNetworkError) throw err;      // don't retry HTTP 4xx/5xx
+          // Wait and retry once — Render is almost certainly awake by now
+          // because our /keep-alive ping runs alongside; even in the worst
+          // case the sleeping-service transition finishes in <2s.
+          await new Promise(r => setTimeout(r, 1500));
+          try {
+            return await postChatOnce(body, TIMEOUT_MS);
+          } catch (err2) {
+            if (err2.name === 'AbortError') {
+              throw new Error(
+                'The tutor is taking too long to reply. Render’s free tier '
+                + 'may still be waking up. Open /health/llm to check the LLM '
+                + 'status, then try again.'
+              );
+            }
+            throw err2;
           }
-          throw err2;
         }
+      } finally {
+        // Always release, even on double-retry failure — otherwise the
+        // composer stays permanently locked and the learner needs to
+        // reload the page. The counter-based setBusy handles nested
+        // calls safely.
+        setBusy(false);
       }
     }
 

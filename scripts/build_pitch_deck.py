@@ -1404,8 +1404,8 @@ def slide_economics(prs):
     _add_text(s, 0.6, 0.4, 12.1, 0.5, "Economics",
               size=14, color=GREEN, bold=True)
     _add_text(s, 0.6, 0.85, 12.1, 0.7,
-              "R2 per learner per year. At scale.",
-              size=28, bold=True, color=WHITE)
+              "R15–R25 today. R2 target — with Dell + Vodacom in place.",
+              size=24, bold=True, color=WHITE)
     _add_rule(s, 0.6, 1.75, 4)
 
     # ---- Killer-number band (PANEL bg, GREEN border, 3 columns) --------
@@ -1422,62 +1422,70 @@ def slide_economics(prs):
     band.text_frame.text = ""
 
     col_w = 12.1 / 3
-    # Left column
+    # Left column — TODAY (honest, unsubsidised)
     _add_text(s, 0.6, band_y + 0.15, col_w, 0.35,
-              "COST PER LEARNER / YEAR",
+              "TODAY · UNSUBSIDISED PILOT",
               size=11, color=MUTED, bold=True, align=PP_ALIGN.CENTER)
     _add_text(s, 0.6, band_y + 0.5, col_w, 0.75,
-              "≈ R2",
-              size=44, color=GREEN_SOFT, bold=True, align=PP_ALIGN.CENTER)
-    # Mid column
+              "~R15–R25 / yr",
+              size=32, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
+    # Mid column — TARGET (the ask)
     _add_text(s, 0.6 + col_w, band_y + 0.15, col_w, 0.35,
-              "100,000 LEARNERS",
+              "TARGET · DELL + VODACOM",
               size=11, color=MUTED, bold=True, align=PP_ALIGN.CENTER)
     _add_text(s, 0.6 + col_w, band_y + 0.5, col_w, 0.75,
-              "≈ R200k / yr",
-              size=36, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
-    # Right column
+              "~R2 / yr",
+              size=44, color=GREEN_SOFT, bold=True, align=PP_ALIGN.CENTER)
+    # Right column — Private tutor comparator
     _add_text(s, 0.6 + 2 * col_w, band_y + 0.15, col_w, 0.35,
               "PRIVATE TUTOR EQUIV.",
               size=11, color=MUTED, bold=True, align=PP_ALIGN.CENTER)
     _add_text(s, 0.6 + 2 * col_w, band_y + 0.5, col_w, 0.75,
               "R16,000 / yr",
-              size=36, color=ORANGE_SOFT, bold=True, align=PP_ALIGN.CENTER)
+              size=32, color=ORANGE_SOFT, bold=True, align=PP_ALIGN.CENTER)
 
-    # ---- Left column below — "What makes up the R2" -------------------
-    col_top = 3.65
+    # ---- Left column below — cost breakdown -------------------
+    col_top = 3.6
     _add_text(s, 0.6, col_top, 5.8, 0.4,
-              "What makes up the R2",
-              size=15, color=GREEN_SOFT, bold=True)
-    _add_bullets(s, 0.6, col_top + 0.5, 5.8, 3.0, [
-        "LLM tokens (Gemini Flash-Lite): ~R1.10 / learner / yr",
-        "USSD aggregator (per session): ~R0.40 / learner / yr",
-        "WhatsApp Cloud API + hosting: ~R0.30 / learner / yr",
-        "Analytics + monitoring + SMS OTP: ~R0.20 / learner / yr",
-        "Assumes: ~100 sessions/learner/year, mixed channels",
-        "At production scale on Dell AI Factory NIM: ~R0.80 / yr",
-    ], size=12, color=TEXT, spacing=5)
+              "Today's cost breakdown (unsubsidised)",
+              size=14, color=GREEN_SOFT, bold=True)
+    _add_bullets(s, 0.6, col_top + 0.45, 5.8, 2.8, [
+        "LLM tokens (Gemini Flash-Lite): ~R3–R10 / learner / yr",
+        "USSD aggregator (per session): ~R5–R10 / learner / yr",
+        "WhatsApp Cloud API: ~R2–R4 / learner / yr",
+        "Hosting + Postgres + Redis: ~R2–R4 / learner / yr",
+        "Analytics + monitoring + SMS OTP: ~R1–R2 / learner / yr",
+        "Path to R2: Dell NIM hardware + Vodacom absorbs USSD/data",
+    ], size=11, color=TEXT, spacing=4)
 
     # ---- Right column — ROI comparison pill-pairs ---------------------
     _add_text(s, 7.0, col_top, 5.8, 0.4,
               "ROI vs. what SA learners have today",
-              size=15, color=GREEN_SOFT, bold=True)
+              size=14, color=GREEN_SOFT, bold=True)
     roi_rows = [
-        ("Private tutor",       "R16,000 / yr",         ORANGE),
-        ("Extra textbook",      "R400 (one-off)",       ORANGE),
-        ("Nothing (status quo)", "R0 · fails 50%",      ORANGE),
-        ("EduConnect",          "R2 / yr",              GREEN),
+        ("Private tutor",         "R16,000 / yr",     ORANGE),
+        ("Extra textbook",        "R400 (one-off)",   ORANGE),
+        ("Nothing (status quo)",  "R0 · fails 50%",   ORANGE),
+        ("EduConnect (today)",    "~R20 / yr",        GREEN),
+        ("EduConnect (target)",   "R2 / yr",          GREEN),
     ]
-    ry = col_top + 0.5
-    row_h = 0.55
+    ry = col_top + 0.45
+    row_h = 0.44
     label_w = 3.1
     cost_w = 2.6
     for label, cost, cost_fill in roi_rows:
-        _add_pill(s, 7.0, ry, label_w, row_h - 0.1, label,
-                  fill=PANEL, fg=TEXT, size=12, bold=True)
-        _add_pill(s, 7.0 + label_w + 0.1, ry, cost_w, row_h - 0.1, cost,
-                  fill=cost_fill, fg=DARK_TXT, size=12, bold=True)
+        _add_pill(s, 7.0, ry, label_w, row_h - 0.06, label,
+                  fill=PANEL, fg=TEXT, size=11, bold=True)
+        _add_pill(s, 7.0 + label_w + 0.1, ry, cost_w, row_h - 0.06, cost,
+                  fill=cost_fill, fg=DARK_TXT, size=11, bold=True)
         ry += row_h + 0.05
+
+    # ---- Assumptions footnote (small, muted) -------------------------
+    _add_text(s, 0.6, 6.55, 12.1, 0.28,
+              "Assumes: ~100 sessions/learner/year (unvalidated) · "
+              "Dell hardware sponsorship + Vodacom absorbing USSD/data "
+              "to reach the R2 target",
+              size=9, color=MUTED, align=PP_ALIGN.CENTER)
 
     # ---- Bottom banner ------------------------------------------------
     banner_y = 6.85
@@ -1491,19 +1499,26 @@ def slide_economics(prs):
     banner.line.width = Pt(1.5)
     banner.text_frame.text = ""
     _add_text(s, 0.6, banner_y + 0.06, 12.1, 0.35,
-              "1 extra matric pass generates ~R150k lifetime earnings uplift. "
-              "Break-even at ~1 additional pass per 75,000 learners served.",
+              "Even at 10× today's cost (~R200/yr), we're still 80× cheaper "
+              "than a tutor. 1 extra matric pass = ~R150k lifetime earnings "
+              "uplift — break-even at ~1 pass per 75k learners.",
               size=11, color=ORANGE_SOFT, align=PP_ALIGN.CENTER, bold=True)
 
     _add_speaker_notes(s,
-        "The R2/learner/year number is the pitch's killer stat. Break it "
-        "down so the CFO in the room can audit it. Costs are today's Gemini "
-        "Flash-Lite pilot pricing — they DROP to ~R0.80 on Dell AI Factory "
-        "NIM (hardware-only cost, no per-token bill). The private-tutor "
-        "comparison isn't hypothetical — R250-500/hour × ~60 hours/year is "
-        "the going rate in SA. The break-even framing is roadmap, not "
-        "shipped: we haven't run the pilot yet, so uplift is a target, not "
-        "a claim. Rehearse the R2-vs-R16,000 line — that's the mic drop.")
+        "Two numbers on this slide, both honest. R15–R25 is TODAY: real "
+        "Gemini Flash-Lite pricing, real aggregator USSD rates (~R0.05–R0.10 "
+        "per session), real Meta WhatsApp Cloud rates, real Render/Postgres "
+        "hosting. R2 is the TARGET — it lands only when Dell donates NIM "
+        "hardware (drops LLM cost to hardware amortisation only) AND "
+        "Vodacom absorbs USSD + data charges through the Purpose "
+        "partnership. Neither is signed. The ~100 sessions/learner/year "
+        "figure is our modelling assumption — we don't have pilot data yet, "
+        "so it could be 20 or 300. If a CFO in the room challenges the R2, "
+        "the honest answer is: 'That's our target with signed partnerships. "
+        "Unsubsidised today, we're at R15–R25 — and even at 10× that, "
+        "we're still ~80× cheaper than a private tutor. The economics work "
+        "at any point in that range.' Don't oversell R2 — the R2-vs-R25 "
+        "framing is what makes this credible in Q&A.")
     return s
 
 
